@@ -182,12 +182,16 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding(createProjects: Bool) {
-        if createProjects, !isReplay {
+        if createProjects {
             let names = Array(selectedProjects).sorted() + customProjects
             var existingNames = Set(existingProjects.map { $0.name.lowercased() })
             var nextSortIndex = existingProjects.nextSortIndex
             for name in names where !existingNames.contains(name.lowercased()) {
-                modelContext.insert(Project(name: name, colorToken: ProjectCatalog.colorToken(forProjectNamed: name), sortIndex: nextSortIndex))
+                modelContext.insert(Project(
+                    name: name,
+                    colorToken: ProjectCatalog.colorToken(forProjectNamed: name),
+                    sortIndex: nextSortIndex
+                ))
                 existingNames.insert(name.lowercased())
                 nextSortIndex += 1
             }
