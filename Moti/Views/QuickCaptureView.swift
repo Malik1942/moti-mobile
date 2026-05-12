@@ -14,7 +14,7 @@ struct QuickCaptureView: View {
     @StateObject private var speechService = SpeechTranscriptionService()
     @State private var input = ""
     @State private var inputBeforeRecording = ""
-    @State private var isLoading = false
+    @State private var isSubmitting = false
     @State private var errorMessage: String?
     @State private var didAutoStartVoice = false
     @State private var isInVoiceMode: Bool
@@ -78,7 +78,7 @@ struct QuickCaptureView: View {
 
     private var submitDisabled: Bool {
         input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            || isLoading
+            || isSubmitting
             || speechService.isRecording
     }
 
@@ -112,7 +112,7 @@ struct QuickCaptureView: View {
                 }
             }
             .buttonStyle(.plain)
-            .disabled(isLoading)
+            .disabled(isSubmitting)
 
             voiceActionRow
 
@@ -121,7 +121,7 @@ struct QuickCaptureView: View {
                     .font(.caption)
                     .foregroundStyle(.red)
             }
-            if isLoading {
+            if isSubmitting {
                 HStack(spacing: 8) {
                     ProgressView()
                     Text("Placing it on your timeline…")
@@ -203,7 +203,7 @@ struct QuickCaptureView: View {
                 .padding(.horizontal, 2)
             }
 
-            if isLoading {
+            if isSubmitting {
                 HStack(spacing: 8) {
                     ProgressView()
                     Text("Placing it on your timeline…")
@@ -244,7 +244,7 @@ struct QuickCaptureView: View {
                 }
             }
             .buttonStyle(.plain)
-            .disabled(isLoading)
+            .disabled(isSubmitting)
             .accessibilityLabel(speechService.isRecording ? "Stop recording" : "Start voice capture")
 
             Spacer()
@@ -281,7 +281,7 @@ struct QuickCaptureView: View {
     }
 
     private func startVoiceCapture() async {
-        guard !speechService.isRecording, !isLoading else { return }
+        guard !speechService.isRecording, !isSubmitting else { return }
         inputBeforeRecording = input.trimmingCharacters(in: .whitespacesAndNewlines)
         errorMessage = nil
         do {
@@ -299,66 +299,68 @@ struct QuickCaptureView: View {
 
     // MARK: - Submit
 
+    @MainActor
     private func submit() {
+        guard !isSubmitting else { return }
+        isSubmitting = true
+
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isLoading else { return }
-        isLoading = true
+        guard !text.isEmpty else {
+            isSubmitting = false
+            return
+        }
+
         speechService.stopTranscription()
         errorMessage = nil
-        Task {
+
+        Task { @MainActor in
+            defer { isSubmitting = false }
             do {
                 let parsedItems = try await parser.parseMany(text)
                 guard !parsedItems.isEmpty else {
                     throw TaskUnderstandingError.foundationModelUnavailable("no work items returned")
                 }
-                try await MainActor.run {
-                    var timelineCount = 0
-                    var reviewCount = 0
-
-                    for parsed in parsedItems {
-                        let item = WorkItem(parsed: parsed)
-                        applyProjectMapping(from: parsed, to: item)
-                        if parsed.needsReview {
-                            item.status = .needsReview
-                            reviewCount += 1
-                        } else {
-                            timelineCount += 1
-                        }
-                        #if DEBUG
-                        print(
-                            """
-                            QuickCapture parsed:
-                            input=\(parsed.rawInput)
-                            title=\(parsed.title)
-                            project=\(parsed.projectGuess ?? "nil")
-                            savedProject=\(item.projectName ?? "nil")
-                            suggestedProject=\(item.suggestedProjectName ?? "nil")
-                            dueDate=\(parsed.dueDate?.description ?? "nil")
-                            workingStartDate=\(parsed.workingStartDate?.description ?? "nil")
-                            workingEndDate=\(parsed.workingEndDate?.description ?? "nil")
-                            needsReview=\(parsed.needsReview)
-                            parserConfidence=\(parsed.parserConfidence)
-                            """
-                        )
-                        #endif
-                        modelContext.insert(item)
-                        try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: projects)
+                var timelineCount = 0
+                var reviewCount = 0
+                for parsed in parsedItems {
+                    let item = WorkItem(parsed: parsed)
+                    applyProjectMapping(from: parsed, to: item)
+                    if parsed.needsReview {
+                        item.status = .needsReview
+                        reviewCount += 1
+                    } else {
+                        timelineCount += 1
                     }
-
                     #if DEBUG
-                    if parsedItems.count > 1 {
-                        print("QuickCapture added \(parsedItems.count) work items: \(timelineCount) timeline, \(reviewCount) review.")
-                    }
+                    print(
+                        """
+                        QuickCapture parsed:
+                        input=\(parsed.rawInput)
+                        title=\(parsed.title)
+                        project=\(parsed.projectGuess ?? "nil")
+                        savedProject=\(item.projectName ?? "nil")
+                        suggestedProject=\(item.suggestedProjectName ?? "nil")
+                        dueDate=\(parsed.dueDate?.description ?? "nil")
+                        workingStartDate=\(parsed.workingStartDate?.description ?? "nil")
+                        workingEndDate=\(parsed.workingEndDate?.description ?? "nil")
+                        needsReview=\(parsed.needsReview)
+                        parserConfidence=\(parsed.parserConfidence)
+                        """
+                    )
                     #endif
-                    try modelContext.save()
-                    input = ""
-                    dismiss()
+                    modelContext.insert(item)
+                    try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: projects)
                 }
+                #if DEBUG
+                if parsedItems.count > 1 {
+                    print("QuickCapture added \(parsedItems.count) work items: \(timelineCount) timeline, \(reviewCount) review.")
+                }
+                #endif
+                try modelContext.save()
+                input = ""
+                dismiss()
             } catch {
-                await MainActor.run {
-                    errorMessage = "I could not parse that yet."
-                    isLoading = false
-                }
+                errorMessage = "I could not parse that yet."
             }
         }
     }
