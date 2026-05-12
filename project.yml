@@ -51,3 +51,33 @@ targets:
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
+
+schemes:
+  Moti:
+    build:
+      targets:
+        Moti: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+  MotiWidget:
+    build:
+      targets:
+        MotiWidget: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
