@@ -547,6 +547,7 @@ private struct ProjectDetailView: View {
     let project: Project
 
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
+    @State private var showingEdit = false
 
     private var projectItems: [WorkItem] {
         workItems
@@ -620,6 +621,14 @@ private struct ProjectDetailView: View {
         }
         .navigationTitle(project.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Edit") { showingEdit = true }
+            }
+        }
+        .sheet(isPresented: $showingEdit) {
+            EditProjectSheet(project: project)
+        }
     }
 
     private var nextDueLabel: String {

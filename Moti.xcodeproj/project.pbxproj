@@ -43,6 +43,7 @@
 		C9F8212A0BF7408506A726F0 /* MotiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */; };
 		D138F0FB9BA34BDF8421D1EC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */; };
 		D31E185392D4B107FE242590 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */; };
+		D798E9C040D7B54F1C764C91 /* EditProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */; };
 		D8E24D814D5F2FD45D444D96 /* MotiWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BBCECF2669A889C4D6145209 /* MotiWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5831017862C61EA3E73AAB1F /* TimelineView.swift */; };
 		E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */; };
@@ -120,6 +121,7 @@
 		BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		BF41184673063DB0A325C69D /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetViews.swift; sourceTree = "<group>"; };
+		CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProjectSheet.swift; sourceTree = "<group>"; };
 		DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedWorkItem.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
@@ -220,6 +222,7 @@
 			isa = PBXGroup;
 			children = (
 				ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */,
+				CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */,
 				BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */,
 				53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */,
 				BF41184673063DB0A325C69D /* QuickCaptureView.swift */,
@@ -390,6 +393,7 @@
 				F318D271E306F2530F8E9147 /* CompletionLog.swift in Sources */,
 				C56248EF547B9F3415D4D03B /* CompletionLogger.swift in Sources */,
 				624D25138D022FD7AF96F265 /* DateResolver.swift in Sources */,
+				D798E9C040D7B54F1C764C91 /* EditProjectSheet.swift in Sources */,
 				51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */,
 				C276154A921126DB993D149C /* FoundationModelsTaskUnderstandingService.swift in Sources */,
 				19D60336519AB492F56B8F2A /* MissingInfoChip.swift in Sources */,
