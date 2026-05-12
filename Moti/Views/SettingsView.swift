@@ -55,16 +55,15 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Intelligence") {
-                    LabeledContent("Active", value: "\(activeMode.label), \(activeMode.detailLabel)")
+                    Picker("Active", selection: mode) {
+                        ForEach(TaskUnderstandingMode.releaseOptions) { mode in
+                            Text(mode.label).tag(mode)
+                        }
+                    }
+
                     LabeledContent("Foundation Model", value: foundationStatus.summary)
                     if let fallback = foundationStatus.fallbackSummary, requestedMode == .foundationModel {
                         LabeledContent("Fallback", value: fallback)
-                    }
-
-                    Picker("Preferred", selection: mode) {
-                        ForEach(TaskUnderstandingMode.releaseOptions) { mode in
-                            Text("\(mode.label), \(mode.detailLabel)").tag(mode)
-                        }
                     }
                 }
 
@@ -96,7 +95,7 @@ struct SettingsView: View {
 
                     LabeledContent("Sync Status", value: calendarStatusLabel)
 
-                    Text("Automatically mirror scheduled work items to your calendar. Moti remains the source of truth.")
+                    Text("Scheduled work items are mirrored to Apple Calendar by project. Each project gets its own calendar with a matching name and color. Moti remains the source of truth.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
@@ -123,6 +122,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .contentMargins(.bottom, 72, for: .scrollContent)
             .navigationTitle("Settings")
             .onAppear {
                 if modeRawValue == TaskUnderstandingMode.mockSLM.rawValue {
@@ -163,6 +163,15 @@ struct SettingsView: View {
                     await MainActor.run {
                         calendarSyncEnabled = granted
                         calendarSyncProviderRawValue = CalendarSyncProvider.appleCalendar.rawValue
+                        if granted {
+                            let mode = CalendarSyncMode(rawValue: calendarSyncModeRawValue) ?? .event
+                            try? AppleCalendarSyncService.shared.syncExistingScheduledItems(
+                                workItems: workItems,
+                                projects: projects,
+                                mode: mode
+                            )
+                            try? modelContext.save()
+                        }
                         refreshCalendarStatus()
                     }
                 }

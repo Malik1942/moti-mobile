@@ -89,7 +89,7 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .foundationModel: "Foundation Model"
+        case .foundationModel: "Foundational Model"
         case .ruleBased: "Rule-based"
         case .mockSLM: "Mock SLM"
         }

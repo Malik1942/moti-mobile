@@ -21,6 +21,7 @@ enum WorkItemTemporalIntent: String, Codable, Equatable {
     case workingPeriod
     case event
     case periodWithDeadline
+    case openEndedAfter
     case noTime
     case unknown
 }

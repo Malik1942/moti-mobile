@@ -9,10 +9,12 @@ struct MultiWeekTimelineHeroView: View {
     @State private var selectedItem: WorkItem?
 
     private let labelWidth: CGFloat = 104
+    private let plotDividerWidth: CGFloat = 1
+    private let plotLeadingGap: CGFloat = 8
     private let axisHeight: CGFloat = 46
     private let projectHeaderHeight: CGFloat = 26
-    private let rowHeight: CGFloat = 38
-    private let selectedRowHeight: CGFloat = 46
+    private let rowHeight: CGFloat = 54
+    private let selectedRowHeight: CGFloat = 58
     private let laneGap: CGFloat = 8
     private let minimumPlotHeight: CGFloat = 470
     private let calendar = Calendar.current
@@ -26,11 +28,15 @@ struct MultiWeekTimelineHeroView: View {
     }
 
     // 2W fills the available plot width exactly (no scroll).
-    // Month and Quarter use a moderate multiplier — Quarter stays dense, not endless.
+    // Longer horizons use day-based widths so the coordinate system stays readable.
     private func plotContentWidth(availableWidth: CGFloat) -> CGFloat {
         switch horizonDays {
-        case ...14:  return availableWidth
-        default:     return availableWidth * 1.6
+        case ...14:
+            return availableWidth
+        case ...60:
+            return max(availableWidth, CGFloat(horizonDays) * 14)
+        default:
+            return max(availableWidth, CGFloat(horizonDays) * 8)
         }
     }
 
@@ -140,7 +146,7 @@ struct MultiWeekTimelineHeroView: View {
             header
 
             GeometryReader { proxy in
-                let availableForPlot = max(1, proxy.size.width - labelWidth)
+                let availableForPlot = max(1, proxy.size.width - labelWidth - plotDividerWidth - plotLeadingGap)
                 let plotWidth = plotContentWidth(availableWidth: availableForPlot)
                 let plotHeight = max(minimumPlotHeight, contentHeight)
 
@@ -150,13 +156,29 @@ struct MultiWeekTimelineHeroView: View {
                         .frame(width: labelWidth, height: plotHeight, alignment: .topLeading)
                         .clipped()
 
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.12))
+                        .frame(width: plotDividerWidth, height: plotHeight)
+
+                    Color.clear
+                        .frame(width: plotLeadingGap, height: plotHeight)
+
                     // 2W: fixed, no scroll — full 14-day overview fits on screen.
-                    // Month/Quarter: controlled horizontal scroll with same 1.6x width.
+                    // Month/Quarter: controlled horizontal scroll with an explicit leading anchor.
                     if horizonDays <= 14 {
                         plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth, plotHeight: plotHeight)
                     } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth + 16, plotHeight: plotHeight)
+                        ScrollViewReader { scrollProxy in
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth, plotHeight: plotHeight)
+                                    .id("timeline-start")
+                            }
+                            .onAppear {
+                                scrollProxy.scrollTo("timeline-start", anchor: .leading)
+                            }
+                            .onChange(of: horizonDays) {
+                                scrollProxy.scrollTo("timeline-start", anchor: .leading)
+                            }
                         }
                     }
                 }
@@ -190,8 +212,8 @@ struct MultiWeekTimelineHeroView: View {
             // Size anchor — tells the ZStack (and therefore the ScrollView) the canvas width.
             Color.clear.frame(width: canvasWidth, height: plotHeight)
             axisAndGrid(timelineWidth: plotWidth, height: plotHeight)
-            laneStack(timelineWidth: plotWidth)
             todayLine(timelineWidth: plotWidth, height: plotHeight)
+            laneStack(timelineWidth: plotWidth)
         }
     }
 
@@ -310,7 +332,7 @@ struct MultiWeekTimelineHeroView: View {
                 emptyLaneLine(for: lane, timelineWidth: timelineWidth)
             } else {
                 ForEach(Array(lane.items.enumerated()), id: \.element.id) { index, item in
-                    workBar(for: item, timelineWidth: timelineWidth, showTitle: lane.mode == .project)
+                    workBar(for: item, timelineWidth: timelineWidth)
                         .offset(y: barYOffset(for: lane, index: index))
                 }
             }
@@ -325,42 +347,71 @@ struct MultiWeekTimelineHeroView: View {
             .offset(y: lane.mode == .project ? projectHeaderHeight : 12)
     }
 
-    private func workBar(for item: WorkItem, timelineWidth: CGFloat, showTitle: Bool = false) -> some View {
+    private func workBar(for item: WorkItem, timelineWidth: CGFloat) -> some View {
         let frame = barFrame(for: item, timelineWidth: timelineWidth)
         let color = itemColor(item)
-        let maxTitleWidth = min(timelineWidth - frame.x - 4, 180)
+        let isEvent = isEventItem(item)
+        let titleWidth = titleWidth(for: frame, timelineWidth: timelineWidth)
+        let titleX = readableTextX(for: frame.x, width: titleWidth, timelineWidth: timelineWidth)
+        let progressWidth: CGFloat = 38
+        let progressX = readableTextX(for: frame.x, width: progressWidth, timelineWidth: timelineWidth)
 
         return Button {
             selectedItem = item
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                if showTitle {
-                    Text(item.title)
-                        .font(.caption2.weight(.semibold))
-                        .lineLimit(1)
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: max(0, maxTitleWidth), alignment: .leading)
-                }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.title)
+                    .font(.caption2.weight(.semibold))
+                    .lineLimit(1)
+                    .foregroundStyle(.primary)
+                    .truncationMode(.tail)
+                    .frame(width: titleWidth, alignment: .leading)
+                    .offset(x: titleX)
 
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(color.opacity(0.28))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(color.opacity(0.65), lineWidth: 1)
+                ZStack(alignment: .topLeading) {
+                    if isEvent {
+                        Circle()
+                            .fill(color.opacity(0.30))
+                            .overlay {
+                                Circle()
+                                    .stroke(color.opacity(0.70), lineWidth: 1.2)
+                            }
+                            .frame(width: frame.width, height: frame.width)
+                            .offset(x: frame.x, y: 3)
+                    } else {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(color.opacity(0.28))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(color.opacity(0.65), lineWidth: 1)
+                            }
+                            .frame(width: frame.width, height: 20)
+                            .offset(x: frame.x)
+
+                        if let dueX = dueX(for: item, timelineWidth: timelineWidth),
+                           timelineWidth >= 18 {
+                            deadlineMarker(for: item)
+                                .offset(x: min(max(dueX - 9, 0), timelineWidth - 18))
                         }
-
-                    if let dueX = dueX(for: item, timelineWidth: timelineWidth) {
-                        deadlineMarker(for: item)
-                            .offset(x: dueX - frame.x - 9)
                     }
                 }
-                .frame(width: frame.width, height: showTitle ? 20 : 26)
+                .frame(width: timelineWidth, height: 20, alignment: .topLeading)
+                .clipped()
+
+                if !isEvent, let progress = elapsedPercentLabel(for: item) {
+                    Text(progress)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(color)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .frame(width: progressWidth, alignment: .leading)
+                        .offset(x: progressX)
+                }
             }
+            .frame(width: timelineWidth, alignment: .leading)
         }
         .buttonStyle(.plain)
-        .offset(x: frame.x)
-        .accessibilityLabel("\(item.title), working period")
+        .accessibilityLabel(accessibilityLabel(for: item))
     }
 
     private func deadlineMarker(for item: WorkItem) -> some View {
@@ -380,14 +431,14 @@ struct MultiWeekTimelineHeroView: View {
         let plotHeight = max(0, height - axisHeight)
         return ZStack(alignment: .topLeading) {
             Rectangle()
-                .fill(.red.opacity(0.75))
-                .frame(width: 2, height: plotHeight)
+                .fill(.red.opacity(0.38))
+                .frame(width: 1, height: plotHeight)
                 .offset(x: x, y: axisHeight)
             Text("Today")
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(.red)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.red.opacity(0.72))
                 .fixedSize()
-                .offset(x: min(max(x - 15, 0), timelineWidth - 34), y: axisHeight + 8)
+                .offset(x: min(max(x - 15, 0), timelineWidth - 34), y: axisHeight - 16)
         }
     }
 
@@ -402,22 +453,66 @@ struct MultiWeekTimelineHeroView: View {
 
     private func barYOffset(for lane: TimelineLane, index: Int) -> CGFloat {
         switch lane.mode {
-        case .project:  return projectHeaderHeight + CGFloat(index) * rowHeight + 4
-        case .workItem: return 10
+        case .project:  return projectHeaderHeight + CGFloat(index) * rowHeight + 6
+        case .workItem: return 8
         }
+    }
+
+    private func titleWidth(for frame: (x: CGFloat, width: CGFloat), timelineWidth: CGFloat) -> CGFloat {
+        let remainingWidth = max(0, timelineWidth - frame.x)
+        return min(max(44, remainingWidth), min(220, timelineWidth))
+    }
+
+    private func readableTextX(for proposedX: CGFloat, width: CGFloat, timelineWidth: CGFloat) -> CGFloat {
+        let todayX = dateX(.now, timelineWidth: timelineWidth)
+        let adjustedX = abs(proposedX - todayX) < 14 ? proposedX + 10 : proposedX
+        return min(max(0, adjustedX), max(0, timelineWidth - width))
+    }
+
+    private func isEventItem(_ item: WorkItem) -> Bool {
+        if case .event? = renderKind(for: item) {
+            return true
+        }
+        return false
+    }
+
+    private func elapsedPercentLabel(for item: WorkItem) -> String? {
+        guard case let .period(start, end)? = renderKind(for: item) else { return nil }
+        let lowerBound = min(start, end)
+        let upperBound = max(start, end)
+        let totalMinutes = upperBound.timeIntervalSince(lowerBound) / 60
+        guard totalMinutes > 0 else { return nil }
+
+        let elapsedMinutes = Date.now.timeIntervalSince(lowerBound) / 60
+        let progress = min(max(elapsedMinutes / totalMinutes, 0), 1)
+        return "\(Int((progress * 100).rounded()))%"
+    }
+
+    private func accessibilityLabel(for item: WorkItem) -> String {
+        if let progress = elapsedPercentLabel(for: item) {
+            return "\(item.title), \(progress) time elapsed"
+        }
+        return "\(item.title), event"
     }
 
     private func barFrame(for item: WorkItem, timelineWidth: CGFloat) -> (x: CGFloat, width: CGFloat) {
         switch renderKind(for: item) {
         case .event(let at):
             let x = dateX(at, timelineWidth: timelineWidth)
-            return (max(0, x - 7), 14)
+            let eventWidth: CGFloat = 14
+            return (min(max(0, x - (eventWidth / 2)), max(0, timelineWidth - eventWidth)), eventWidth)
         case .period(let start, let end):
-            let startX = dateX(start, timelineWidth: timelineWidth)
-            let endX = dateX(end, timelineWidth: timelineWidth)
-            let x = min(startX, endX)
-            let width = max(18, abs(endX - startX))
-            return (x, min(width, timelineWidth - x))
+            let lowerBound = min(start, end)
+            let upperBound = max(start, end)
+            let visibleStart = max(lowerBound, startDate)
+            let visibleEnd = min(upperBound, endDate)
+            guard visibleEnd >= visibleStart else { return (0, 0) }
+
+            let startX = dateX(visibleStart, timelineWidth: timelineWidth)
+            let endX = dateX(visibleEnd, timelineWidth: timelineWidth)
+            let x = min(max(0, startX), timelineWidth)
+            let rawWidth = max(18, endX - startX)
+            return (x, min(rawWidth, max(0, timelineWidth - x)))
         case nil:
             return (0, 0)
         }
@@ -463,7 +558,7 @@ struct MultiWeekTimelineHeroView: View {
             let e = calendar.date(bySettingHour: 23, minute: 59, second: 0, of: at) ?? at
             return (s, e)
         case .period(let s, let e):
-            return (s, e)
+            return (min(s, e), max(s, e))
         case nil:
             return nil
         }
@@ -509,6 +604,10 @@ private struct TimelineLane: Identifiable {
 private struct TimelineItemSheet: View {
     let item: WorkItem
 
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @State private var showingDeleteConfirmation = false
+
     var body: some View {
         NavigationStack {
             List {
@@ -529,11 +628,32 @@ private struct TimelineItemSheet: View {
                 }
                 Section {
                     NavigationLink("Edit") {
-                        WorkItemDetailView(item: item)
+                        WorkItemDetailView(showsDeleteAction: false, item: item)
+                    }
+
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Text("Delete")
                     }
                 }
             }
             .navigationTitle("Timeline Detail")
+            .alert("Delete Work Item?", isPresented: $showingDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    deleteWorkItem()
+                }
+            } message: {
+                Text("This will permanently delete this work item. This cannot be undone.")
+            }
         }
+    }
+
+    private func deleteWorkItem() {
+        try? AppleCalendarSyncService.shared.deleteEvent(for: item)
+        modelContext.delete(item)
+        try? modelContext.save()
+        dismiss()
     }
 }

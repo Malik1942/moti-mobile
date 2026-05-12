@@ -19,8 +19,8 @@ struct OnboardingView: View {
                 TabView(selection: $page) {
                     OnboardingPageView(
                         systemImage: "calendar.badge.clock",
-                        title: "Plan work by time, not just tasks.",
-                        bodyText: "Moti turns natural language captures into project timelines, so you can see when work starts, when it ends, and what is coming due."
+                        title: "Plan work by timeline, not to-do list.",
+                        bodyText: "Moti turns quick captures into project timelines, showing when work starts, when it ends, and what is coming due."
                     )
                     .tag(0)
 
@@ -42,7 +42,7 @@ struct OnboardingView: View {
                 footer
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle(isReplay ? "Onboarding" : "Welcome to Moti")
+            .navigationTitle("Welcome to Moti")
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -185,9 +185,11 @@ struct OnboardingView: View {
         if createProjects, !isReplay {
             let names = Array(selectedProjects).sorted() + customProjects
             var existingNames = Set(existingProjects.map { $0.name.lowercased() })
+            var nextSortIndex = existingProjects.nextSortIndex
             for name in names where !existingNames.contains(name.lowercased()) {
-                modelContext.insert(Project(name: name, colorToken: ProjectCatalog.colorToken(forProjectNamed: name)))
+                modelContext.insert(Project(name: name, colorToken: ProjectCatalog.colorToken(forProjectNamed: name), sortIndex: nextSortIndex))
                 existingNames.insert(name.lowercased())
+                nextSortIndex += 1
             }
             try? modelContext.save()
         }

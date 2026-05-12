@@ -151,7 +151,16 @@ enum DateResolver {
     }
 
     static func resolveStartDate(in input: String, calendar: Calendar = .current, now: Date = .now) -> Date? {
-        resolve(in: input, calendar: calendar, now: now)
+        let text = input.lowercased()
+        if text.contains("now") {
+            return now
+        }
+        if text.contains("after "),
+           let baseDate = resolve(in: input, calendar: calendar, now: now)?.date {
+            let start = calendar.startOfDay(for: baseDate)
+            return calendar.date(byAdding: .day, value: 1, to: start) ?? start
+        }
+        return resolve(in: input, calendar: calendar, now: now)
             .map { calendar.startOfDay(for: $0.date) }
     }
 
@@ -315,6 +324,9 @@ enum DateResolver {
             let range = nextWeekRange(from: now, calendar: calendar)
             return (range.start, range.end, true)
         }
+        if let range = resolveNowToRange(in: text, calendar: calendar, now: now) {
+            return range
+        }
         if let range = resolveRangeExpression(in: text, startMarker: "between ", separator: " and ", calendar: calendar, now: now) {
             return range
         }
@@ -322,6 +334,19 @@ enum DateResolver {
             return range
         }
         return nil
+    }
+
+    private static func resolveNowToRange(in text: String, calendar: Calendar, now: Date) -> (start: Date, end: Date, vague: Bool)? {
+        let markers = ["now to ", "now until ", "now through "]
+        guard let marker = markers.first(where: { text.contains($0) }),
+              let range = text.range(of: marker)
+        else { return nil }
+
+        let fragment = String(text[range.upperBound...])
+        guard let end = resolveRangeEndpoint(in: fragment, isStart: false, calendar: calendar, now: now) else {
+            return nil
+        }
+        return (now, max(now, end), false)
     }
 
     private static func resolveRangeExpression(in text: String, startMarker: String, separator: String, calendar: Calendar, now: Date) -> (start: Date, end: Date, vague: Bool)? {

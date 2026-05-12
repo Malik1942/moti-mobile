@@ -8,15 +8,27 @@ struct FoundationModelsTaskUnderstandingService: TaskUnderstandingService {
     var fallback: any TaskUnderstandingService
 
     func parse(_ input: String) async throws -> ParsedWorkItem {
+        let items = try await parseMany(input)
+        if let first = items.first {
+            return first
+        }
+        return try await fallback.parse(input)
+    }
+
+    func parseMany(_ input: String) async throws -> [ParsedWorkItem] {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *) {
             do {
-                return try await FoundationModelParser().parse(input)
+                let items = try await FoundationModelParser().parseMany(input)
+                if items.isEmpty {
+                    return try await fallback.parseMany(input)
+                }
+                return items
             } catch {
                 #if DEBUG
                 print("FoundationModelsTaskUnderstandingService fallback:", error.localizedDescription)
                 #endif
-                return try await fallback.parse(input)
+                return try await fallback.parseMany(input)
             }
         }
         #endif
@@ -24,7 +36,7 @@ struct FoundationModelsTaskUnderstandingService: TaskUnderstandingService {
         #if DEBUG
         print("FoundationModelsTaskUnderstandingService fallback: FoundationModels requires iOS 26 or newer.")
         #endif
-        return try await fallback.parse(input)
+        return try await fallback.parseMany(input)
     }
 }
 
@@ -67,6 +79,14 @@ enum FoundationModelRuntime {
 @available(iOS 26.0, *)
 private struct FoundationModelParser {
     func parse(_ input: String) async throws -> ParsedWorkItem {
+        let items = try await parseMany(input)
+        guard let first = items.first else {
+            throw TaskUnderstandingError.foundationModelUnavailable("no structured work items returned")
+        }
+        return first
+    }
+
+    func parseMany(_ input: String) async throws -> [ParsedWorkItem] {
         let model = SystemLanguageModel.default
         guard model.isAvailable else {
             throw TaskUnderstandingError.foundationModelUnavailable(model.availability.userFacingDescription)
@@ -75,9 +95,25 @@ private struct FoundationModelParser {
         let session = LanguageModelSession(model: model, instructions: Self.instructions)
         let response = try await session.respond(
             to: Self.prompt(for: input),
-            generating: FoundationModelWorkItemDraft.self
+            generating: FoundationModelWorkItemsDraft.self
         )
-        return map(response.content, rawInput: input)
+
+        let localSegments = CaptureSegmenter.segments(from: input)
+        let drafts = response.content.items
+        let mapped = drafts.enumerated().map { index, draft in
+            let source = draft.sourceText?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let fallbackSource = localSegments.count == drafts.count ? localSegments[index] : input
+            return map(draft, rawInput: source?.isEmpty == false ? source! : fallbackSource)
+        }
+
+        if mapped.count <= 1, localSegments.count > 1 {
+            #if DEBUG
+            print("Foundation Model returned one item for a multi-segment capture; using line-based fallback split.")
+            #endif
+            return try await RuleBasedTaskUnderstandingService().parseMany(input)
+        }
+
+        return mapped
     }
 
     private func map(_ draft: FoundationModelWorkItemDraft, rawInput input: String) -> ParsedWorkItem {
@@ -102,7 +138,14 @@ private struct FoundationModelParser {
 
         let shouldPreferPeriodEndAsDue = temporalIntent == .workingPeriod || (rawHasPeriodSyntax && temporalIntent != .periodWithDeadline)
         var dueDate: Date?
-        if shouldPreferPeriodEndAsDue {
+        if temporalIntent == .openEndedAfter {
+            dueDate = nil
+            workingStartDate = draft.workingStartDateText
+                .flatMap { DateResolver.resolveStartDate(in: $0, now: createdAt) }
+                ?? rawTemporal.dueDate
+                .flatMap { Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: $0)) }
+            workingEndDate = nil
+        } else if shouldPreferPeriodEndAsDue {
             dueDate = workingEndDate ?? rawTemporal.dueDate
         } else {
             dueDate = draft.dueDateText
@@ -130,12 +173,17 @@ private struct FoundationModelParser {
         let project = normalizedProject(draft.projectName) ?? ProjectInferrer.infer(from: trimmed)
         let hasUsableTimeInfo = draft.hasUsableTimeInfo || dueDate != nil || workingStartDate != nil || workingEndDate != nil
         let explicitlyNoDeadline = DateResolver.explicitlyHasNoDeadline(trimmed)
-        let actionable = CapturedClassifier.hasActionVerb(trimmed) || CapturedClassifier.hasActionVerb(title)
+        let actionable = CapturedClassifier.hasActionVerb(trimmed)
+            || CapturedClassifier.hasActionVerb(title)
+            || (!title.isEmpty && hasUsableTimeInfo && !CapturedClassifier.isVeryVague(title))
+        let missingEndDate = temporalIntent == .openEndedAfter || (workingStartDate != nil && workingEndDate == nil && dueDate == nil)
 
-        let needsReview = explicitlyNoDeadline || !hasUsableTimeInfo || !actionable || title.isEmpty
+        let needsReview = explicitlyNoDeadline || !hasUsableTimeInfo || !actionable || title.isEmpty || missingEndDate
         let reviewReason: String?
         if needsReview {
-            if explicitlyNoDeadline || !hasUsableTimeInfo {
+            if missingEndDate {
+                reviewReason = "Missing end date"
+            } else if explicitlyNoDeadline || !hasUsableTimeInfo {
                 reviewReason = "Missing time information"
             } else if !actionable || title.isEmpty {
                 reviewReason = "Needs a clearer work description"
@@ -151,6 +199,7 @@ private struct FoundationModelParser {
             """
             Foundation Model parsed:
             rawInput=\(trimmed)
+            sourceText=\(draft.sourceText ?? "nil")
             modelTitle=\(draft.title)
             title=\(title)
             project=\(project ?? "Uncategorized")
@@ -211,6 +260,12 @@ private struct FoundationModelParser {
         - If the user says "from X to Y", X is workingStartDateText and Y is workingEndDateText.
         - If the user gives both a working period and a deadline, preserve both separately.
         - For period-only work, use temporalIntent working_period and use the period end as dueDateText only if a deadline marker is useful.
+        - A single capture can contain multiple independent work items. Return one item per independent work intention.
+        - Split on line breaks, bullet points, numbered lists, semicolons, equals-sign structures, and separate clauses with different time expressions when they describe distinct deliverables or phases.
+        - Split phase language such as "now to X", "after X", and "by X" when each phrase describes a separate work phase.
+        - Do not split one coherent item just because it has both a working period and a deadline.
+        - "now to X = work" means temporalIntent working_period, workingStartDateText now, workingEndDateText X.
+        - "after X = work" means temporalIntent open_ended_after, workingStartDateText after X, workingEndDateText null, dueDateText null, needsReview true, reason Missing end date.
 
         Title rules:
         Remove filler phrases: I need to, I have to, I want to, remind me to, please, can you.
@@ -224,6 +279,8 @@ private struct FoundationModelParser {
         - "from X to Y" -> working_period.
         - "from X to Y and submit by Z" -> period_with_deadline.
         - "before X", "by X", "due X", or "submit by X" -> deadline.
+        - "now to X" -> working_period.
+        - "after X" with no end date -> open_ended_after.
         - "meeting/interview/call/demo at X" -> event.
         - "no deadline yet" -> no_time.
         For events: workingStartDateText = null, workingEndDateText = null. Only dueDateText is set.
@@ -243,6 +300,14 @@ private struct FoundationModelParser {
         Output: title Interview with Matt, projectName Job Search, temporalIntent event, dueDateText Friday, workingStartDateText null, workingEndDateText null, needsReview false.
         Raw: Call recruiter on 5.20
         Output: title Call recruiter, projectName Job Search, temporalIntent event, dueDateText 5.20, workingStartDateText null, workingEndDateText null, needsReview false.
+        Raw:
+        Now to May 15 = preparation and casual job hunting
+        After May 15 = serious job hunting and outreach rhythm
+        By May 22 = story library ready for interviews and coffee chats
+        Output: three items:
+        1. sourceText Now to May 15 = preparation and casual job hunting, title Preparation and casual job hunting, projectName Job Search, temporalIntent working_period, workingStartDateText now, workingEndDateText May 15, dueDateText May 15, needsReview false.
+        2. sourceText After May 15 = serious job hunting and outreach rhythm, title Serious job hunting and outreach rhythm, projectName Job Search, temporalIntent open_ended_after, workingStartDateText after May 15, workingEndDateText null, dueDateText null, needsReview true.
+        3. sourceText By May 22 = story library ready for interviews and coffee chats, title Build story library for interviews and coffee chats, projectName Job Search, temporalIntent deadline, dueDateText May 22, workingStartDateText null, workingEndDateText null, needsReview false.
 
         Project inference:
         Job Search: job application, job applications, application, resume, recruiter, interview, referral, LinkedIn, cover letter, hiring, company, internship, full-time.
@@ -266,7 +331,10 @@ private struct FoundationModelParser {
         Current date: \(currentDate)
         Timezone: \(timezone)
 
-        Convert this capture into a structured Moti work item:
+        Convert this capture into structured Moti work items.
+        Return an array. If the capture is one coherent work intention, return exactly one item.
+        If it contains multiple lines or independent dated phases, return multiple items.
+
         \(input)
         """
     }
@@ -286,6 +354,8 @@ private struct FoundationModelParser {
             return .event
         case "period_with_deadline":
             return .periodWithDeadline
+        case "open_ended_after":
+            return .openEndedAfter
         case "no_time":
             return .noTime
         default:
@@ -320,14 +390,24 @@ private struct FoundationModelParser {
 
 @available(iOS 26.0, *)
 @Generable
+private struct FoundationModelWorkItemsDraft {
+    @Guide(description: "All parsed work items from the capture. Use one item for one coherent work intention; use multiple items for independent lines, bullets, phases, or deliverables.")
+    var items: [FoundationModelWorkItemDraft]
+}
+
+@available(iOS 26.0, *)
+@Generable
 private struct FoundationModelWorkItemDraft {
+    @Guide(description: "The original line or fragment this item came from.")
+    var sourceText: String?
+
     @Guide(description: "A clean short title, not the raw user sentence.")
     var title: String
 
     @Guide(description: "One of Job Search, School, Portfolio, Moti, Personal, or Uncategorized.")
     var projectName: String
 
-    @Guide(description: "One of deadline, working_period, event, period_with_deadline, or no_time.")
+    @Guide(description: "One of deadline, working_period, event, period_with_deadline, open_ended_after, or no_time.")
     var temporalIntent: String
 
     @Guide(description: "Deadline text, such as before 5.15, by Friday, next Thursday 10AM, or null.")

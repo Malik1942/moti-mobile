@@ -1,15 +1,31 @@
 import Foundation
 
 struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
+    func parseMany(_ input: String) async throws -> [ParsedWorkItem] {
+        let segments = CaptureSegmenter.segments(from: input)
+        guard segments.count > 1 else {
+            return [try await parse(input)]
+        }
+        var parsedItems: [ParsedWorkItem] = []
+        for segment in segments {
+            parsedItems.append(try await parse(segment))
+        }
+        return parsedItems
+    }
+
     func parse(_ input: String) async throws -> ParsedWorkItem {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         let temporal = DateResolver.resolveTemporal(in: trimmed)
+        let openEndedStart = Self.openEndedAfterStart(in: trimmed)
+        let isOpenEndedAfter = openEndedStart != nil
         let project = ProjectInferrer.infer(from: trimmed)
         let hasVerb = CapturedClassifier.hasActionVerb(trimmed)
         let veryVague = CapturedClassifier.isVeryVague(trimmed)
         let hasNumericRange = trimmed.range(of: #"\b\d+\s+to\s+\d+\b"#, options: .regularExpression) != nil
         let title = Self.normalizedTitle(from: trimmed)
-        let clearTitle = hasVerb && !title.isEmpty
+        let hasUsableSchedule = temporal.hasTimeInformation || isOpenEndedAfter
+        let actionable = hasVerb || (!title.isEmpty && hasUsableSchedule && !veryVague)
+        let clearTitle = actionable && !title.isEmpty
 
         let parserConfidence: Double
         if clearTitle && temporal.hasTimeInformation && !temporal.isVague && project != nil {
@@ -24,21 +40,28 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
             parserConfidence = 0.55
         }
 
-        let needsReview = DateResolver.explicitlyHasNoDeadline(trimmed) || !temporal.hasTimeInformation || !hasVerb || title.isEmpty
+        let needsReview = DateResolver.explicitlyHasNoDeadline(trimmed) || !hasUsableSchedule || !actionable || title.isEmpty || isOpenEndedAfter
         let reviewReason: String?
-        if DateResolver.explicitlyHasNoDeadline(trimmed) || !temporal.hasTimeInformation {
+        if isOpenEndedAfter {
+            reviewReason = "Missing end date"
+        } else if DateResolver.explicitlyHasNoDeadline(trimmed) || !hasUsableSchedule {
             reviewReason = "Missing time information"
-        } else if !hasVerb || title.isEmpty {
+        } else if !actionable || title.isEmpty {
             reviewReason = "Needs a clearer work description"
         } else {
             reviewReason = nil
         }
-        let intent = Self.temporalIntent(for: trimmed, temporal: temporal)
+        let intent = isOpenEndedAfter ? WorkItemTemporalIntent.openEndedAfter : Self.temporalIntent(for: trimmed, temporal: temporal)
 
         // Events are point-in-time: override the createdAt→dueDate fallback with a one-day bar.
+        var dueDate = temporal.dueDate
         var workStart = temporal.workingStartDate
         var workEnd = temporal.workingEndDate
-        if intent == .event, let due = temporal.dueDate {
+        if isOpenEndedAfter {
+            dueDate = nil
+            workStart = openEndedStart
+            workEnd = nil
+        } else if intent == .event, let due = temporal.dueDate {
             let cal = Calendar.current
             workStart = cal.startOfDay(for: due)
             workEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: due) ?? due
@@ -55,7 +78,7 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
             title: title.isEmpty ? trimmed : title,
             projectGuess: project,
             temporalIntent: intent,
-            dueDate: temporal.dueDate,
+            dueDate: dueDate,
             workingStartDate: workStart,
             workingEndDate: workEnd,
             suggestedSessions: needsReview ? [] : sessions,
@@ -80,7 +103,12 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
     }
 
     static func normalizedTitle(from input: String) -> String {
-        var title = DateResolver.removingDatePhrases(from: input)
+        var source = input
+        if let equalsRange = source.range(of: "=") {
+            source = String(source[equalsRange.upperBound...])
+        }
+
+        var title = DateResolver.removingDatePhrases(from: source)
         for prefix in ["i need to ", "i have to ", "i want to ", "remind me to ", "please ", "can you ", "i need ", "need to ", "need "] {
             if title.lowercased().hasPrefix(prefix) {
                 title.removeFirst(prefix.count)
@@ -127,6 +155,12 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
             return .event
         }
         return .deadline
+    }
+
+    private static func openEndedAfterStart(in input: String) -> Date? {
+        let text = input.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.hasPrefix("after ") else { return nil }
+        return DateResolver.resolveStartDate(in: text)
     }
 
     private func reasoningSummary(clearTitle: Bool, hasTime: Bool, project: String?, vague: Bool) -> String {

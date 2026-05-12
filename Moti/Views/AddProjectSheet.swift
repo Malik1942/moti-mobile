@@ -15,17 +15,39 @@ struct AddProjectSheet: View {
             Form {
                 Section("Project") {
                     TextField("Project name", text: $name)
-                    Picker("Color", selection: $colorToken) {
+
+                    Menu {
                         ForEach(ProjectCatalog.colorTokens, id: \.self) { token in
-                            HStack {
-                                Circle()
-                                    .fill(color(for: token))
-                                    .frame(width: 12, height: 12)
-                                Text(token.capitalized)
+                            Button {
+                                colorToken = token
+                            } label: {
+                                HStack {
+                                    colorDot(for: token)
+                                    Text(token.capitalized)
+                                    if token == colorToken {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
-                            .tag(token)
                         }
+                    } label: {
+                        HStack {
+                            Text("Color")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            HStack(spacing: 7) {
+                                colorDot(for: colorToken)
+                                Text(colorToken.capitalized)
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
 
                 if let errorMessage {
@@ -59,19 +81,14 @@ struct AddProjectSheet: View {
             return
         }
 
-        modelContext.insert(Project(name: trimmedName, colorToken: colorToken))
+        modelContext.insert(Project(name: trimmedName, colorToken: colorToken, sortIndex: projects.nextSortIndex))
         try? modelContext.save()
         dismiss()
     }
 
-    private func color(for token: String) -> Color {
-        switch token {
-        case "blue": .blue
-        case "green": .green
-        case "purple": .purple
-        case "orange": .orange
-        case "gray": .gray
-        default: .indigo
-        }
+    private func colorDot(for token: String) -> some View {
+        Circle()
+            .fill(Color.projectToken(token))
+            .frame(width: 11, height: 11)
     }
 }

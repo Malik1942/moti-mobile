@@ -16,15 +16,15 @@ struct ReviewView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 18) {
+                VStack(spacing: MotiLayout.cardSpacing) {
                     if reviewItems.isEmpty {
                         EmptyReviewState()
                     } else {
                         reviewList
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
+                .padding(.horizontal, MotiLayout.pagePadding)
+                .padding(.top, MotiLayout.pageTopPadding)
                 .padding(.bottom, 32)
             }
             .background(Color(.systemGroupedBackground))
@@ -41,23 +41,18 @@ struct ReviewView: View {
     }
 
     private var reviewList: some View {
-        VStack(spacing: 0) {
-            ForEach(Array(reviewItems.enumerated()), id: \.element.id) { index, item in
+        VStack(spacing: MotiLayout.cardSpacing) {
+            ForEach(reviewItems) { item in
                 NavigationLink {
                     WorkItemDetailView(item: item)
                 } label: {
                     ReviewItemRow(item: item)
+                        .motiCard()
                 }
                 .buttonStyle(.plain)
-
-                if index < reviewItems.count - 1 {
-                    Divider()
-                        .padding(.leading, 18)
-                }
+                .contentShape(RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
             }
         }
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
-        .shadow(color: .black.opacity(0.04), radius: 18, x: 0, y: 8)
     }
 }
 
@@ -78,8 +73,7 @@ private struct EmptyReviewState: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
-        .shadow(color: .black.opacity(0.04), radius: 18, x: 0, y: 8)
+        .motiCard()
     }
 }
 
@@ -89,10 +83,10 @@ private struct ReviewItemRow: View {
     private var isLightReview: Bool { item.needsProjectAssignment }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 10) {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(item.title.isEmpty ? item.rawInput : item.title)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
 
@@ -114,14 +108,12 @@ private struct ReviewItemRow: View {
                 }
             }
 
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
 
             Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
-        .contentShape(Rectangle())
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
+        .padding(MotiLayout.cardPadding)
     }
 }

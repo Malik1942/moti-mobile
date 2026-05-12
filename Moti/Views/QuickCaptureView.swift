@@ -307,32 +307,49 @@ struct QuickCaptureView: View {
         errorMessage = nil
         Task {
             do {
-                let parsed = try await parser.parse(text)
+                let parsedItems = try await parser.parseMany(text)
+                guard !parsedItems.isEmpty else {
+                    throw TaskUnderstandingError.foundationModelUnavailable("no work items returned")
+                }
                 try await MainActor.run {
-                    let item = WorkItem(parsed: parsed)
-                    applyProjectMapping(from: parsed, to: item)
-                    if parsed.needsReview {
-                        item.status = .needsReview
+                    var timelineCount = 0
+                    var reviewCount = 0
+
+                    for parsed in parsedItems {
+                        let item = WorkItem(parsed: parsed)
+                        applyProjectMapping(from: parsed, to: item)
+                        if parsed.needsReview {
+                            item.status = .needsReview
+                            reviewCount += 1
+                        } else {
+                            timelineCount += 1
+                        }
+                        #if DEBUG
+                        print(
+                            """
+                            QuickCapture parsed:
+                            input=\(parsed.rawInput)
+                            title=\(parsed.title)
+                            project=\(parsed.projectGuess ?? "nil")
+                            savedProject=\(item.projectName ?? "nil")
+                            suggestedProject=\(item.suggestedProjectName ?? "nil")
+                            dueDate=\(parsed.dueDate?.description ?? "nil")
+                            workingStartDate=\(parsed.workingStartDate?.description ?? "nil")
+                            workingEndDate=\(parsed.workingEndDate?.description ?? "nil")
+                            needsReview=\(parsed.needsReview)
+                            parserConfidence=\(parsed.parserConfidence)
+                            """
+                        )
+                        #endif
+                        modelContext.insert(item)
+                        try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: projects)
                     }
+
                     #if DEBUG
-                    print(
-                        """
-                        QuickCapture parsed:
-                        input=\(parsed.rawInput)
-                        title=\(parsed.title)
-                        project=\(parsed.projectGuess ?? "nil")
-                        savedProject=\(item.projectName ?? "nil")
-                        suggestedProject=\(item.suggestedProjectName ?? "nil")
-                        dueDate=\(parsed.dueDate?.description ?? "nil")
-                        workingStartDate=\(parsed.workingStartDate?.description ?? "nil")
-                        workingEndDate=\(parsed.workingEndDate?.description ?? "nil")
-                        needsReview=\(parsed.needsReview)
-                        parserConfidence=\(parsed.parserConfidence)
-                        """
-                    )
+                    if parsedItems.count > 1 {
+                        print("QuickCapture added \(parsedItems.count) work items: \(timelineCount) timeline, \(reviewCount) review.")
+                    }
                     #endif
-                    modelContext.insert(item)
-                    try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item)
                     try modelContext.save()
                     dismiss()
                 }

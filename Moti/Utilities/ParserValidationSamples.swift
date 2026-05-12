@@ -14,7 +14,17 @@ enum ParserValidationSamples {
         "I need to submit 5 job application before 5.15",
         "I need to have an interview with Matt next Thursday 10AM",
         "Read papers for research proposal, no deadline yet",
-        "Reach out to recruiters over the weekend"
+        "Reach out to recruiters over the weekend",
+        """
+        Now to May 15 = preparation and casual job hunting
+        After May 15 = serious job hunting and outreach rhythm
+        By May 22 = story library ready for interviews and coffee chats
+        """,
+        """
+        Finish resume by Friday
+        Apply to 5 jobs before May 20
+        Prepare interview stories by May 22
+        """
     ]
 
     static let expectedNotes = [
@@ -30,17 +40,27 @@ enum ParserValidationSamples {
         "I need to submit 5 job application before 5.15": "Title Submit 5 job applications, Job Search, due May 15 at 23:59, needsReview false.",
         "I need to have an interview with Matt next Thursday 10AM": "Title Interview with Matt, Job Search, temporalIntent event, due next Thursday at 10:00, workingStartDate Thursday 00:00, workingEndDate Thursday 23:59 (one-day bar), needsReview false.",
         "Read papers for research proposal, no deadline yet": "Title Read papers for research proposal, School, no due date, needsReview true.",
-        "Reach out to recruiters over the weekend": "Title Reach out to recruiters, Job Search, working period Saturday to Sunday, due Sunday at 23:59, needsReview false."
+        "Reach out to recruiters over the weekend": "Title Reach out to recruiters, Job Search, working period Saturday to Sunday, due Sunday at 23:59, needsReview false.",
+        """
+        Now to May 15 = preparation and casual job hunting
+        After May 15 = serious job hunting and outreach rhythm
+        By May 22 = story library ready for interviews and coffee chats
+        """: "Three WorkItems: preparation/casual job hunting as now-to-May 15 period, serious job hunting after May 15 in Review with missing end date, story library by May 22 as deadline.",
+        """
+        Finish resume by Friday
+        Apply to 5 jobs before May 20
+        Prepare interview stories by May 22
+        """: "Three WorkItems, all with deadlines and needsReview false."
     ]
 
     static func run(using service: any TaskUnderstandingService = FoundationModelsTaskUnderstandingService(fallback: RuleBasedTaskUnderstandingService())) async -> [ParserValidationResult] {
         var results: [ParserValidationResult] = []
         for input in examples {
             do {
-                let parsed = try await service.parse(input)
-                results.append(ParserValidationResult(input: input, parsed: parsed, errorDescription: nil))
+                let parsedItems = try await service.parseMany(input)
+                results.append(ParserValidationResult(input: input, parsedItems: parsedItems, errorDescription: nil))
             } catch {
-                results.append(ParserValidationResult(input: input, parsed: nil, errorDescription: error.localizedDescription))
+                results.append(ParserValidationResult(input: input, parsedItems: [], errorDescription: error.localizedDescription))
             }
         }
         return results
@@ -49,6 +69,10 @@ enum ParserValidationSamples {
 
 struct ParserValidationResult {
     let input: String
-    let parsed: ParsedWorkItem?
+    let parsedItems: [ParsedWorkItem]
     let errorDescription: String?
+
+    var parsed: ParsedWorkItem? {
+        parsedItems.first
+    }
 }

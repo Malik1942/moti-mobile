@@ -22,16 +22,20 @@ struct TimelineView: View {
         !projects.isEmpty || !workItems.isEmpty
     }
 
+    private var orderedProjects: [Project] {
+        projects.motiOrdered
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: MotiLayout.sectionSpacing) {
                     if hasAnyRuntimeContent {
                         projectSelector
                         horizonSelector
                         MultiWeekTimelineHeroView(
                             workItems: filteredItems,
-                            projects: projects,
+                            projects: orderedProjects,
                             selectedProject: selectedProject,
                             horizonDays: horizonDays
                         )
@@ -41,7 +45,7 @@ struct TimelineView: View {
                     }
                 }
                 .padding()
-                .padding(.bottom, 24)
+                .padding(.bottom, 64)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Timeline")
@@ -65,6 +69,10 @@ struct TimelineView: View {
                 )
             }
             .onChange(of: projects.count) { _, _ in
+                if selectedProject != ProjectCatalog.allProjectsLabel,
+                   !projects.contains(where: { $0.name == selectedProject }) {
+                    selectedProject = ProjectCatalog.allProjectsLabel
+                }
                 MotiDebugDataLogger.log(
                     source: "TimelineView.projectsChanged",
                     projects: projects,
@@ -78,11 +86,11 @@ struct TimelineView: View {
     private var projectSelector: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach([ProjectCatalog.allProjectsLabel] + projects.map(\.name), id: \.self) { project in
+                ForEach([ProjectCatalog.allProjectsLabel] + orderedProjects.map(\.name), id: \.self) { project in
                     Button {
                         selectedProject = project
                     } label: {
-                        let runtimeProject = projects.first { $0.name == project }
+                        let runtimeProject = orderedProjects.first { $0.name == project }
                         if project == ProjectCatalog.allProjectsLabel {
                             Text(ProjectCatalog.allProjectsLabel)
                                 .font(.caption.weight(.semibold))

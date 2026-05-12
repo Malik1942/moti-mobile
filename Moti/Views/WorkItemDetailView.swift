@@ -2,6 +2,8 @@ import SwiftData
 import SwiftUI
 
 struct WorkItemDetailView: View {
+    var showsDeleteAction = true
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -65,8 +67,8 @@ struct WorkItemDetailView: View {
                 }
                 .buttonStyle(.plain)
 
-                if let tp = currentTimingProgress {
-                    timingProgressRow(tp)
+                if let elapsedTime = item.elapsedTime() {
+                    timeElapsedRow(elapsedTime)
                 }
             }
 
@@ -74,25 +76,25 @@ struct WorkItemDetailView: View {
                 Text(item.rawInput)
                     .foregroundStyle(.secondary)
             }
-        }
-        .navigationTitle("Work Item")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "trash")
+
+            if showsDeleteAction {
+                Section {
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Text("Delete")
+                    }
                 }
-                .accessibilityLabel("Delete work item")
             }
         }
+        .navigationTitle("Work Item")
         .alert("Delete Work Item?", isPresented: $showingDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 deleteWorkItem()
             }
         } message: {
-            Text("This will remove this work item from your timeline.")
+            Text("This will permanently delete this work item. This cannot be undone.")
         }
         .sheet(isPresented: $showingTimingEditor) {
             TimingEditorSheet(
@@ -111,7 +113,7 @@ struct WorkItemDetailView: View {
             guard !isDeleting else { return }
             item.updatedAt = .now
             reconcileReviewState()
-            try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item)
+            try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: projects)
             try? modelContext.save()
         }
     }
@@ -168,44 +170,9 @@ struct WorkItemDetailView: View {
         .contentShape(Rectangle())
     }
 
-    private var currentTimingProgress: (progress: Double, elapsed: Int, total: Int, isEvent: Bool)? {
-        guard let start = item.workingStartDate, let end = item.workingEndDate else { return nil }
-        let cal = Calendar.current
-        let isEvent = cal.isDate(start, inSameDayAs: end)
-        let now = Date.now
-        let totalSec = end.timeIntervalSince(start)
-        guard totalSec > 0 else {
-            return (now >= start ? 1.0 : 0.0, now >= start ? 1 : 0, 1, isEvent)
-        }
-        let progress = min(max(now.timeIntervalSince(start) / totalSec, 0), 1)
-        let totalDays = max(1, cal.dateComponents([.day], from: cal.startOfDay(for: start), to: cal.startOfDay(for: end)).day ?? 1)
-        let elapsedDays = min(max(cal.dateComponents([.day], from: cal.startOfDay(for: start), to: cal.startOfDay(for: now)).day ?? 0, 0), totalDays)
-        return (progress, elapsedDays, totalDays, isEvent)
-    }
-
-    @ViewBuilder
-    private func timingProgressRow(_ tp: (progress: Double, elapsed: Int, total: Int, isEvent: Bool)) -> some View {
-        if tp.isEvent {
-            LabeledContent("Type", value: "Point-in-time event")
-                .foregroundStyle(.secondary)
-        } else {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Time Progress")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text("\(Int(tp.progress * 100))% elapsed")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(tp.progress > 0.85 ? .orange : .secondary)
-                }
-                ProgressView(value: tp.progress)
-                    .tint(tp.progress > 0.85 ? .orange : .indigo)
-                Text("\(tp.elapsed) of \(tp.total) days into the working period")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 2)
-        }
+    private func timeElapsedRow(_ elapsedTime: WorkItemElapsedTime) -> some View {
+        LabeledContent("Time elapsed", value: elapsedTime.detailLabel)
+            .foregroundStyle(.secondary)
     }
 
     private var hasAnyTiming: Bool {
@@ -269,7 +236,7 @@ struct WorkItemDetailView: View {
         item.dueDate = dueDate
         item.updatedAt = .now
         reconcileReviewState()
-        try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item)
+        try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: projects)
         try? modelContext.save()
         showingTimingEditor = false
     }
@@ -317,7 +284,7 @@ struct WorkItemDetailView: View {
             return
         }
 
-        modelContext.insert(Project(name: suggested, colorToken: ProjectCatalog.colorToken(forProjectNamed: suggested)))
+        modelContext.insert(Project(name: suggested, colorToken: ProjectCatalog.colorToken(forProjectNamed: suggested), sortIndex: projects.nextSortIndex))
         item.projectName = suggested
         item.suggestedProjectName = nil
         item.updatedAt = .now

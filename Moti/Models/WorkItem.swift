@@ -21,6 +21,7 @@ final class WorkItem {
     var notes: String?
     var parserExplanation: String
     var calendarEventIdentifier: String?
+    var calendarIdentifier: String?
     var calendarProvider: String?
     var lastCalendarSyncAt: Date?
     var suggestedProjectName: String?
@@ -62,6 +63,7 @@ final class WorkItem {
         self.notes = notes
         self.parserExplanation = parserExplanation
         self.calendarEventIdentifier = nil
+        self.calendarIdentifier = nil
         self.calendarProvider = nil
         self.lastCalendarSyncAt = nil
         self.suggestedProjectName = nil
@@ -124,5 +126,44 @@ final class WorkItem {
             return "Suggested project: \(suggested)"
         }
         return "Assign a project"
+    }
+
+    func elapsedTime(asOf date: Date = .now, calendar: Calendar = .current) -> WorkItemElapsedTime? {
+        guard let start = workingStartDate, let end = workingEndDate else { return nil }
+
+        let startDay = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: end)
+
+        guard startDay < endDay else {
+            return WorkItemElapsedTime(elapsedDays: 0, totalDays: 0, percentage: 0, isEvent: true)
+        }
+
+        let totalDays = max(1, calendar.dateComponents([.day], from: startDay, to: endDay).day ?? 1)
+        let currentDay = calendar.startOfDay(for: date)
+        let rawElapsedDays = calendar.dateComponents([.day], from: startDay, to: currentDay).day ?? 0
+        let elapsedDays = min(max(rawElapsedDays, 0), totalDays)
+        let percentage = Int((Double(elapsedDays) / Double(totalDays) * 100).rounded())
+
+        return WorkItemElapsedTime(
+            elapsedDays: elapsedDays,
+            totalDays: totalDays,
+            percentage: min(max(percentage, 0), 100),
+            isEvent: false
+        )
+    }
+}
+
+struct WorkItemElapsedTime: Equatable {
+    let elapsedDays: Int
+    let totalDays: Int
+    let percentage: Int
+    let isEvent: Bool
+
+    var compactLabel: String {
+        isEvent ? "Event" : "\(elapsedDays)/\(totalDays)d · \(percentage)%"
+    }
+
+    var detailLabel: String {
+        isEvent ? "Event" : "\(elapsedDays) of \(totalDays) days · \(percentage)%"
     }
 }

@@ -48,13 +48,25 @@ struct RootTabView: View {
     // tap plus → .large (text, keyboard ready); long press plus → .medium (voice, no keyboard)
     @State private var captureDetent: PresentationDetent = .large
 
+    @Query(sort: \WorkItem.createdAt) private var workItems: [WorkItem]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+
+    // Observed properties that trigger a widget snapshot refresh when any work item or project changes
+    private var widgetChangeToken: String {
+        let items = workItems.map { "\($0.id)\($0.title)\($0.statusRawValue)\($0.projectName ?? "")\($0.workingStartDate?.timeIntervalSinceReferenceDate ?? 0)\($0.workingEndDate?.timeIntervalSinceReferenceDate ?? 0)" }.joined(separator: ",")
+        let projs = projects.map { "\($0.id)\($0.name)\($0.colorToken)" }.joined(separator: ",")
+        return items + "|" + projs
+    }
+
     var body: some View {
         Group {
             if hasCompletedOnboarding {
                 GeometryReader { proxy in
                     ZStack(alignment: .bottom) {
                         selectedContent
-                            .safeAreaPadding(.bottom, MotiTabBarMetrics.contentClearance(for: proxy.safeAreaInsets.bottom))
+                            .safeAreaInset(edge: .bottom, spacing: 0) {
+                                Color.clear.frame(height: MotiTabBarMetrics.contentClearance(for: proxy.safeAreaInsets.bottom))
+                            }
 
                         MotiTabBar(
                             selectedTab: $selectedTab,
@@ -79,6 +91,12 @@ struct RootTabView: View {
                 }
             }
         }
+        .task { writeWidgetSnapshot() }
+        .onChange(of: widgetChangeToken) { _, _ in writeWidgetSnapshot() }
+    }
+
+    private func writeWidgetSnapshot() {
+        WidgetSnapshotWriter.write(projects: projects, workItems: workItems)
     }
 
     @ViewBuilder
@@ -107,15 +125,14 @@ struct RootTabView: View {
 
 enum MotiTabBarMetrics {
     static let rowHeight: CGFloat = 64
-    static let plusSize: CGFloat = 56
-    static let plusLift: CGFloat = 12
+    static let plusSize: CGFloat = 52
 
     static func totalHeight(for bottomSafeArea: CGFloat) -> CGFloat {
         rowHeight + max(bottomSafeArea, 8)
     }
 
     static func contentClearance(for bottomSafeArea: CGFloat) -> CGFloat {
-        totalHeight(for: bottomSafeArea) + plusLift + 18
+        totalHeight(for: bottomSafeArea) + 32
     }
 }
 
@@ -207,14 +224,13 @@ private struct MotiTabBar: View {
             Circle()
                 .fill(Color.indigo)
                 .frame(width: MotiTabBarMetrics.plusSize, height: MotiTabBarMetrics.plusSize)
-                .shadow(color: .indigo.opacity(0.24), radius: 8, y: 4)
+                .shadow(color: .indigo.opacity(0.18), radius: 6, y: 2)
             Image(systemName: "plus")
                 .font(.system(size: 22, weight: .medium))
                 .foregroundStyle(.white)
                 .frame(width: MotiTabBarMetrics.plusSize, height: MotiTabBarMetrics.plusSize)
         }
         .frame(maxWidth: .infinity, minHeight: 52)
-        .offset(y: -MotiTabBarMetrics.plusLift)
         .contentShape(Circle())
         .onTapGesture {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()

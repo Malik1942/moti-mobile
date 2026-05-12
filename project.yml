@@ -15,6 +15,7 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Moti
+      - path: MotiShared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.malik.Moti
@@ -27,3 +28,26 @@ targets:
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Moti uses speech recognition to turn your spoken captures into text.
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Moti/Moti.entitlements
+    dependencies:
+      - target: MotiWidget
+        embed: true
+      - sdk: WidgetKit.framework
+
+  MotiWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MotiWidget
+      - path: MotiShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.malik.Moti.MotiWidget
+        INFOPLIST_FILE: MotiWidget/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: MotiWidget
+        SKIP_INSTALL: YES
+        CODE_SIGN_ENTITLEMENTS: MotiWidget/MotiWidget.entitlements
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
