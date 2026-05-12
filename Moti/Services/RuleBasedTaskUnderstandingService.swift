@@ -33,9 +33,20 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
         } else {
             reviewReason = nil
         }
+        let intent = Self.temporalIntent(for: trimmed, temporal: temporal)
+
+        // Events are point-in-time: override the createdAt→dueDate fallback with a one-day bar.
+        var workStart = temporal.workingStartDate
+        var workEnd = temporal.workingEndDate
+        if intent == .event, let due = temporal.dueDate {
+            let cal = Calendar.current
+            workStart = cal.startOfDay(for: due)
+            workEnd = cal.date(bySettingHour: 23, minute: 59, second: 0, of: due) ?? due
+        }
+
         let sessions = Self.suggestedSessions(
-            start: temporal.workingStartDate,
-            end: temporal.workingEndDate,
+            start: workStart,
+            end: workEnd,
             due: temporal.dueDate
         )
 
@@ -43,10 +54,10 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
             rawInput: trimmed,
             title: title.isEmpty ? trimmed : title,
             projectGuess: project,
-            temporalIntent: Self.temporalIntent(for: trimmed, temporal: temporal),
+            temporalIntent: intent,
             dueDate: temporal.dueDate,
-            workingStartDate: temporal.workingStartDate,
-            workingEndDate: temporal.workingEndDate,
+            workingStartDate: workStart,
+            workingEndDate: workEnd,
             suggestedSessions: needsReview ? [] : sessions,
             estimatedEffort: hasNumericRange ? 120 : 60,
             parserConfidence: parserConfidence,

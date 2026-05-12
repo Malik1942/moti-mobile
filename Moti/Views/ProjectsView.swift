@@ -3,32 +3,79 @@ import SwiftUI
 
 struct ProjectsView: View {
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+    @State private var showingAddProject = false
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(ProjectCatalog.defaultProjects, id: \.self) { project in
-                    let items = workItems.filter { $0.projectName == project && !$0.needsReview }
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            ProjectPill(project: project)
-                            Spacer()
-                            Text("\(items.count) active")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+            Group {
+                if projects.isEmpty {
+                    emptyProjectsState
+                } else {
+                    List {
+                        ForEach(projects) { project in
+                            let items = workItems.filter { $0.projectName == project.name && !$0.needsReview }
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    ProjectPill(project: project.name, colorToken: project.colorToken)
+                                    Spacer()
+                                    Text("\(items.count) active")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                if let nextDeadline = items.compactMap(\.dueDate).sorted().first {
+                                    Label(nextDeadline.formatted(date: .abbreviated, time: .shortened), systemImage: "flag.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("No scheduled work yet")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                workloadBar(count: items.count)
+                            }
+                            .padding(.vertical, 6)
                         }
-                        if let nextDeadline = items.compactMap(\.dueDate).sorted().first {
-                            Label(nextDeadline.formatted(date: .abbreviated, time: .shortened), systemImage: "flag.fill")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        workloadBar(count: items.count)
                     }
-                    .padding(.vertical, 6)
                 }
             }
             .navigationTitle("Projects")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingAddProject = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .accessibilityLabel("Add project")
+                }
+            }
+            .sheet(isPresented: $showingAddProject) {
+                AddProjectSheet()
+            }
         }
+    }
+
+    private var emptyProjectsState: some View {
+        VStack(alignment: .leading, spacing: MotiLayout.emptyStateSpacing) {
+            MotiEmptyStateIcon(systemName: "square.grid.2x2")
+            Text("Add your first project.")
+                .font(.motiEmptyTitle)
+            Text("Projects help Moti organize work across your timeline.")
+                .font(.motiEmptySubtitle)
+                .foregroundStyle(.secondary)
+            Button {
+                showingAddProject = true
+            } label: {
+                Label("Add Project", systemImage: "square.grid.2x2")
+            }
+            .font(.motiButtonLabel)
+            .buttonStyle(.borderedProminent)
+            .tint(.indigo)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color(.systemGroupedBackground))
     }
 
     private func workloadBar(count: Int) -> some View {

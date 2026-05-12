@@ -5,8 +5,10 @@ enum TaskUnderstandingServiceFactory {
         switch requestedMode {
         case .foundationModel:
             return FoundationModelRuntime.status.isAvailable ? .foundationModel : .ruleBased
-        case .ruleBased, .mockSLM:
+        case .ruleBased:
             return requestedMode
+        case .mockSLM:
+            return FoundationModelRuntime.status.isAvailable ? .foundationModel : .ruleBased
         }
     }
 

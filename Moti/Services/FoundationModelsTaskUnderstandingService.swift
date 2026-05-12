@@ -114,7 +114,12 @@ private struct FoundationModelParser {
             dueDate = workingEndDate
         }
 
-        if let dueDate, workingStartDate == nil, workingEndDate == nil {
+        if temporalIntent == .event, let dueDate {
+            // Point-in-time: one-day bar on the event date, not createdAt → eventDate.
+            let cal = Calendar.current
+            workingStartDate = cal.startOfDay(for: dueDate)
+            workingEndDate = cal.date(bySettingHour: 23, minute: 59, second: 0, of: dueDate) ?? dueDate
+        } else if let dueDate, workingStartDate == nil, workingEndDate == nil {
             workingStartDate = createdAt
             workingEndDate = dueDate
         }
@@ -199,7 +204,8 @@ private struct FoundationModelParser {
         - If project is unclear but time exists, use Uncategorized and still place it on Timeline.
         - If the user gives a date but no exact time, treat it as a valid deadline at 23:59.
         - If the user says "before X" or "by X," treat X as a deadline.
-        - If dueDate exists but working period is missing, working period should be from createdAt to dueDate.
+        - If temporalIntent is deadline and dueDate exists but working period is missing, set working period from createdAt to dueDate.
+        - If temporalIntent is event, do NOT add a working period. Set workingStartDateText and workingEndDateText to null. The Swift layer creates a one-day working period from the event date.
         - Do not assume the first date is the due date.
         - If the user says "between X and Y", X is workingStartDateText and Y is workingEndDateText.
         - If the user says "from X to Y", X is workingStartDateText and Y is workingEndDateText.
@@ -213,12 +219,14 @@ private struct FoundationModelParser {
         Normalize "apply 3 roles" to "Apply to 3 roles".
 
         Temporal intent rules:
+        - "on [date]" or "at [time]" for a point-in-time item (interview, meeting, call, demo, exam, presentation, submission event) -> event.
         - "between X and Y" -> working_period.
         - "from X to Y" -> working_period.
         - "from X to Y and submit by Z" -> period_with_deadline.
         - "before X", "by X", "due X", or "submit by X" -> deadline.
-        - "meeting/interview/call at X" -> event.
+        - "meeting/interview/call/demo at X" -> event.
         - "no deadline yet" -> no_time.
+        For events: workingStartDateText = null, workingEndDateText = null. Only dueDateText is set.
 
         Examples:
         Raw: I want to apply 3 big tech roles between 5.20 and 6.5
@@ -227,8 +235,14 @@ private struct FoundationModelParser {
         Output: title Work on portfolio, projectName Portfolio, temporalIntent period_with_deadline, workingStartDateText Monday, workingEndDateText Wednesday, dueDateText Friday, needsReview false.
         Raw: I need to finish 5 job applications before 5.15
         Output: title Finish 5 job applications, projectName Job Search, temporalIntent deadline, dueDateText 5.15, workingStartDateText null, workingEndDateText null, needsReview false.
+        Raw: Submit portfolio by Friday
+        Output: title Submit portfolio, projectName Portfolio, temporalIntent deadline, dueDateText Friday, workingStartDateText null, workingEndDateText null, needsReview false.
         Raw: I need to have an interview with Matt next Thursday 10AM
         Output: title Interview with Matt, projectName Job Search, temporalIntent event, dueDateText next Thursday 10AM, workingStartDateText null, workingEndDateText null, needsReview false.
+        Raw: Interview with Matt on Friday
+        Output: title Interview with Matt, projectName Job Search, temporalIntent event, dueDateText Friday, workingStartDateText null, workingEndDateText null, needsReview false.
+        Raw: Call recruiter on 5.20
+        Output: title Call recruiter, projectName Job Search, temporalIntent event, dueDateText 5.20, workingStartDateText null, workingEndDateText null, needsReview false.
 
         Project inference:
         Job Search: job application, job applications, application, resume, recruiter, interview, referral, LinkedIn, cover letter, hiring, company, internship, full-time.
@@ -259,10 +273,7 @@ private struct FoundationModelParser {
 
     private func normalizedProject(_ value: String?) -> String? {
         guard let value, !value.isEmpty, value != "Uncategorized" else { return nil }
-        if ProjectCatalog.defaultProjects.contains(value) {
-            return value
-        }
-        return nil
+        return ProjectCatalog.normalizedTemplateName(value)
     }
 
     private func normalizedTemporalIntent(_ value: String, rawInput: String) -> WorkItemTemporalIntent {

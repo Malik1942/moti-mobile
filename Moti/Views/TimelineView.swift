@@ -2,9 +2,14 @@ import SwiftData
 import SwiftUI
 
 struct TimelineView: View {
+    var onAddToTimeline: () -> Void = {}
+
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
     @State private var selectedProject = ProjectCatalog.allProjectsLabel
-    @State private var horizonDays = 28
+    @State private var horizonDays = 30
+    @State private var showingAddProject = false
 
     private var filteredItems: [WorkItem] {
         workItems.filter { item in
@@ -13,30 +18,85 @@ struct TimelineView: View {
         }
     }
 
+    private var hasAnyRuntimeContent: Bool {
+        !projects.isEmpty || !workItems.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    projectSelector
-                    horizonSelector
-                    MultiWeekTimelineHeroView(workItems: filteredItems, selectedProject: selectedProject, horizonDays: horizonDays)
-                    summaryCards
+                    if hasAnyRuntimeContent {
+                        projectSelector
+                        horizonSelector
+                        MultiWeekTimelineHeroView(
+                            workItems: filteredItems,
+                            projects: projects,
+                            selectedProject: selectedProject,
+                            horizonDays: horizonDays
+                        )
+                        summaryCards
+                    } else {
+                        emptyTimelineState
+                    }
                 }
                 .padding()
                 .padding(.bottom, 24)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Timeline")
+            .sheet(isPresented: $showingAddProject) {
+                AddProjectSheet()
+            }
+            .onAppear {
+                MotiDebugDataLogger.log(
+                    source: "TimelineView.onAppear",
+                    projects: projects,
+                    workItems: workItems,
+                    hasCompletedOnboarding: hasCompletedOnboarding
+                )
+            }
+            .onChange(of: workItems.count) { _, _ in
+                MotiDebugDataLogger.log(
+                    source: "TimelineView.workItemsChanged",
+                    projects: projects,
+                    workItems: workItems,
+                    hasCompletedOnboarding: hasCompletedOnboarding
+                )
+            }
+            .onChange(of: projects.count) { _, _ in
+                MotiDebugDataLogger.log(
+                    source: "TimelineView.projectsChanged",
+                    projects: projects,
+                    workItems: workItems,
+                    hasCompletedOnboarding: hasCompletedOnboarding
+                )
+            }
         }
     }
 
     private var projectSelector: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach([ProjectCatalog.allProjectsLabel] + ProjectCatalog.defaultProjects, id: \.self) { project in
+                ForEach([ProjectCatalog.allProjectsLabel] + projects.map(\.name), id: \.self) { project in
                     Button {
                         selectedProject = project
                     } label: {
-                        ProjectPill(project: project == ProjectCatalog.allProjectsLabel ? nil : project, isSelected: selectedProject == project)
+                        let runtimeProject = projects.first { $0.name == project }
+                        if project == ProjectCatalog.allProjectsLabel {
+                            Text(ProjectCatalog.allProjectsLabel)
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .foregroundStyle(selectedProject == project ? .white : .indigo)
+                                .background(selectedProject == project ? .indigo : .indigo.opacity(0.12), in: Capsule())
+                        } else {
+                            ProjectPill(
+                                project: project,
+                                isSelected: selectedProject == project,
+                                colorToken: runtimeProject?.colorToken
+                            )
+                        }
                     }
                     .buttonStyle(.plain)
                 }
@@ -47,8 +107,8 @@ struct TimelineView: View {
     private var horizonSelector: some View {
         Picker("Horizon", selection: $horizonDays) {
             Text("2W").tag(14)
-            Text("4W").tag(28)
             Text("Month").tag(30)
+            Text("Quarter").tag(90)
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: 260)
@@ -89,6 +149,43 @@ struct TimelineView: View {
                 }
             }
         }
+    }
+
+    private var emptyTimelineState: some View {
+        VStack(alignment: .leading, spacing: MotiLayout.emptyStateSpacing) {
+            Text("Your timeline is ready.")
+                .font(.headline)
+            Text("Create a project or capture work with timing to start planning.")
+                .font(.motiEmptySubtitle)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 10) {
+                Button {
+                    showingAddProject = true
+                } label: {
+                    Label("Add Project", systemImage: "square.grid.2x2")
+                }
+                .font(.motiButtonLabel)
+                .buttonStyle(.borderedProminent)
+                .tint(.indigo)
+
+                Button {
+                    onAddToTimeline()
+                } label: {
+                    Label("Add to Timeline", systemImage: "plus")
+                }
+                .font(.motiButtonLabel)
+                .buttonStyle(.bordered)
+                .tint(.indigo)
+            }
+
+            Text("Try: \"Work on portfolio from Monday to Wednesday.\"")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(MotiLayout.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
     }
 
     private func compactSummary(_ title: String, items: [WorkItem], showRawInput: Bool = false) -> some View {

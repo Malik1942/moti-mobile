@@ -1,7 +1,23 @@
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    @Query(sort: \WorkItem.createdAt) private var workItems: [WorkItem]
+    @Query(sort: \Project.createdAt) private var projects: [Project]
+    @Query(sort: \CompletionLog.timestamp) private var completionLogs: [CompletionLog]
+
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("taskUnderstandingMode") private var modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
+    @AppStorage("calendarSyncEnabled") private var calendarSyncEnabled = false
+    @AppStorage("calendarSyncProvider") private var calendarSyncProviderRawValue = CalendarSyncProvider.appleCalendar.rawValue
+    @AppStorage("calendarSyncMode") private var calendarSyncModeRawValue = CalendarSyncMode.event.rawValue
+
+    @State private var calendarStatus = AppleCalendarSyncStatus.off
+    @State private var showingGoogleComingSoon = false
+    @State private var showingOnboarding = false
+    @State private var showingResetLocalDataConfirmation = false
 
     private var mode: Binding<TaskUnderstandingMode> {
         Binding {
@@ -23,10 +39,22 @@ struct SettingsView: View {
         FoundationModelRuntime.status
     }
 
+    private var calendarSyncMode: Binding<CalendarSyncMode> {
+        Binding {
+            CalendarSyncMode(rawValue: calendarSyncModeRawValue) ?? .event
+        } set: {
+            calendarSyncModeRawValue = $0.rawValue
+        }
+    }
+
+    private var calendarSyncProvider: CalendarSyncProvider {
+        CalendarSyncProvider(rawValue: calendarSyncProviderRawValue) ?? .appleCalendar
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                Section("Parser") {
+                Section("Intelligence") {
                     LabeledContent("Active", value: "\(activeMode.label), \(activeMode.detailLabel)")
                     LabeledContent("Foundation Model", value: foundationStatus.summary)
                     if let fallback = foundationStatus.fallbackSummary, requestedMode == .foundationModel {
@@ -34,18 +62,146 @@ struct SettingsView: View {
                     }
 
                     Picker("Preferred", selection: mode) {
-                        ForEach(TaskUnderstandingMode.allCases) { mode in
+                        ForEach(TaskUnderstandingMode.releaseOptions) { mode in
                             Text("\(mode.label), \(mode.detailLabel)").tag(mode)
                         }
                     }
                 }
 
+                Section("Calendar Sync") {
+                    Toggle("Auto-sync to Calendar", isOn: calendarSyncToggle)
+
+                    Picker("Calendar Provider", selection: Binding(
+                        get: { calendarSyncProvider },
+                        set: { provider in
+                            if provider == .googleCalendar {
+                                showingGoogleComingSoon = true
+                                calendarSyncProviderRawValue = CalendarSyncProvider.appleCalendar.rawValue
+                            } else {
+                                calendarSyncProviderRawValue = provider.rawValue
+                            }
+                        }
+                    )) {
+                        Text("Apple Calendar").tag(CalendarSyncProvider.appleCalendar)
+                        Text("Google Calendar, Coming Soon")
+                            .foregroundStyle(.secondary)
+                            .tag(CalendarSyncProvider.googleCalendar)
+                    }
+
+                    Picker("Sync Work Items As", selection: calendarSyncMode) {
+                        ForEach(CalendarSyncMode.allCases) { mode in
+                            Text(mode.label).tag(mode)
+                        }
+                    }
+
+                    LabeledContent("Sync Status", value: calendarStatusLabel)
+
+                    Text("Automatically mirror scheduled work items to your calendar. Moti remains the source of truth.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    Text("Google Calendar sync is planned for a later version.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("About") {
-                    Text("All task data is stored on this device. No network calls in V0.")
+                    Text("Moti keeps your work data on this device and uses on-device intelligence to turn natural language captures into project timelines.")
+                        .foregroundStyle(.secondary)
+
+                    Button("View Onboarding") {
+                        showingOnboarding = true
+                    }
+                }
+
+                Section("Advanced") {
+                    Button("Reset Local Data", role: .destructive) {
+                        showingResetLocalDataConfirmation = true
+                    }
+                    Text("Clears local work items and projects on this device after confirmation.")
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Settings")
+            .onAppear {
+                if modeRawValue == TaskUnderstandingMode.mockSLM.rawValue {
+                    modeRawValue = FoundationModelRuntime.status.isAvailable
+                        ? TaskUnderstandingMode.foundationModel.rawValue
+                        : TaskUnderstandingMode.ruleBased.rawValue
+                }
+                refreshCalendarStatus()
+            }
+            .alert("Google Calendar Coming Later", isPresented: $showingGoogleComingSoon) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Google Calendar sync is planned for a later version. Apple Calendar is available now.")
+            }
+            .sheet(isPresented: $showingOnboarding) {
+                OnboardingView(isReplay: true) {
+                    showingOnboarding = false
+                }
+            }
+            .alert("Reset Local Data?", isPresented: $showingResetLocalDataConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Reset", role: .destructive) {
+                    resetLocalData()
+                }
+            } message: {
+                Text("This will delete all projects, work items, and onboarding state on this device. This cannot be undone.")
+            }
         }
+    }
+
+    private var calendarSyncToggle: Binding<Bool> {
+        Binding {
+            calendarSyncEnabled
+        } set: { isEnabled in
+            if isEnabled {
+                Task {
+                    let granted = await AppleCalendarSyncService.shared.requestAccess()
+                    await MainActor.run {
+                        calendarSyncEnabled = granted
+                        calendarSyncProviderRawValue = CalendarSyncProvider.appleCalendar.rawValue
+                        refreshCalendarStatus()
+                    }
+                }
+            } else {
+                calendarSyncEnabled = false
+                refreshCalendarStatus()
+            }
+        }
+    }
+
+    private var calendarStatusLabel: String {
+        guard calendarSyncEnabled else { return AppleCalendarSyncStatus.off.label }
+        return calendarStatus.label
+    }
+
+    private func refreshCalendarStatus() {
+        calendarStatus = calendarSyncProvider == .appleCalendar
+            ? AppleCalendarSyncService.shared.syncStatus
+            : .unavailable
+
+        if calendarSyncEnabled, calendarStatus != .connected {
+            calendarSyncEnabled = false
+        }
+    }
+
+    private func resetLocalData() {
+        for workItem in workItems {
+            try? AppleCalendarSyncService.shared.deleteEvent(for: workItem)
+            modelContext.delete(workItem)
+        }
+        for project in projects {
+            modelContext.delete(project)
+        }
+        for completionLog in completionLogs {
+            modelContext.delete(completionLog)
+        }
+        hasCompletedOnboarding = false
+        modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
+        calendarSyncEnabled = false
+        try? modelContext.save()
     }
 }

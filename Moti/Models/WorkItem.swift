@@ -20,6 +20,10 @@ final class WorkItem {
     var statusRawValue: String
     var notes: String?
     var parserExplanation: String
+    var calendarEventIdentifier: String?
+    var calendarProvider: String?
+    var lastCalendarSyncAt: Date?
+    var suggestedProjectName: String?
 
     init(
         id: UUID = UUID(),
@@ -57,6 +61,10 @@ final class WorkItem {
         self.statusRawValue = status.rawValue
         self.notes = notes
         self.parserExplanation = parserExplanation
+        self.calendarEventIdentifier = nil
+        self.calendarProvider = nil
+        self.lastCalendarSyncAt = nil
+        self.suggestedProjectName = nil
     }
 
     convenience init(parsed: ParsedWorkItem) {
@@ -93,6 +101,28 @@ final class WorkItem {
     }
 
     var displayProject: String {
-        projectName?.isEmpty == false ? projectName! : "Uncategorized"
+        projectName?.isEmpty == false ? projectName! : ProjectCatalog.unassignedLabel
+    }
+
+    /// True when the item has a usable working period or due date.
+    var hasUsableTiming: Bool {
+        let hasValidPeriod = workingStartDate.flatMap { start in
+            workingEndDate.map { start <= $0 }
+        } ?? false
+        return dueDate != nil || hasValidPeriod
+    }
+
+    /// True when the item can appear on Timeline but has no assigned project.
+    /// These items show in Review as a light (non-blocking) reminder.
+    var needsProjectAssignment: Bool {
+        hasUsableTiming && !needsReview && projectName == nil && status != .archived
+    }
+
+    /// Human-readable reason shown in the light-review row.
+    var lightReviewReason: String {
+        if let suggested = suggestedProjectName, !suggested.isEmpty {
+            return "Suggested project: \(suggested)"
+        }
+        return "Assign a project"
     }
 }

@@ -6,6 +6,7 @@ struct WorkItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
 
     @Bindable var item: WorkItem
+    @Query(sort: \Project.createdAt) private var projects: [Project]
 
     @State private var showingDeleteConfirmation = false
     @State private var showingTimingEditor = false
@@ -22,15 +23,36 @@ struct WorkItemDetailView: View {
         Form {
             Section("Work Item") {
                 TextField("Title", text: $item.title)
-                Picker("Project", selection: Binding($item.projectName, replacingNilWith: "Uncategorized")) {
-                    Text("Uncategorized").tag("Uncategorized")
-                    ForEach(ProjectCatalog.defaultProjects, id: \.self) { project in
+                Picker("Project", selection: Binding($item.projectName, replacingNilWith: ProjectCatalog.unassignedLabel)) {
+                    Text(ProjectCatalog.unassignedLabel).tag(ProjectCatalog.unassignedLabel)
+                    ForEach(projectOptions, id: \.self) { project in
                         Text(project).tag(project)
                     }
                 }
                 Picker("Status", selection: statusSelection) {
                     ForEach(WorkItemStatus.visibleCases) { status in
                         Text(status.label).tag(status)
+                    }
+                }
+            }
+
+            if shouldShowSuggestedProject {
+                Section("Suggested Project") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Suggested: \(item.suggestedProjectName ?? "")")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                        Text("This is not an assigned project until you create it.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Button("Create") {
+                            createSuggestedProject()
+                        }
+                        .buttonStyle(.bordered)
+                        Spacer()
                     }
                 }
             }
@@ -42,6 +64,10 @@ struct WorkItemDetailView: View {
                     timingRow
                 }
                 .buttonStyle(.plain)
+
+                if let tp = currentTimingProgress {
+                    timingProgressRow(tp)
+                }
             }
 
             Section("Original Capture") {
@@ -85,6 +111,7 @@ struct WorkItemDetailView: View {
             guard !isDeleting else { return }
             item.updatedAt = .now
             reconcileReviewState()
+            try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item)
             try? modelContext.save()
         }
     }
@@ -100,6 +127,19 @@ struct WorkItemDetailView: View {
                 item.needsReview = newStatus == .needsReview
             }
         )
+    }
+
+    private var projectOptions: [String] {
+        var names = projects.map(\.name)
+        if let current = item.projectName, !names.contains(current) {
+            names.append(current)
+        }
+        return names
+    }
+
+    private var shouldShowSuggestedProject: Bool {
+        guard item.projectName == nil, let suggested = item.suggestedProjectName, !suggested.isEmpty else { return false }
+        return !projects.contains { $0.name.localizedCaseInsensitiveCompare(suggested) == .orderedSame }
     }
 
     private var timingRow: some View {
@@ -126,6 +166,46 @@ struct WorkItemDetailView: View {
                 .foregroundStyle(.tertiary)
         }
         .contentShape(Rectangle())
+    }
+
+    private var currentTimingProgress: (progress: Double, elapsed: Int, total: Int, isEvent: Bool)? {
+        guard let start = item.workingStartDate, let end = item.workingEndDate else { return nil }
+        let cal = Calendar.current
+        let isEvent = cal.isDate(start, inSameDayAs: end)
+        let now = Date.now
+        let totalSec = end.timeIntervalSince(start)
+        guard totalSec > 0 else {
+            return (now >= start ? 1.0 : 0.0, now >= start ? 1 : 0, 1, isEvent)
+        }
+        let progress = min(max(now.timeIntervalSince(start) / totalSec, 0), 1)
+        let totalDays = max(1, cal.dateComponents([.day], from: cal.startOfDay(for: start), to: cal.startOfDay(for: end)).day ?? 1)
+        let elapsedDays = min(max(cal.dateComponents([.day], from: cal.startOfDay(for: start), to: cal.startOfDay(for: now)).day ?? 0, 0), totalDays)
+        return (progress, elapsedDays, totalDays, isEvent)
+    }
+
+    @ViewBuilder
+    private func timingProgressRow(_ tp: (progress: Double, elapsed: Int, total: Int, isEvent: Bool)) -> some View {
+        if tp.isEvent {
+            LabeledContent("Type", value: "Point-in-time event")
+                .foregroundStyle(.secondary)
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Time Progress")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Text("\(Int(tp.progress * 100))% elapsed")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(tp.progress > 0.85 ? .orange : .secondary)
+                }
+                ProgressView(value: tp.progress)
+                    .tint(tp.progress > 0.85 ? .orange : .indigo)
+                Text("\(tp.elapsed) of \(tp.total) days into the working period")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 2)
+        }
     }
 
     private var hasAnyTiming: Bool {
@@ -189,6 +269,7 @@ struct WorkItemDetailView: View {
         item.dueDate = dueDate
         item.updatedAt = .now
         reconcileReviewState()
+        try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item)
         try? modelContext.save()
         showingTimingEditor = false
     }
@@ -199,6 +280,7 @@ struct WorkItemDetailView: View {
         item.dueDate = nil
         item.updatedAt = .now
         reconcileReviewState()
+        try? AppleCalendarSyncService.shared.deleteEvent(for: item)
         try? modelContext.save()
         showingTimingEditor = false
     }
@@ -221,9 +303,25 @@ struct WorkItemDetailView: View {
 
     private func deleteWorkItem() {
         isDeleting = true
+        try? AppleCalendarSyncService.shared.deleteEvent(for: item)
         modelContext.delete(item)
         try? modelContext.save()
         dismiss()
+    }
+
+    private func createSuggestedProject() {
+        guard let suggested = item.suggestedProjectName?.trimmingCharacters(in: .whitespacesAndNewlines), !suggested.isEmpty else { return }
+        if let existingProject = projects.first(where: { $0.name.localizedCaseInsensitiveCompare(suggested) == .orderedSame }) {
+            item.projectName = existingProject.name
+            item.suggestedProjectName = nil
+            return
+        }
+
+        modelContext.insert(Project(name: suggested, colorToken: ProjectCatalog.colorToken(forProjectNamed: suggested)))
+        item.projectName = suggested
+        item.suggestedProjectName = nil
+        item.updatedAt = .now
+        try? modelContext.save()
     }
 
     private func endOfDay(for date: Date) -> Date {
@@ -235,7 +333,7 @@ private extension Binding where Value == String {
     init(_ source: Binding<String?>, replacingNilWith fallback: String) {
         self.init(
             get: { source.wrappedValue ?? fallback },
-            set: { source.wrappedValue = $0 == "Uncategorized" || $0.isEmpty ? nil : $0 }
+            set: { source.wrappedValue = $0 == ProjectCatalog.unassignedLabel || $0.isEmpty ? nil : $0 }
         )
     }
 }

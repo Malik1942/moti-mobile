@@ -2,7 +2,11 @@ import SwiftUI
 
 extension Color {
     static func project(_ name: String?) -> Color {
-        switch ProjectCatalog.color(for: name) {
+        projectToken(ProjectCatalog.color(for: name))
+    }
+
+    static func projectToken(_ token: String?) -> Color {
+        switch token {
         case "blue": .blue
         case "green": .green
         case "purple": .purple

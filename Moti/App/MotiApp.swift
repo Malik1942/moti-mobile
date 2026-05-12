@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 @main
 struct MotiApp: App {
@@ -22,7 +23,9 @@ struct MotiApp: App {
                 .tint(.indigo)
                 .onAppear {
                     if !didPromoteFoundationModelDefault && modeRawValue == TaskUnderstandingMode.mockSLM.rawValue {
-                        modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
+                        modeRawValue = FoundationModelRuntime.status.isAvailable
+                            ? TaskUnderstandingMode.foundationModel.rawValue
+                            : TaskUnderstandingMode.ruleBased.rawValue
                         didPromoteFoundationModelDefault = true
                     }
                     #if DEBUG
@@ -32,35 +35,59 @@ struct MotiApp: App {
                     #endif
                 }
         }
-        .modelContainer(for: [WorkItem.self, CompletionLog.self])
+        .modelContainer(for: [WorkItem.self, CompletionLog.self, Project.self])
     }
 }
 
 struct RootTabView: View {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab: MotiTab = .timeline
     @State private var showingCapture = false
+    @State private var captureStartMode: CaptureStartMode = .text
+    // Controls which detent the sheet opens at.
+    // tap plus → .large (text, keyboard ready); long press plus → .medium (voice, no keyboard)
+    @State private var captureDetent: PresentationDetent = .large
 
     var body: some View {
-        selectedContent
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                MotiTabBar(selectedTab: $selectedTab) {
-                    showingCapture = true
+        Group {
+            if hasCompletedOnboarding {
+                GeometryReader { proxy in
+                    ZStack(alignment: .bottom) {
+                        selectedContent
+                            .safeAreaPadding(.bottom, MotiTabBarMetrics.contentClearance(for: proxy.safeAreaInsets.bottom))
+
+                        MotiTabBar(
+                            selectedTab: $selectedTab,
+                            bottomSafeArea: proxy.safeAreaInsets.bottom
+                        ) { mode in
+                            presentCapture(mode)
+                        }
+                    }
+                    .ignoresSafeArea(.container, edges: .bottom)
+                    .ignoresSafeArea(.keyboard, edges: .bottom)
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
+                .sheet(isPresented: $showingCapture) {
+                    QuickCaptureView(
+                        startWithVoice: captureStartMode == .voice,
+                        selectedDetent: $captureDetent
+                    )
+                    .presentationDetents([.medium, .large], selection: $captureDetent)
+                }
+            } else {
+                OnboardingView {
+                    hasCompletedOnboarding = true
+                }
             }
-            .sheet(isPresented: $showingCapture) {
-                QuickCaptureView()
-                    .presentationDetents([.medium, .large])
-            }
+        }
     }
 
     @ViewBuilder
     private var selectedContent: some View {
         switch selectedTab {
         case .timeline:
-            TimelineView()
+            TimelineView {
+                presentCapture(.text)
+            }
         case .projects:
             ProjectsView()
         case .review:
@@ -69,6 +96,32 @@ struct RootTabView: View {
             SettingsView()
         }
     }
+
+    private func presentCapture(_ mode: CaptureStartMode) {
+        guard !showingCapture else { return }
+        captureStartMode = mode
+        captureDetent = mode == .voice ? .medium : .large
+        showingCapture = true
+    }
+}
+
+enum MotiTabBarMetrics {
+    static let rowHeight: CGFloat = 64
+    static let plusSize: CGFloat = 56
+    static let plusLift: CGFloat = 12
+
+    static func totalHeight(for bottomSafeArea: CGFloat) -> CGFloat {
+        rowHeight + max(bottomSafeArea, 8)
+    }
+
+    static func contentClearance(for bottomSafeArea: CGFloat) -> CGFloat {
+        totalHeight(for: bottomSafeArea) + plusLift + 18
+    }
+}
+
+enum CaptureStartMode {
+    case text
+    case voice
 }
 
 private enum MotiTab: String, CaseIterable, Identifiable {
@@ -100,25 +153,33 @@ private enum MotiTab: String, CaseIterable, Identifiable {
 
 private struct MotiTabBar: View {
     @Binding var selectedTab: MotiTab
-    let onCapture: () -> Void
+    let bottomSafeArea: CGFloat
+    let onCapture: (CaptureStartMode) -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
-            tabButton(.timeline)
-            tabButton(.projects)
-            centerAction
-            tabButton(.review)
-            tabButton(.settings)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                tabButton(.timeline)
+                tabButton(.projects)
+                centerAction
+                tabButton(.review)
+                tabButton(.settings)
+            }
+            .frame(height: MotiTabBarMetrics.rowHeight)
+            .padding(.horizontal, 6)
+
+            Color.clear
+                .frame(height: max(bottomSafeArea, 8))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-        .frame(maxWidth: .infinity, minHeight: 76)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 30))
-        .overlay {
-            RoundedRectangle(cornerRadius: 30)
-                .stroke(.white.opacity(0.28))
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color(.separator).opacity(0.28))
+                .frame(maxWidth: .infinity)
+                .frame(height: 0.5)
         }
-        .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
+        .shadow(color: .black.opacity(0.07), radius: 10, y: -2)
     }
 
     private func tabButton(_ tab: MotiTab) -> some View {
@@ -134,13 +195,7 @@ private struct MotiTabBar: View {
                     .minimumScaleFactor(0.8)
             }
             .foregroundStyle(selectedTab == tab ? .indigo : .secondary)
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .background {
-                if selectedTab == tab {
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(.indigo.opacity(0.12))
-                }
-            }
+            .frame(maxWidth: .infinity, minHeight: 52)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -148,22 +203,28 @@ private struct MotiTabBar: View {
     }
 
     private var centerAction: some View {
-        Button {
-            onCapture()
-        } label: {
-            ZStack {
-                Circle()
-                    .fill(.indigo)
-                    .frame(width: 56, height: 56)
-                    .shadow(color: .indigo.opacity(0.28), radius: 10, y: 5)
-                Image(systemName: "plus")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.white)
-            }
-            .frame(maxWidth: .infinity, minHeight: 64)
-            .contentShape(Rectangle())
+        ZStack {
+            Circle()
+                .fill(Color.indigo)
+                .frame(width: MotiTabBarMetrics.plusSize, height: MotiTabBarMetrics.plusSize)
+                .shadow(color: .indigo.opacity(0.24), radius: 8, y: 4)
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(.white)
+                .frame(width: MotiTabBarMetrics.plusSize, height: MotiTabBarMetrics.plusSize)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, minHeight: 52)
+        .offset(y: -MotiTabBarMetrics.plusLift)
+        .contentShape(Circle())
+        .onTapGesture {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            onCapture(.text)
+        }
+        .onLongPressGesture(minimumDuration: 0.45) {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            onCapture(.voice)
+        }
         .accessibilityLabel("Add to Timeline")
+        .accessibilityHint("Tap to type. Long press to speak.")
     }
 }

@@ -27,6 +27,9 @@ Build/
 # Logs
 *.log
 
+# Local agent worktrees
+.claude/
+
 # Playgrounds
 timeline.xctimeline
 playground.xcworkspace/

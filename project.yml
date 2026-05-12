@@ -6,6 +6,8 @@ settings:
     IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     SWIFT_VERSION: "5.0"
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
 targets:
   Moti:
     type: application
@@ -17,6 +19,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.malik.Moti
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Moti
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: Moti needs calendar access to sync scheduled work items to your calendar.
+        INFOPLIST_KEY_NSCalendarsUsageDescription: Moti needs calendar access to sync scheduled work items to your calendar.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Moti uses the microphone so you can capture work items by voice.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: Moti uses speech recognition to turn your spoken captures into text.
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

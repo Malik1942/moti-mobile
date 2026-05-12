@@ -49,8 +49,11 @@ enum WorkItemStatus: String, Codable, CaseIterable, Identifiable {
 }
 
 enum ProjectCatalog {
-    static let defaultProjects = ["Job Search", "School", "Portfolio", "Moti", "Personal"]
+    static let suggestedTemplates = ["Job Search", "School", "Portfolio", "Personal"]
+    static let parserSuggestions = ["Job Search", "School", "Portfolio", "Moti", "Personal"]
     static let allProjectsLabel = "All Projects"
+    static let unassignedLabel = "Unassigned"
+    static let colorTokens = ["blue", "green", "purple", "indigo", "orange", "gray"]
 
     static func color(for project: String?) -> String {
         switch project {
@@ -62,6 +65,15 @@ enum ProjectCatalog {
         default: "gray"
         }
     }
+
+    static func colorToken(forProjectNamed name: String) -> String {
+        color(for: name)
+    }
+
+    static func normalizedTemplateName(_ value: String?) -> String? {
+        guard let value else { return nil }
+        return parserSuggestions.first { $0.localizedCaseInsensitiveCompare(value) == .orderedSame }
+    }
 }
 
 enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
@@ -70,6 +82,10 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
     case mockSLM
 
     var id: String { rawValue }
+
+    static var releaseOptions: [TaskUnderstandingMode] {
+        [.foundationModel, .ruleBased]
+    }
 
     var label: String {
         switch self {
@@ -84,6 +100,41 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
         case .foundationModel: "On-device"
         case .ruleBased: "Fallback"
         case .mockSLM: "Debug Only"
+        }
+    }
+}
+
+enum CalendarSyncProvider: String, CaseIterable, Identifiable {
+    case appleCalendar
+    case googleCalendar
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .appleCalendar: "Apple Calendar"
+        case .googleCalendar: "Google Calendar"
+        }
+    }
+
+    var detailLabel: String? {
+        switch self {
+        case .appleCalendar: nil
+        case .googleCalendar: "Coming Soon"
+        }
+    }
+}
+
+enum CalendarSyncMode: String, CaseIterable, Identifiable {
+    case event
+    case allDay
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .event: "Events"
+        case .allDay: "All-day Events"
         }
     }
 }
