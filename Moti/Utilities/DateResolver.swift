@@ -71,6 +71,11 @@ enum DateResolver {
         if let match = resolveBeforeAfter(in: text, calendar: calendar, now: now) {
             return match
         }
+        // "in N days/weeks/months" — relative duration, checked before numeric-date scan
+        // so "in 5 days" is NOT confused with the calendar-date pattern M.DD
+        if let match = resolveRelativeDuration(in: text, calendar: calendar, now: now) {
+            return match
+        }
         if !containsWorkingPeriodSyntax(text), let baseDate = resolveDateFragment(text, calendar: calendar, now: now) {
             return (date(on: baseDate, matchingTimeIn: text, calendar: calendar), dateLabel(in: text) ?? "date", false)
         }
@@ -125,12 +130,17 @@ enum DateResolver {
             options: [.regularExpression, .caseInsensitive]
         )
         title = title.replacingOccurrences(
+            of: #"\bin\s+\d+\s+(?:days?|weeks?|months?)\b"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        title = title.replacingOccurrences(
             of: #"\b(?:at\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm)\b"#,
             with: "",
             options: [.regularExpression, .caseInsensitive]
         )
         title = title.replacingOccurrences(
-            of: #"\b(?:before|by|due|on|submit on)?\s*(?:\d{1,2}[./-]\d{1,2}|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)\b"#,
+            of: #"\b(?:before|by|due|on|submit on|in|at)?\s*(?:\d{1,2}[./-]\d{1,2}|(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?)\b"#,
             with: "",
             options: [.regularExpression, .caseInsensitive]
         )
@@ -186,6 +196,33 @@ enum DateResolver {
             return match
         }
         return nil
+    }
+
+    private static func resolveRelativeDuration(in text: String, calendar: Calendar, now: Date) -> (Date, String, Bool)? {
+        let pattern = #"\bin\s+(\d+)\s+(days?|weeks?|months?)\b"#
+        guard
+            let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
+            let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+            let numberRange = Range(match.range(at: 1), in: text),
+            let unitRange = Range(match.range(at: 2), in: text),
+            let n = Int(text[numberRange])
+        else { return nil }
+
+        let unit = String(text[unitRange]).lowercased()
+        let component: Calendar.Component
+        let label: String
+        if unit.hasPrefix("day") {
+            component = .day
+            label = n == 1 ? "in 1 day" : "in \(n) days"
+        } else if unit.hasPrefix("week") {
+            component = .weekOfYear
+            label = n == 1 ? "in 1 week" : "in \(n) weeks"
+        } else {
+            component = .month
+            label = n == 1 ? "in 1 month" : "in \(n) months"
+        }
+        guard let date = calendar.date(byAdding: component, value: n, to: now) else { return nil }
+        return (date, label, false)
     }
 
     private static func resolveBeforeAfter(in text: String, calendar: Calendar, now: Date) -> (Date, String, Bool)? {

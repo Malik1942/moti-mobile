@@ -302,8 +302,8 @@ struct QuickCaptureView: View {
     private func submit() {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isLoading else { return }
-        speechService.stopTranscription()
         isLoading = true
+        speechService.stopTranscription()
         errorMessage = nil
         Task {
             do {
@@ -351,6 +351,7 @@ struct QuickCaptureView: View {
                     }
                     #endif
                     try modelContext.save()
+                    input = ""
                     dismiss()
                 }
             } catch {
