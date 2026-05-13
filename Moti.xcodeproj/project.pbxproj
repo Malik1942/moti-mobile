@@ -82,7 +82,7 @@
 		052732FDB298243A938D4B0F /* MotiDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDesignSystem.swift; sourceTree = "<group>"; };
 		062A86233E995C5759D8096F /* MotiWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetBundle.swift; sourceTree = "<group>"; };
 		0684F746536052582806A392 /* MotiWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MotiWidget.entitlements; sourceTree = "<group>"; };
-		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		16051795458D002FFE029597 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
 		16A8E35EB4E1E95654A55651 /* MissingInfoChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingInfoChip.swift; sourceTree = "<group>"; };
 		19AEB42AF5A553D92C1FCA9D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -117,7 +117,7 @@
 		A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectColor.swift; sourceTree = "<group>"; };
 		A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLogger.swift; sourceTree = "<group>"; };
 		ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleConfidenceScorer.swift; sourceTree = "<group>"; };
-		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		BF41184673063DB0A325C69D /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetViews.swift; sourceTree = "<group>"; };
@@ -348,8 +348,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = 64DA73B4E47CD0EF5DB41985 /* Build configuration list for PBXProject "Moti" */;
 			developmentRegion = en;
@@ -452,6 +450,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MotiWidget/MotiWidget.entitlements;
+				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				INFOPLIST_FILE = MotiWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MotiWidget;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -539,6 +538,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Moti/Moti.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Moti;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Moti needs calendar access to sync scheduled work items to your calendar.";
@@ -561,6 +561,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MotiWidget/MotiWidget.entitlements;
+				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				INFOPLIST_FILE = MotiWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MotiWidget;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -582,6 +583,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Moti/Moti.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Moti;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Moti needs calendar access to sync scheduled work items to your calendar.";
