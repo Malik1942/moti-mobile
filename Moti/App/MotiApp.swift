@@ -35,7 +35,7 @@ struct MotiApp: App {
                     #endif
                 }
         }
-        .modelContainer(for: [WorkItem.self, CompletionLog.self, Project.self])
+        .modelContainer(for: [WorkItem.self, CompletionLog.self, Project.self, WorkSession.self, SessionCheckIn.self])
     }
 }
 
@@ -48,8 +48,14 @@ struct RootTabView: View {
     // tap plus → .large (text, keyboard ready); long press plus → .medium (voice, no keyboard)
     @State private var captureDetent: PresentationDetent = .large
 
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase)   private var scenePhase
+
     @Query(sort: \WorkItem.createdAt) private var workItems: [WorkItem]
     @Query(sort: \Project.createdAt) private var projects: [Project]
+    @Query private var allSessions: [WorkSession]
+
+    private var scheduler: TimelineCheckpointScheduler { .shared }
 
     // Observed properties that trigger a widget snapshot refresh when any work item or project changes
     private var widgetChangeToken: String {
@@ -74,7 +80,28 @@ struct RootTabView: View {
                         ) { mode in
                             presentCapture(mode)
                         }
+
+                        // Timeline checkpoint floating card — appears above the tab bar
+                        // when a checkpoint fires while the app is foregrounded.
+                        if let checkpoint = scheduler.coordinator.pendingCheckpoint {
+                            CheckpointFloatingCard(
+                                event: checkpoint,
+                                onRespond: { state in
+                                    handleCheckpointResponse(event: checkpoint, state: state)
+                                },
+                                onDismiss: {
+                                    handleCheckpointDismiss(event: checkpoint)
+                                }
+                            )
+                            .padding(.bottom, MotiTabBarMetrics.totalHeight(for: proxy.safeAreaInsets.bottom) + 10)
+                            .transition(.asymmetric(
+                                insertion: .offset(y: 80).combined(with: .opacity),
+                                removal:   .offset(y: 80).combined(with: .opacity)
+                            ))
+                            .zIndex(10)
+                        }
                     }
+                    .animation(.spring(duration: 0.35), value: scheduler.coordinator.pendingCheckpoint?.id)
                     .ignoresSafeArea(.container, edges: .bottom)
                     .ignoresSafeArea(.keyboard, edges: .bottom)
                 }
@@ -93,6 +120,55 @@ struct RootTabView: View {
         }
         .task { writeWidgetSnapshot() }
         .onChange(of: widgetChangeToken) { _, _ in writeWidgetSnapshot() }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active,
+                  let active = allSessions.first(where: { $0.isActive })
+            else { return }
+            scheduler.resolvePassedCheckpoints(for: active)
+        }
+    }
+
+    // MARK: - Checkpoint handlers
+
+    private func handleCheckpointResponse(
+        event: CheckpointCoordinator.CheckpointEvent,
+        state: SessionState
+    ) {
+        if let session = allSessions.first(where: { $0.id == event.sessionID }) {
+            let checkIn = SessionCheckIn(progress: event.progress, state: state)
+            session.checkIns.append(checkIn)
+            markFired(event: event, in: session)
+        }
+        withAnimation(.spring(duration: 0.3)) {
+            scheduler.coordinator.pendingCheckpoint = nil
+        }
+        #if DEBUG
+        print("[Checkpoints] Response recorded: \(Int(event.progress * 100))% → \(state.rawValue)")
+        #endif
+    }
+
+    private func handleCheckpointDismiss(event: CheckpointCoordinator.CheckpointEvent) {
+        if let session = allSessions.first(where: { $0.id == event.sessionID }) {
+            markFired(event: event, in: session)
+        }
+        withAnimation(.spring(duration: 0.3)) {
+            scheduler.coordinator.pendingCheckpoint = nil
+        }
+        #if DEBUG
+        print("[Checkpoints] Checkpoint dismissed: \(Int(event.progress * 100))%")
+        #endif
+    }
+
+    private func markFired(event: CheckpointCoordinator.CheckpointEvent, in session: WorkSession) {
+        if !session.firedCheckpoints.contains(event.progress) {
+            session.firedCheckpoints.append(event.progress)
+        }
+        // Deactivate session once the final checkpoint has fired.
+        if session.firedCheckpoints.count >= session.checkpointProgress.count {
+            session.isActive = false
+            scheduler.cancelCheckpoints(for: session.id)
+        }
+        try? modelContext.save()
     }
 
     private func writeWidgetSnapshot() {

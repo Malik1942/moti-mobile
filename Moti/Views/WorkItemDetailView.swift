@@ -10,8 +10,15 @@ struct WorkItemDetailView: View {
     @Bindable var item: WorkItem
     @Query(sort: \Project.createdAt) private var projects: [Project]
 
+    @Query private var allSessions: [WorkSession]
+
+    private var activeSession: WorkSession? {
+        allSessions.first { $0.workItemID == item.id && $0.isActive }
+    }
+
     @State private var showingDeleteConfirmation = false
     @State private var showingTimingEditor = false
+    @State private var showingStartSession = false
     @State private var draftWorkingStartDate = Date.now
     @State private var draftWorkingEndDate = Date.now
     @State private var draftDueDate = Date.now
@@ -72,6 +79,23 @@ struct WorkItemDetailView: View {
                 }
             }
 
+            Section("Session") {
+                if let session = activeSession {
+                    ActiveSessionRow(session: session)
+                    Button(role: .destructive) {
+                        endSession(session)
+                    } label: {
+                        Text("End Session")
+                    }
+                } else {
+                    Button {
+                        showingStartSession = true
+                    } label: {
+                        Label("Start Timeline Session", systemImage: "timer")
+                    }
+                }
+            }
+
             Section("Original Capture") {
                 Text(item.rawInput)
                     .foregroundStyle(.secondary)
@@ -95,6 +119,9 @@ struct WorkItemDetailView: View {
             }
         } message: {
             Text("This will permanently delete this work item. This cannot be undone.")
+        }
+        .sheet(isPresented: $showingStartSession) {
+            StartSessionSheet(workItem: item) {}
         }
         .sheet(isPresented: $showingTimingEditor) {
             TimingEditorSheet(
@@ -268,6 +295,15 @@ struct WorkItemDetailView: View {
         }
     }
 
+    private func endSession(_ session: WorkSession) {
+        session.isActive = false
+        TimelineCheckpointScheduler.shared.cancelCheckpoints(for: session.id)
+        try? modelContext.save()
+        #if DEBUG
+        print("[Checkpoints] Session ended manually: \(session.id)")
+        #endif
+    }
+
     private func deleteWorkItem() {
         isDeleting = true
         try? AppleCalendarSyncService.shared.deleteEvent(for: item)
@@ -293,6 +329,43 @@ struct WorkItemDetailView: View {
 
     private func endOfDay(for date: Date) -> Date {
         Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? date
+    }
+}
+
+// MARK: - Active Session Row
+
+private struct ActiveSessionRow: View {
+    let session: WorkSession
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Label("Session active", systemImage: "timer")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.indigo)
+                Spacer()
+                Text(session.remainingLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            ProgressView(value: session.currentProgress)
+                .tint(.indigo)
+
+            HStack(spacing: 16) {
+                ForEach(session.checkpointProgress, id: \.self) { cp in
+                    let fired = session.firedCheckpoints.contains(cp)
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(fired ? Color.indigo : Color.secondary.opacity(0.25))
+                            .frame(width: 6, height: 6)
+                        Text("\(Int(cp * 100))%")
+                            .font(.caption2)
+                            .foregroundStyle(fired ? .indigo : .secondary)
+                    }
+                }
+            }
+        }
     }
 }
 

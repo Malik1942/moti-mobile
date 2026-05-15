@@ -10,6 +10,7 @@
 		01D12B1DE82DC9668CB41510 /* MultiWeekTimelineHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE26C3A5DE2A83990656065 /* MultiWeekTimelineHeroView.swift */; };
 		0529DCF1F697624597807713 /* MockSLMTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AEB904F6BE6B247DCC0943D /* MockSLMTaskUnderstandingService.swift */; };
 		056DD7C1EB2BF180DF9EE5F9 /* AddProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */; };
+		0D863B1DBC83E470A8131CC6 /* TimelineCheckpointScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */; };
 		144795598A70B595CDA7FD93 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF41184673063DB0A325C69D /* QuickCaptureView.swift */; };
 		15AC7CE05BB4792AE1583FCB /* ScheduleConfidenceScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */; };
 		1900B36E129922D919431A46 /* WorkItemCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC688CE513900DA62FC4E2C /* WorkItemCard.swift */; };
@@ -18,7 +19,9 @@
 		1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */; };
 		1F5AAA357B7EC34B20B3DFB8 /* ProjectInferrer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */; };
 		289BEAA0C0466B216B021566 /* ParserValidationSamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47105D1BF12898C061AFC16D /* ParserValidationSamples.swift */; };
+		2DC006A009325186AE6FBBCB /* CheckpointFloatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F138181FDCBC9EDA618DD4C2 /* CheckpointFloatingCard.swift */; };
 		2FB5F8FA3E344597D5870D58 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F8750733AF4FC3145AA7E /* SettingsView.swift */; };
+		396FCFFC1EA80D89600F5DF4 /* WorkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDECA64D676AF0FABEFF825A /* WorkSession.swift */; };
 		3A1F9C01B89D0031D20EF419 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16051795458D002FFE029597 /* ReviewView.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
@@ -46,6 +49,7 @@
 		D798E9C040D7B54F1C764C91 /* EditProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */; };
 		D8E24D814D5F2FD45D444D96 /* MotiWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BBCECF2669A889C4D6145209 /* MotiWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5831017862C61EA3E73AAB1F /* TimelineView.swift */; };
+		DC29984263760D5880F28ADE /* StartSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C46CF0A0FC1D62F8DE56EB8 /* StartSessionSheet.swift */; };
 		E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */; };
 		E784BA20607523415553AE8F /* RuleBasedTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */; };
 		EA9EF71C9A4FCD827A5D4E55 /* MotiDebugDataLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */; };
@@ -89,6 +93,7 @@
 		1DE26C3A5DE2A83990656065 /* MultiWeekTimelineHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiWeekTimelineHeroView.swift; sourceTree = "<group>"; };
 		29E16979A0DAAED5CF27B706 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2A3A3F0F686739AFC74C1E2E /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		2C46CF0A0FC1D62F8DE56EB8 /* StartSessionSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StartSessionSheet.swift; sourceTree = "<group>"; };
 		382ABA033145311D10EF58FD /* Moti.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moti.entitlements; sourceTree = "<group>"; };
 		407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingService.swift; sourceTree = "<group>"; };
 		43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleBasedTaskUnderstandingService.swift; sourceTree = "<group>"; };
@@ -109,6 +114,7 @@
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
+		8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		99639D9AB321E54C8399696F /* WorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItem.swift; sourceTree = "<group>"; };
 		9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleCalendarSyncService.swift; sourceTree = "<group>"; };
@@ -122,8 +128,10 @@
 		BF41184673063DB0A325C69D /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetViews.swift; sourceTree = "<group>"; };
 		CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProjectSheet.swift; sourceTree = "<group>"; };
+		DDECA64D676AF0FABEFF825A /* WorkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkSession.swift; sourceTree = "<group>"; };
 		DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedWorkItem.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
+		F138181FDCBC9EDA618DD4C2 /* CheckpointFloatingCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckpointFloatingCard.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
 		FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDebugDataLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -167,6 +175,16 @@
 				BBCECF2669A889C4D6145209 /* MotiWidget.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		78361BEEABFF3E1281520D8E /* Sessions */ = {
+			isa = PBXGroup;
+			children = (
+				2C46CF0A0FC1D62F8DE56EB8 /* StartSessionSheet.swift */,
+				F138181FDCBC9EDA618DD4C2 /* CheckpointFloatingCard.swift */,
+			);
+			name = Sessions;
+			path = Sessions;
 			sourceTree = "<group>";
 		};
 		8850F035C99B1C49565289C7 /* Frameworks */ = {
@@ -231,6 +249,7 @@
 				5831017862C61EA3E73AAB1F /* TimelineView.swift */,
 				75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */,
 				E58A15E7F9B849A120A02744 /* Components */,
+				78361BEEABFF3E1281520D8E /* Sessions */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -254,6 +273,7 @@
 				7BD412970ED5D739AC844251 /* SpeechTranscriptionService.swift */,
 				407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */,
 				494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */,
+				8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -266,6 +286,7 @@
 				DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */,
 				2A3A3F0F686739AFC74C1E2E /* Project.swift */,
 				99639D9AB321E54C8399696F /* WorkItem.swift */,
+				DDECA64D676AF0FABEFF825A /* WorkSession.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -316,8 +337,6 @@
 				643147D41C6F6773636C4EC9 /* PBXTargetDependency */,
 			);
 			name = Moti;
-			packageProductDependencies = (
-			);
 			productName = Moti;
 			productReference = 0F4FC74F477677311A025A0F /* Moti.app */;
 			productType = "com.apple.product-type.application";
@@ -334,8 +353,6 @@
 			dependencies = (
 			);
 			name = MotiWidget;
-			packageProductDependencies = (
-			);
 			productName = MotiWidget;
 			productReference = BBCECF2669A889C4D6145209 /* MotiWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -424,6 +441,10 @@
 				A2FBBCE31B1C284935A4B5A8 /* WorkItem.swift in Sources */,
 				1900B36E129922D919431A46 /* WorkItemCard.swift in Sources */,
 				1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */,
+				396FCFFC1EA80D89600F5DF4 /* WorkSession.swift in Sources */,
+				0D863B1DBC83E470A8131CC6 /* TimelineCheckpointScheduler.swift in Sources */,
+				DC29984263760D5880F28ADE /* StartSessionSheet.swift in Sources */,
+				2DC006A009325186AE6FBBCB /* CheckpointFloatingCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
