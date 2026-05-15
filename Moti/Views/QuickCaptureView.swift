@@ -123,13 +123,8 @@ struct QuickCaptureView: View {
                     .disabled(submitDisabled)
             }
         }
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-            Button("Done") {
-                isInputFocused = false
-            }
-            .font(.subheadline.weight(.semibold))
-        }
+        // No keyboard toolbar — tapping outside the TextField (the .onTapGesture
+        // on the textBody background) dismisses focus and folds the keyboard.
     }
 
     private var submitDisabled: Bool {

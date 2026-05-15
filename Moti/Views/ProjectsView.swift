@@ -636,6 +636,10 @@ private struct ProjectDetailView: View {
                 }
             }
         }
+        // The custom tab bar sits above the system safe area, so the List's
+        // own bottom inset isn't enough — add explicit clearance so the last
+        // work-item row scrolls fully into view.
+        .contentMargins(.bottom, MotiLayout.pageBottomPadding, for: .scrollContent)
         .navigationTitle(project.name)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $selectedWorkItem) { item in
