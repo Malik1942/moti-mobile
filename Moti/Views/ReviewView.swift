@@ -2,9 +2,15 @@ import SwiftData
 import SwiftUI
 
 struct ReviewView: View {
+    @Environment(\.modelContext) private var modelContext
+
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
     @Query(sort: \Project.createdAt) private var projects: [Project]
+
+    @State private var selectedWorkItem: WorkItem?
+    @State private var workItemPendingDeletion: WorkItem?
+    @State private var openSwipeID: UUID?
 
     private var reviewItems: [WorkItem] {
         // Critical review (needsReview) first, then light review (needsProjectAssignment).
@@ -29,6 +35,20 @@ struct ReviewView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Review")
+            .navigationDestination(item: $selectedWorkItem) { item in
+                WorkItemDetailView(item: item)
+            }
+            .alert("Delete Work Item?", isPresented: deleteWorkItemAlertBinding) {
+                Button("Cancel", role: .cancel) { workItemPendingDeletion = nil }
+                Button("Delete", role: .destructive) {
+                    if let item = workItemPendingDeletion {
+                        deleteWorkItem(item)
+                    }
+                    workItemPendingDeletion = nil
+                }
+            } message: {
+                Text("This will permanently delete this work item. This cannot be undone.")
+            }
             .onAppear {
                 MotiDebugDataLogger.log(
                     source: "ReviewView.onAppear",
@@ -43,16 +63,34 @@ struct ReviewView: View {
     private var reviewList: some View {
         VStack(spacing: MotiLayout.cardSpacing) {
             ForEach(reviewItems) { item in
-                NavigationLink {
-                    WorkItemDetailView(item: item)
-                } label: {
+                MotiSwipeDeleteRow(
+                    isSwipeOpen: openSwipeID == item.id,
+                    onTap: { selectedWorkItem = item },
+                    onDelete: { workItemPendingDeletion = item },
+                    onSwipeOpen: { openSwipeID = item.id },
+                    onSwipeClose: { if openSwipeID == item.id { openSwipeID = nil } }
+                ) {
                     ReviewItemRow(item: item)
                         .motiCard()
                 }
-                .buttonStyle(.plain)
                 .contentShape(RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
             }
         }
+    }
+
+    private var deleteWorkItemAlertBinding: Binding<Bool> {
+        Binding {
+            workItemPendingDeletion != nil
+        } set: { isPresented in
+            if !isPresented { workItemPendingDeletion = nil }
+        }
+    }
+
+    private func deleteWorkItem(_ item: WorkItem) {
+        try? AppleCalendarSyncService.shared.deleteEvent(for: item)
+        modelContext.delete(item)
+        openSwipeID = nil
+        try? modelContext.save()
     }
 }
 

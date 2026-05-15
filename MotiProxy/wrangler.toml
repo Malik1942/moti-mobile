@@ -1,0 +1,19 @@
+name = "moti-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Optional: per-IP rate limiting. Create a KV namespace once with:
+#     npx wrangler kv namespace create RATE_LIMIT
+# then paste the id below and uncomment the block. Without it, the Worker still
+# works — rate limiting is just skipped.
+#
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "PASTE_KV_NAMESPACE_ID_HERE"
+
+# Secrets are NOT declared here — they are set with `wrangler secret put` so
+# they never end up in source control. See README for the deploy walkthrough.
+#
+# Required secrets:
+#   GEMINI_API_KEY    — your real Google Gemini API key
+#   APP_SHARED_SECRET — long random string (openssl rand -hex 32) shared with the iOS app

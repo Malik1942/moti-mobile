@@ -1,0 +1,5 @@
+# Local development secrets for `wrangler dev`. Copy to `.dev.vars` and fill in.
+# `.dev.vars` is gitignored. For production, use `wrangler secret put` instead.
+
+GEMINI_API_KEY=replace-with-your-real-gemini-key
+APP_SHARED_SECRET=replace-with-a-long-random-string-from-openssl-rand-hex-32

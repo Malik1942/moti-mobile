@@ -19,6 +19,11 @@ struct SettingsView: View {
     @State private var showingOnboarding = false
     @State private var showingResetLocalDataConfirmation = false
 
+    // Smart Capture API key (Gemini) — Settings UI for the Keychain-backed key.
+    @State private var apiKeyDraft: String = ""
+    @State private var apiKeyConfigured: Bool = SmartCaptureKeyStore.hasKeychainKey
+    @State private var apiKeySaveFeedback: String?
+
     private var mode: Binding<TaskUnderstandingMode> {
         Binding {
             TaskUnderstandingMode(rawValue: modeRawValue) ?? .foundationModel
@@ -61,10 +66,22 @@ struct SettingsView: View {
                         }
                     }
 
+                    if let description = requestedMode.modeDescription {
+                        Text(description)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
                     LabeledContent("Foundation Model", value: foundationStatus.summary)
                     if let fallback = foundationStatus.fallbackSummary, requestedMode == .foundationModel {
                         LabeledContent("Fallback", value: fallback)
                     }
+                }
+
+                // Smart Capture API key entry — only relevant in LLM mode.
+                // Stored in iOS Keychain; never embedded in the app binary.
+                if requestedMode == .llm {
+                    smartCaptureAPISection
                 }
 
                 Section("Calendar Sync") {
@@ -195,6 +212,79 @@ struct SettingsView: View {
         if calendarSyncEnabled, calendarStatus != .connected {
             calendarSyncEnabled = false
         }
+    }
+
+    // MARK: - Smart Capture API section
+
+    @ViewBuilder
+    private var smartCaptureAPISection: some View {
+        Section("Smart Capture API") {
+            SecureField(
+                apiKeyConfigured ? "Replace stored key" : "Paste your Gemini API key",
+                text: $apiKeyDraft
+            )
+            .textContentType(.password)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.never)
+            .submitLabel(.done)
+            .onSubmit(saveAPIKey)
+
+            HStack {
+                Button("Save") { saveAPIKey() }
+                    .disabled(apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Spacer()
+
+                if apiKeyConfigured {
+                    Button("Clear", role: .destructive) { clearAPIKey() }
+                }
+            }
+
+            LabeledContent("Status", value: apiKeyStatusLabel)
+
+            if let feedback = apiKeySaveFeedback {
+                Text(feedback)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("Used by Smart Capture in LLM mode. Stored in the iOS Keychain on this device. Requests go only to generativelanguage.googleapis.com (Google Gemini).")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var apiKeyStatusLabel: String {
+        if SmartCaptureKeyStore.isProxyConfigured {
+            return "Routed through proxy"
+        }
+        if apiKeyConfigured { return "Configured" }
+        #if DEBUG
+        if DevSecrets.geminiAPIKey?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            return "Using DEBUG fallback"
+        }
+        #endif
+        return "Not configured"
+    }
+
+    private func saveAPIKey() {
+        let trimmed = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let ok = SmartCaptureKeyStore.setKey(trimmed)
+        if ok {
+            apiKeyDraft = ""
+            apiKeyConfigured = SmartCaptureKeyStore.hasKeychainKey
+            apiKeySaveFeedback = "Key saved to Keychain."
+        } else {
+            apiKeySaveFeedback = "Could not save key to Keychain."
+        }
+    }
+
+    private func clearAPIKey() {
+        _ = SmartCaptureKeyStore.clear()
+        apiKeyDraft = ""
+        apiKeyConfigured = SmartCaptureKeyStore.hasKeychainKey
+        apiKeySaveFeedback = "Key cleared."
     }
 
     private func resetLocalData() {

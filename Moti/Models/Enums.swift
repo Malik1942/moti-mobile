@@ -80,11 +80,12 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
     case foundationModel
     case ruleBased
     case mockSLM
+    case llm
 
     var id: String { rawValue }
 
     static var releaseOptions: [TaskUnderstandingMode] {
-        [.foundationModel, .ruleBased]
+        [.foundationModel, .ruleBased, .llm]
     }
 
     var label: String {
@@ -92,6 +93,7 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
         case .foundationModel: "Foundational Model"
         case .ruleBased: "Rule-based"
         case .mockSLM: "Mock SLM"
+        case .llm: "LLM"
         }
     }
 
@@ -100,6 +102,17 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
         case .foundationModel: "On-device"
         case .ruleBased: "Fallback"
         case .mockSLM: "Debug Only"
+        case .llm: "Smart Capture"
+        }
+    }
+
+    /// Longer-form explanation shown in Settings for modes that need it.
+    var modeDescription: String? {
+        switch self {
+        case .llm:
+            return "Uses Smart Capture to clarify vague input, save project context, and generate task plans."
+        case .foundationModel, .ruleBased, .mockSLM:
+            return nil
         }
     }
 }

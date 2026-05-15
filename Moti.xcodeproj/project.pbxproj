@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00D983F580970522BC6A5DB7 /* GeminiContextualCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9218237DF13576D966EDB303 /* GeminiContextualCaptureService.swift */; };
 		01D12B1DE82DC9668CB41510 /* MultiWeekTimelineHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE26C3A5DE2A83990656065 /* MultiWeekTimelineHeroView.swift */; };
 		0529DCF1F697624597807713 /* MockSLMTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AEB904F6BE6B247DCC0943D /* MockSLMTaskUnderstandingService.swift */; };
 		056DD7C1EB2BF180DF9EE5F9 /* AddProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */; };
 		144795598A70B595CDA7FD93 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF41184673063DB0A325C69D /* QuickCaptureView.swift */; };
 		15AC7CE05BB4792AE1583FCB /* ScheduleConfidenceScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */; };
+		1802ECF32C8A192FA523F8B5 /* SmartCapturePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB5A2EC0A3C8092FFA89CCE /* SmartCapturePromptBuilder.swift */; };
 		1900B36E129922D919431A46 /* WorkItemCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC688CE513900DA62FC4E2C /* WorkItemCard.swift */; };
 		19D60336519AB492F56B8F2A /* MissingInfoChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A8E35EB4E1E95654A55651 /* MissingInfoChip.swift */; };
 		1AEF893405C4E4A42303BC97 /* MotiWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062A86233E995C5759D8096F /* MotiWidgetBundle.swift */; };
@@ -19,19 +21,25 @@
 		1F5AAA357B7EC34B20B3DFB8 /* ProjectInferrer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */; };
 		289BEAA0C0466B216B021566 /* ParserValidationSamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47105D1BF12898C061AFC16D /* ParserValidationSamples.swift */; };
 		2FB5F8FA3E344597D5870D58 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F8750733AF4FC3145AA7E /* SettingsView.swift */; };
+		346017B14E3AD425CEC0C2F2 /* ProjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E6B375AA998198D74AB612 /* ProjectContext.swift */; };
+		3885669E60E2F0A2FD7243EA /* GeminiAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */; };
 		3A1F9C01B89D0031D20EF419 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16051795458D002FFE029597 /* ReviewView.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
 		4ED62F04AA13A9C82B66359D /* ProjectColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */; };
 		51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F4E8BC65CE551E817F3140 /* Enums.swift */; };
+		5D606A2EE2834715D3E6665C /* SmartCaptureKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CFF3BE6B3BD2DEF2EDFE569 /* SmartCaptureKeyStore.swift */; };
 		624D25138D022FD7AF96F265 /* DateResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B74EF4219717B138C1A0737 /* DateResolver.swift */; };
+		6EFB8BF06E607B06DDC6453C /* ContextualCaptureAgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */; };
 		719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */; };
 		7DA30CD959B2D291DD1DF0C7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 19AEB42AF5A553D92C1FCA9D /* Assets.xcassets */; };
 		81B1168D27826F32DA845465 /* MotiDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 052732FDB298243A938D4B0F /* MotiDesignSystem.swift */; };
+		84081BE0DA1BA30FA855561B /* ProjectMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B42F30D0B591B6E148A5DD9 /* ProjectMatcher.swift */; };
 		8A63DD6CDDA74788AB200C7A /* ParsedWorkItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */; };
 		91B250EF94F1178429D5B32A /* TaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */; };
 		92DC868804783E9B9A6442F4 /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD412970ED5D739AC844251 /* SpeechTranscriptionService.swift */; };
 		A2FBBCE31B1C284935A4B5A8 /* WorkItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99639D9AB321E54C8399696F /* WorkItem.swift */; };
+		A78B52413733D902EA9CA85D /* SmartCaptureResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EA26E306E5F27632FD785BB /* SmartCaptureResultView.swift */; };
 		A87A45911AA1BC08CF6F5A56 /* TaskUnderstandingServiceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */; };
 		ACCA94165CDDEFDD94530283 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */; };
 		AD6210438742AAC67EEEF5C3 /* MotiWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */; };
@@ -52,6 +60,8 @@
 		ED8045DAA94D532CB6778A70 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */; };
 		F24E15F107FEFC1E37099429 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3A3F0F686739AFC74C1E2E /* Project.swift */; };
 		F318D271E306F2530F8E9147 /* CompletionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */; };
+		F8FB2D9AADFA1D310F570622 /* CaptureModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52926AC7E8877F5B43FDE1F4 /* CaptureModels.swift */; };
+		FB2CFABAF9091698A61A245D /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 057E24A716C36CBC1943DCBE /* Secrets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,12 +90,15 @@
 
 /* Begin PBXFileReference section */
 		052732FDB298243A938D4B0F /* MotiDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDesignSystem.swift; sourceTree = "<group>"; };
+		057E24A716C36CBC1943DCBE /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		062A86233E995C5759D8096F /* MotiWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetBundle.swift; sourceTree = "<group>"; };
 		0684F746536052582806A392 /* MotiWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MotiWidget.entitlements; sourceTree = "<group>"; };
 		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		15E6B375AA998198D74AB612 /* ProjectContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectContext.swift; sourceTree = "<group>"; };
 		16051795458D002FFE029597 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
 		16A8E35EB4E1E95654A55651 /* MissingInfoChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingInfoChip.swift; sourceTree = "<group>"; };
 		19AEB42AF5A553D92C1FCA9D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1B42F30D0B591B6E148A5DD9 /* ProjectMatcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProjectMatcher.swift; sourceTree = "<group>"; };
 		1DE26C3A5DE2A83990656065 /* MultiWeekTimelineHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiWeekTimelineHeroView.swift; sourceTree = "<group>"; };
 		29E16979A0DAAED5CF27B706 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2A3A3F0F686739AFC74C1E2E /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
@@ -97,6 +110,7 @@
 		4AEB904F6BE6B247DCC0943D /* MockSLMTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSLMTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		4EF157DBAE933EECAA3A5046 /* FoundationModelsTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		50F4E8BC65CE551E817F3140 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
+		52926AC7E8877F5B43FDE1F4 /* CaptureModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CaptureModels.swift; sourceTree = "<group>"; };
 		53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
 		5831017862C61EA3E73AAB1F /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 		5AE2A9C322628F35353C0B5D /* ProjectPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPill.swift; sourceTree = "<group>"; };
@@ -109,6 +123,9 @@
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
+		8CFF3BE6B3BD2DEF2EDFE569 /* SmartCaptureKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCaptureKeyStore.swift; sourceTree = "<group>"; };
+		8EA26E306E5F27632FD785BB /* SmartCaptureResultView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCaptureResultView.swift; sourceTree = "<group>"; };
+		9218237DF13576D966EDB303 /* GeminiContextualCaptureService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeminiContextualCaptureService.swift; sourceTree = "<group>"; };
 		99639D9AB321E54C8399696F /* WorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItem.swift; sourceTree = "<group>"; };
 		9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleCalendarSyncService.swift; sourceTree = "<group>"; };
@@ -122,8 +139,11 @@
 		BF41184673063DB0A325C69D /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetViews.swift; sourceTree = "<group>"; };
 		CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProjectSheet.swift; sourceTree = "<group>"; };
+		D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextualCaptureAgentService.swift; sourceTree = "<group>"; };
 		DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedWorkItem.swift; sourceTree = "<group>"; };
+		E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeminiAPIClient.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
+		FAB5A2EC0A3C8092FFA89CCE /* SmartCapturePromptBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCapturePromptBuilder.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
 		FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDebugDataLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -160,6 +180,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		49F79FBE8FCEB11660D3C60F /* SmartCapture */ = {
+			isa = PBXGroup;
+			children = (
+				8EA26E306E5F27632FD785BB /* SmartCaptureResultView.swift */,
+			);
+			path = SmartCapture;
+			sourceTree = "<group>";
+		};
 		66EEDC112D24D0A6AEADA0D5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -188,6 +216,7 @@
 				A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */,
 				7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */,
 				ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */,
+				1B42F30D0B591B6E148A5DD9 /* ProjectMatcher.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -203,6 +232,7 @@
 				8855BAE76BF3210A69228397 /* Utilities */,
 				9FFE634F2E19788F9D701053 /* Views */,
 				E3F5245E5C6EE0A5EF766644 /* Widget */,
+				057E24A716C36CBC1943DCBE /* Secrets.swift */,
 			);
 			path = Moti;
 			sourceTree = "<group>";
@@ -231,6 +261,7 @@
 				5831017862C61EA3E73AAB1F /* TimelineView.swift */,
 				75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */,
 				E58A15E7F9B849A120A02744 /* Components */,
+				49F79FBE8FCEB11660D3C60F /* SmartCapture */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -241,6 +272,18 @@
 				847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		ACEBE23B0ED4DB6E5C9896D0 /* SmartCapture */ = {
+			isa = PBXGroup;
+			children = (
+				8CFF3BE6B3BD2DEF2EDFE569 /* SmartCaptureKeyStore.swift */,
+				E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */,
+				9218237DF13576D966EDB303 /* GeminiContextualCaptureService.swift */,
+				FAB5A2EC0A3C8092FFA89CCE /* SmartCapturePromptBuilder.swift */,
+			);
+			name = SmartCapture;
+			path = SmartCapture;
 			sourceTree = "<group>";
 		};
 		B39EC641DC823352F20E0711 /* Services */ = {
@@ -254,6 +297,8 @@
 				7BD412970ED5D739AC844251 /* SpeechTranscriptionService.swift */,
 				407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */,
 				494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */,
+				D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */,
+				ACEBE23B0ED4DB6E5C9896D0 /* SmartCapture */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -266,8 +311,18 @@
 				DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */,
 				2A3A3F0F686739AFC74C1E2E /* Project.swift */,
 				99639D9AB321E54C8399696F /* WorkItem.swift */,
+				D038F4FB65BF232B0B0B781D /* SmartCapture */,
+				15E6B375AA998198D74AB612 /* ProjectContext.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		D038F4FB65BF232B0B0B781D /* SmartCapture */ = {
+			isa = PBXGroup;
+			children = (
+				52926AC7E8877F5B43FDE1F4 /* CaptureModels.swift */,
+			);
+			path = SmartCapture;
 			sourceTree = "<group>";
 		};
 		E3F5245E5C6EE0A5EF766644 /* Widget */ = {
@@ -316,8 +371,6 @@
 				643147D41C6F6773636C4EC9 /* PBXTargetDependency */,
 			);
 			name = Moti;
-			packageProductDependencies = (
-			);
 			productName = Moti;
 			productReference = 0F4FC74F477677311A025A0F /* Moti.app */;
 			productType = "com.apple.product-type.application";
@@ -334,8 +387,6 @@
 			dependencies = (
 			);
 			name = MotiWidget;
-			packageProductDependencies = (
-			);
 			productName = MotiWidget;
 			productReference = BBCECF2669A889C4D6145209 /* MotiWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -347,7 +398,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2620;
 			};
 			buildConfigurationList = 64DA73B4E47CD0EF5DB41985 /* Build configuration list for PBXProject "Moti" */;
 			developmentRegion = en;
@@ -422,6 +473,16 @@
 				A2FBBCE31B1C284935A4B5A8 /* WorkItem.swift in Sources */,
 				1900B36E129922D919431A46 /* WorkItemCard.swift in Sources */,
 				1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */,
+				F8FB2D9AADFA1D310F570622 /* CaptureModels.swift in Sources */,
+				6EFB8BF06E607B06DDC6453C /* ContextualCaptureAgentService.swift in Sources */,
+				A78B52413733D902EA9CA85D /* SmartCaptureResultView.swift in Sources */,
+				346017B14E3AD425CEC0C2F2 /* ProjectContext.swift in Sources */,
+				FB2CFABAF9091698A61A245D /* Secrets.swift in Sources */,
+				5D606A2EE2834715D3E6665C /* SmartCaptureKeyStore.swift in Sources */,
+				3885669E60E2F0A2FD7243EA /* GeminiAPIClient.swift in Sources */,
+				00D983F580970522BC6A5DB7 /* GeminiContextualCaptureService.swift in Sources */,
+				84081BE0DA1BA30FA855561B /* ProjectMatcher.swift in Sources */,
+				1802ECF32C8A192FA523F8B5 /* SmartCapturePromptBuilder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -450,7 +511,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MotiWidget/MotiWidget.entitlements;
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				INFOPLIST_FILE = MotiWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MotiWidget;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -502,8 +562,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -525,6 +587,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -538,7 +601,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Moti/Moti.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Moti;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Moti needs calendar access to sync scheduled work items to your calendar.";
@@ -561,7 +623,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MotiWidget/MotiWidget.entitlements;
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				INFOPLIST_FILE = MotiWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MotiWidget;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -583,7 +644,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Moti/Moti.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Moti;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Moti needs calendar access to sync scheduled work items to your calendar.";
@@ -638,8 +698,10 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -654,6 +716,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";

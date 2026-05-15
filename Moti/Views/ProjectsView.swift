@@ -546,8 +546,12 @@ private struct ProjectSummaryRow: View {
 private struct ProjectDetailView: View {
     let project: Project
 
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
     @State private var showingEdit = false
+    @State private var selectedWorkItem: WorkItem?
+    @State private var workItemPendingDeletion: WorkItem?
+    @State private var openWorkItemSwipeID: UUID?
 
     private var projectItems: [WorkItem] {
         workItems
@@ -587,14 +591,21 @@ private struct ProjectDetailView: View {
     var body: some View {
         List {
             Section {
-                HStack(spacing: 10) {
-                    Circle()
-                        .fill(Color.projectToken(project.colorToken))
-                        .frame(width: 12, height: 12)
-                    Text(project.name)
-                        .font(.headline)
-                    Spacer()
+                Button {
+                    showingEdit = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Circle()
+                            .fill(Color.projectToken(project.colorToken))
+                            .frame(width: 12, height: 12)
+                        Text(project.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
 
             Section("Summary") {
@@ -610,21 +621,36 @@ private struct ProjectDetailView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(projectItems) { item in
-                        NavigationLink {
-                            WorkItemDetailView(item: item)
-                        } label: {
+                        MotiSwipeDeleteRow(
+                            isSwipeOpen: openWorkItemSwipeID == item.id,
+                            onTap: { selectedWorkItem = item },
+                            onDelete: { workItemPendingDeletion = item },
+                            onSwipeOpen: { openWorkItemSwipeID = item.id },
+                            onSwipeClose: { if openWorkItemSwipeID == item.id { openWorkItemSwipeID = nil } }
+                        ) {
                             ProjectWorkItemRow(item: item, colorToken: project.colorToken)
+                                .padding(.vertical, 2)
                         }
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                     }
                 }
             }
         }
         .navigationTitle(project.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Edit") { showingEdit = true }
+        .navigationDestination(item: $selectedWorkItem) { item in
+            WorkItemDetailView(item: item)
+        }
+        .alert("Delete Work Item?", isPresented: deleteWorkItemAlertBinding) {
+            Button("Cancel", role: .cancel) { workItemPendingDeletion = nil }
+            Button("Delete", role: .destructive) {
+                if let item = workItemPendingDeletion {
+                    deleteWorkItem(item)
+                }
+                workItemPendingDeletion = nil
             }
+        } message: {
+            Text("This will permanently delete this work item. This cannot be undone.")
         }
         .sheet(isPresented: $showingEdit) {
             EditProjectSheet(project: project)
@@ -638,6 +664,21 @@ private struct ProjectDetailView: View {
     private var projectRangeLabel: String {
         guard let projectRange else { return "No scheduled work yet" }
         return "\(projectRange.start.formatted(date: .abbreviated, time: .omitted)) - \(projectRange.end.formatted(date: .abbreviated, time: .omitted))"
+    }
+
+    private var deleteWorkItemAlertBinding: Binding<Bool> {
+        Binding {
+            workItemPendingDeletion != nil
+        } set: { isPresented in
+            if !isPresented { workItemPendingDeletion = nil }
+        }
+    }
+
+    private func deleteWorkItem(_ item: WorkItem) {
+        try? AppleCalendarSyncService.shared.deleteEvent(for: item)
+        modelContext.delete(item)
+        openWorkItemSwipeID = nil
+        try? modelContext.save()
     }
 }
 
