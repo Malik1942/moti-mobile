@@ -19,6 +19,7 @@ struct MotiApp: App {
         WindowGroup {
             RootTabView()
                 .environment(\.taskUnderstandingService, TaskUnderstandingServiceFactory.make(mode: activeMode))
+                .environment(\.contextualCaptureAgent, ContextualCaptureAgentFactory.make())
                 .fontDesign(.rounded)
                 .tint(.indigo)
                 .onAppear {
@@ -35,7 +36,15 @@ struct MotiApp: App {
                     #endif
                 }
         }
-        .modelContainer(for: [WorkItem.self, CompletionLog.self, Project.self, WorkSession.self, SessionCheckIn.self])
+        .modelContainer(for: [
+            WorkItem.self,
+            CompletionLog.self,
+            Project.self,
+            WorkSession.self,
+            SessionCheckIn.self,
+            ProjectContext.self,
+            ContextNote.self
+        ])
     }
 }
 

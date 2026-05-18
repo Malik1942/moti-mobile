@@ -33,3 +33,8 @@ Build/
 # Playgrounds
 timeline.xctimeline
 playground.xcworkspace/
+
+# Local API keys / secrets — DEBUG-only dev fallback for Smart Capture.
+# The production path is the Settings UI + iOS Keychain.
+# Bootstrap a fresh checkout with:  cp Moti/Secrets.swift.example Moti/Secrets.swift
+Moti/Secrets.swift

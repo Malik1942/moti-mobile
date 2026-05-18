@@ -7,12 +7,13 @@ import FoundationModels
 struct FoundationModelsTaskUnderstandingService: TaskUnderstandingService {
     var fallback: any TaskUnderstandingService
 
-    func parse(_ input: String) async throws -> ParsedWorkItem {
+    // temporalResolutions is ignored — Foundation Models parses dates internally.
+    func parse(_ input: String, temporalResolutions: [TemporalResolution] = []) async throws -> ParsedWorkItem {
         let items = try await parseMany(input)
         if let first = items.first {
             return first
         }
-        return try await fallback.parse(input)
+        return try await fallback.parse(input, temporalResolutions: temporalResolutions)
     }
 
     func parseMany(_ input: String) async throws -> [ParsedWorkItem] {
@@ -106,28 +107,14 @@ private struct FoundationModelParser {
             return map(draft, rawInput: source?.isEmpty == false ? source! : fallbackSource)
         }
 
-        // Defense in depth: the model occasionally returns near-duplicate items
-        // (e.g., one capture interpreted as two slightly different intents with
-        // the same timing). Drop content-duplicates before deciding whether to
-        // fall back to the line-based splitter below.
-        let deduplicated = mapped.deduplicatedByContent()
-
-        #if DEBUG
-        if deduplicated.count != mapped.count {
-            print(
-                "Foundation Model dedup: model returned \(mapped.count) drafts, \(deduplicated.count) unique."
-            )
-        }
-        #endif
-
-        if deduplicated.count <= 1, localSegments.count > 1 {
+        if mapped.count <= 1, localSegments.count > 1 {
             #if DEBUG
             print("Foundation Model returned one item for a multi-segment capture; using line-based fallback split.")
             #endif
             return try await RuleBasedTaskUnderstandingService().parseMany(input)
         }
 
-        return deduplicated
+        return mapped
     }
 
     private func map(_ draft: FoundationModelWorkItemDraft, rawInput input: String) -> ParsedWorkItem {
@@ -172,7 +159,6 @@ private struct FoundationModelParser {
         }
 
         if temporalIntent == .event, let dueDate {
-            // Point-in-time: one-day bar on the event date, not createdAt → eventDate.
             let cal = Calendar.current
             workingStartDate = cal.startOfDay(for: dueDate)
             workingEndDate = cal.date(bySettingHour: 23, minute: 59, second: 0, of: dueDate) ?? dueDate
@@ -281,27 +267,6 @@ private struct FoundationModelParser {
         - "now to X = work" means temporalIntent working_period, workingStartDateText now, workingEndDateText X.
         - "after X = work" means temporalIntent open_ended_after, workingStartDateText after X, workingEndDateText null, dueDateText null, needsReview true, reason Missing end date.
 
-        Uniqueness:
-        - Each returned item must be unique. Never return the same item twice.
-        - Two items are duplicates if they share the same title, project, and timing. If the user expressed the same intention twice, return only one item.
-        - Before returning, mentally verify that each item has a distinct combination of (title, dates). Do not pad the list with near-duplicates.
-
-        When NOT to split (one coherent item):
-        - Multiple verbs on the same thing: "research and write the paper this weekend" → 1 item.
-        - Sequential micro-actions on one target: "review and approve the PR" → 1 item.
-        - Setup steps listed inline as detail: "set up dev environment: clone repo, install deps, run tests" → 1 item.
-        - Working period plus deadline for the same deliverable: "work on portfolio from Monday to Wednesday and submit by Friday" → 1 item, period_with_deadline.
-        - A list of small details under one heading or task name: "groceries: eggs, milk, bread" → 1 item.
-
-        When to split (independent items):
-        - Different targets or people, parallel actions: "email Alice and call Bob tomorrow" → 2 items.
-        - Semicolon-separated unrelated tasks: "buy groceries; finish report by Friday" → 2 items.
-        - Dated rows mapping each day to its own work: "Monday: design review, Tuesday: code review, Wednesday: deploy" → 3 items, each event/working_period for its date.
-        - Numbered or bulleted list of independent work: "1. Submit application by Friday. 2. Prep interview for next week." → 2 items.
-        - Multiple time expressions, each anchoring its own task: "send invoice today, review contract tomorrow" → 2 items.
-
-        When in doubt, prefer not to split. One slightly broad task is a better outcome than two duplicate or fragmented tasks.
-
         Title rules:
         Remove filler phrases: I need to, I have to, I want to, remind me to, please, can you.
         Remove time phrases from the title: before 5.15, by Friday, next Thursday 10AM, tomorrow, tonight, this weekend, between 5.20 and 6.5, from Monday to Wednesday.
@@ -381,18 +346,12 @@ private struct FoundationModelParser {
 
     private func normalizedTemporalIntent(_ value: String, rawInput: String) -> WorkItemTemporalIntent {
         switch value.lowercased().replacingOccurrences(of: "-", with: "_") {
-        case "deadline":
-            return .deadline
-        case "working_period":
-            return .workingPeriod
-        case "event":
-            return .event
-        case "period_with_deadline":
-            return .periodWithDeadline
-        case "open_ended_after":
-            return .openEndedAfter
-        case "no_time":
-            return .noTime
+        case "deadline": return .deadline
+        case "working_period": return .workingPeriod
+        case "event": return .event
+        case "period_with_deadline": return .periodWithDeadline
+        case "open_ended_after": return .openEndedAfter
+        case "no_time": return .noTime
         default:
             let text = rawInput.lowercased()
             if DateResolver.explicitlyHasNoDeadline(rawInput) { return .noTime }
@@ -474,10 +433,8 @@ private struct FoundationModelWorkItemDraft {
 private extension SystemLanguageModel.Availability {
     var userFacingDescription: String {
         switch self {
-        case .available:
-            "Available"
-        case .unavailable(let reason):
-            reason.userFacingDescription
+        case .available: "Available"
+        case .unavailable(let reason): reason.userFacingDescription
         }
     }
 }
@@ -486,14 +443,10 @@ private extension SystemLanguageModel.Availability {
 private extension SystemLanguageModel.Availability.UnavailableReason {
     var userFacingDescription: String {
         switch self {
-        case .deviceNotEligible:
-            "device not eligible"
-        case .appleIntelligenceNotEnabled:
-            "Apple Intelligence not enabled"
-        case .modelNotReady:
-            "model not ready"
-        @unknown default:
-            "unknown reason"
+        case .deviceNotEligible: "device not eligible"
+        case .appleIntelligenceNotEnabled: "Apple Intelligence not enabled"
+        case .modelNotReady: "model not ready"
+        @unknown default: "unknown reason"
         }
     }
 }

@@ -1,0 +1,20 @@
+{
+  "name": "moti-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker that proxies Smart Capture requests from the Moti iOS app to Google Gemini, holding the real API key server-side.",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "secret:gemini": "wrangler secret put GEMINI_API_KEY",
+    "secret:app": "wrangler secret put APP_SHARED_SECRET"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240909.0",
+    "typescript": "^5.5.4",
+    "wrangler": "^3.78.0"
+  }
+}
