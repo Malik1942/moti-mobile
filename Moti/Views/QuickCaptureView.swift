@@ -152,13 +152,15 @@ struct QuickCaptureView: View {
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
+            // Centered — voice mode is the primary interaction here, so the
+            // big mic lives in the middle of the sheet rather than under one thumb.
             Button { toggleVoiceCapture() } label: {
                 ZStack {
                     Circle()
                         .fill(speechService.isRecording ? .red.opacity(0.10) : .indigo.opacity(0.10))
-                        .frame(width: 80, height: 80)
+                        .frame(width: 96, height: 96)
                     Image(systemName: speechService.isRecording ? "stop.fill" : "mic")
-                        .font(.system(size: 28, weight: .medium))
+                        .font(.system(size: 34, weight: .medium))
                         .foregroundStyle(speechService.isRecording ? .red : .indigo)
                 }
             }
@@ -215,17 +217,19 @@ struct QuickCaptureView: View {
 
     @ViewBuilder
     private var voiceActionRow: some View {
-        HStack {
+        // Centered to match the big mic above. Both buttons (when present)
+        // sit side-by-side rather than pinned to opposite edges.
+        HStack(spacing: 18) {
             if !input.isEmpty {
                 Button("Clear & Re-record") { clearAndReRecord() }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            Spacer()
             Button("Type instead") { switchToTextMode() }
                 .font(.subheadline)
                 .foregroundStyle(.indigo)
         }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Text layout (tap-plus, folded or expanded)
@@ -284,9 +288,13 @@ struct QuickCaptureView: View {
         .onTapGesture { isInputFocused = false }
     }
 
-    // Persistent mic row for text mode.
+    // Persistent mic row for text mode. Mic is anchored to the right edge so
+    // it lives under the thumb in a right-hand grip. Keyboard fold is handled
+    // by tapping any blank area in the sheet (the textBody's onTapGesture).
     private var textModeActionBar: some View {
         HStack(spacing: 14) {
+            Spacer()
+
             Button {
                 isInputFocused = false
                 toggleVoiceCapture()
@@ -294,31 +302,15 @@ struct QuickCaptureView: View {
                 ZStack {
                     Circle()
                         .fill((speechService.isRecording ? Color.red : Color.indigo).opacity(0.10))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 64, height: 64)
                     Image(systemName: speechService.isRecording ? "stop.fill" : "mic")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.system(size: 24, weight: .medium))
                         .foregroundStyle(speechService.isRecording ? .red : .indigo)
                 }
             }
             .buttonStyle(.plain)
             .disabled(isSubmitting)
             .accessibilityLabel(speechService.isRecording ? "Stop recording" : "Start voice capture")
-
-            if isInputFocused {
-                Button {
-                    isInputFocused = false
-                } label: {
-                    Image(systemName: "keyboard.chevron.compact.down")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 44, height: 44)
-                        .background(Color(.secondarySystemGroupedBackground), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Dismiss keyboard")
-            }
-
-            Spacer()
         }
         .padding(.bottom, 8)
     }
