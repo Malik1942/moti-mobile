@@ -34,7 +34,7 @@ Build/
 timeline.xctimeline
 playground.xcworkspace/
 
-# Local API keys / secrets — DEBUG-only dev fallback for Smart Capture.
-# The production path is the Settings UI + iOS Keychain.
-# Bootstrap a fresh checkout with:  cp Moti/Secrets.swift.example Moti/Secrets.swift
-Moti/Secrets.swift
+# Moti/Secrets.swift is INTENTIONALLY tracked (CI needs it to compile).
+# The committed copy holds only nil placeholders. To keep your local edits
+# out of git, run once per clone:
+#   git update-index --skip-worktree Moti/Secrets.swift
