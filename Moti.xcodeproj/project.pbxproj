@@ -21,11 +21,12 @@
 		1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */; };
 		1F5AAA357B7EC34B20B3DFB8 /* ProjectInferrer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */; };
 		289BEAA0C0466B216B021566 /* ParserValidationSamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47105D1BF12898C061AFC16D /* ParserValidationSamples.swift */; };
+		2CABB6BA4E8BD5A7500E43B2 /* WorkItemNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1B20831BC55754DA0E1784 /* WorkItemNotificationScheduler.swift */; };
 		2DC006A009325186AE6FBBCB /* CheckpointFloatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F138181FDCBC9EDA618DD4C2 /* CheckpointFloatingCard.swift */; };
 		2FB5F8FA3E344597D5870D58 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F8750733AF4FC3145AA7E /* SettingsView.swift */; };
-		396FCFFC1EA80D89600F5DF4 /* WorkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDECA64D676AF0FABEFF825A /* WorkSession.swift */; };
 		346017B14E3AD425CEC0C2F2 /* ProjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E6B375AA998198D74AB612 /* ProjectContext.swift */; };
 		3885669E60E2F0A2FD7243EA /* GeminiAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */; };
+		396FCFFC1EA80D89600F5DF4 /* WorkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDECA64D676AF0FABEFF825A /* WorkSession.swift */; };
 		3A1F9C01B89D0031D20EF419 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16051795458D002FFE029597 /* ReviewView.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
@@ -128,9 +129,9 @@
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
-		8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		8CFF3BE6B3BD2DEF2EDFE569 /* SmartCaptureKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCaptureKeyStore.swift; sourceTree = "<group>"; };
 		8EA26E306E5F27632FD785BB /* SmartCaptureResultView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCaptureResultView.swift; sourceTree = "<group>"; };
+		8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		9218237DF13576D966EDB303 /* GeminiContextualCaptureService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeminiContextualCaptureService.swift; sourceTree = "<group>"; };
 		99639D9AB321E54C8399696F /* WorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItem.swift; sourceTree = "<group>"; };
 		9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
@@ -139,14 +140,15 @@
 		A28F8750733AF4FC3145AA7E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectColor.swift; sourceTree = "<group>"; };
 		A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLogger.swift; sourceTree = "<group>"; };
+		AC1B20831BC55754DA0E1784 /* WorkItemNotificationScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkItemNotificationScheduler.swift; sourceTree = "<group>"; };
 		ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleConfidenceScorer.swift; sourceTree = "<group>"; };
 		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		BF41184673063DB0A325C69D /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetViews.swift; sourceTree = "<group>"; };
 		CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProjectSheet.swift; sourceTree = "<group>"; };
-		DDECA64D676AF0FABEFF825A /* WorkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkSession.swift; sourceTree = "<group>"; };
 		D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContextualCaptureAgentService.swift; sourceTree = "<group>"; };
+		DDECA64D676AF0FABEFF825A /* WorkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkSession.swift; sourceTree = "<group>"; };
 		DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedWorkItem.swift; sourceTree = "<group>"; };
 		E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeminiAPIClient.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
@@ -319,6 +321,7 @@
 				8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */,
 				D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */,
 				ACEBE23B0ED4DB6E5C9896D0 /* SmartCapture */,
+				AC1B20831BC55754DA0E1784 /* WorkItemNotificationScheduler.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -508,6 +511,7 @@
 				00D983F580970522BC6A5DB7 /* GeminiContextualCaptureService.swift in Sources */,
 				84081BE0DA1BA30FA855561B /* ProjectMatcher.swift in Sources */,
 				1802ECF32C8A192FA523F8B5 /* SmartCapturePromptBuilder.swift in Sources */,
+				2CABB6BA4E8BD5A7500E43B2 /* WorkItemNotificationScheduler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

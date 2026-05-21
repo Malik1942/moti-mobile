@@ -17,6 +17,8 @@ struct SettingsView: View {
     @AppStorage("calendarSyncEnabled") private var calendarSyncEnabled = false
     @AppStorage("calendarSyncProvider") private var calendarSyncProviderRawValue = CalendarSyncProvider.appleCalendar.rawValue
     @AppStorage("calendarSyncMode") private var calendarSyncModeRawValue = CalendarSyncMode.event.rawValue
+    @AppStorage(WorkItemNotificationScheduler.dueRemindersKey)   private var dueRemindersEnabled = true
+    @AppStorage(WorkItemNotificationScheduler.progressChecksKey) private var progressChecksEnabled = true
 
     @State private var calendarStatus = AppleCalendarSyncStatus.off
     @State private var showingGoogleComingSoon = false
@@ -227,6 +229,7 @@ struct SettingsView: View {
                     Task {
                         _ = await TimelineCheckpointScheduler.shared.requestAuthorizationIfNeeded()
                         await refreshNotificationStatus()
+                        await WorkItemNotificationScheduler.shared.reconcile(workItems: workItems)
                     }
                 }
             case .denied:
@@ -237,9 +240,33 @@ struct SettingsView: View {
                 EmptyView()
             }
 
-            Text("Timeline Checkpoints send a gentle nudge at 25%, 50%, 75%, and 90% of a focused session so you can log how it's going. Start a session from any work item's detail screen.")
+            Toggle("Due date reminders", isOn: dueRemindersBinding)
+            Text("A heads-up the morning a task is due, and again about an hour before.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+
+            Toggle("Progress check-ins", isOn: progressChecksBinding)
+            Text("Gentle nudges at 25%, 50%, 75%, and 90% of a scheduled task's working period.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var dueRemindersBinding: Binding<Bool> {
+        Binding {
+            dueRemindersEnabled
+        } set: { newValue in
+            dueRemindersEnabled = newValue
+            Task { await WorkItemNotificationScheduler.shared.reconcile(workItems: workItems) }
+        }
+    }
+
+    private var progressChecksBinding: Binding<Bool> {
+        Binding {
+            progressChecksEnabled
+        } set: { newValue in
+            progressChecksEnabled = newValue
+            Task { await WorkItemNotificationScheduler.shared.reconcile(workItems: workItems) }
         }
     }
 

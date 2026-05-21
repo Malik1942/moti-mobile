@@ -68,7 +68,7 @@ struct RootTabView: View {
 
     // Observed properties that trigger a widget snapshot refresh when any work item or project changes
     private var widgetChangeToken: String {
-        let items = workItems.map { "\($0.id)\($0.title)\($0.statusRawValue)\($0.projectName ?? "")\($0.workingStartDate?.timeIntervalSinceReferenceDate ?? 0)\($0.workingEndDate?.timeIntervalSinceReferenceDate ?? 0)" }.joined(separator: ",")
+        let items = workItems.map { "\($0.id)\($0.title)\($0.statusRawValue)\($0.projectName ?? "")\($0.dueDate?.timeIntervalSinceReferenceDate ?? 0)\($0.workingStartDate?.timeIntervalSinceReferenceDate ?? 0)\($0.workingEndDate?.timeIntervalSinceReferenceDate ?? 0)" }.joined(separator: ",")
         let projs = projects.map { "\($0.id)\($0.name)\($0.colorToken)" }.joined(separator: ",")
         return items + "|" + projs
     }
@@ -127,13 +127,24 @@ struct RootTabView: View {
                 }
             }
         }
-        .task { writeWidgetSnapshot() }
-        .onChange(of: widgetChangeToken) { _, _ in writeWidgetSnapshot() }
+        .task {
+            writeWidgetSnapshot()
+            await WorkItemNotificationScheduler.shared.reconcile(workItems: workItems)
+        }
+        .onChange(of: widgetChangeToken) { _, _ in
+            writeWidgetSnapshot()
+            // Reschedule due-date reminders + progress check-ins whenever any
+            // work item's title, project, status, or timing changes.
+            Task { await WorkItemNotificationScheduler.shared.reconcile(workItems: workItems) }
+        }
         .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active,
-                  let active = allSessions.first(where: { $0.isActive })
-            else { return }
-            scheduler.resolvePassedCheckpoints(for: active)
+            guard newPhase == .active else { return }
+            // Re-sync notifications on foreground (covers permission granted
+            // while away, and time passing while backgrounded).
+            Task { await WorkItemNotificationScheduler.shared.reconcile(workItems: workItems) }
+            if let active = allSessions.first(where: { $0.isActive }) {
+                scheduler.resolvePassedCheckpoints(for: active)
+            }
         }
     }
 
