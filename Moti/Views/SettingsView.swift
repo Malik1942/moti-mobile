@@ -1,5 +1,9 @@
 import SwiftData
 import SwiftUI
+import UserNotifications
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -23,6 +27,9 @@ struct SettingsView: View {
     @State private var apiKeyDraft: String = ""
     @State private var apiKeyConfigured: Bool = SmartCaptureKeyStore.hasKeychainKey
     @State private var apiKeySaveFeedback: String?
+
+    // Timeline Checkpoint notification authorization state.
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     private var mode: Binding<TaskUnderstandingMode> {
         Binding {
@@ -121,6 +128,8 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                notificationsSection
+
                 Section("About") {
                     Text("Moti keeps your work data on this device and uses on-device intelligence to turn natural language captures into project timelines.")
                         .foregroundStyle(.secondary)
@@ -148,6 +157,7 @@ struct SettingsView: View {
                         : TaskUnderstandingMode.ruleBased.rawValue
                 }
                 refreshCalendarStatus()
+                Task { await refreshNotificationStatus() }
             }
             .alert("Google Calendar Coming Later", isPresented: $showingGoogleComingSoon) {
                 Button("OK", role: .cancel) {}
@@ -202,6 +212,58 @@ struct SettingsView: View {
     private var calendarStatusLabel: String {
         guard calendarSyncEnabled else { return AppleCalendarSyncStatus.off.label }
         return calendarStatus.label
+    }
+
+    // MARK: - Notifications section
+
+    @ViewBuilder
+    private var notificationsSection: some View {
+        Section("Notifications") {
+            LabeledContent("Status", value: notificationStatusLabel)
+
+            switch notificationStatus {
+            case .notDetermined:
+                Button("Enable Notifications") {
+                    Task {
+                        _ = await TimelineCheckpointScheduler.shared.requestAuthorizationIfNeeded()
+                        await refreshNotificationStatus()
+                    }
+                }
+            case .denied:
+                Button("Open iOS Settings") { openSystemSettings() }
+            case .authorized, .provisional, .ephemeral:
+                EmptyView()
+            @unknown default:
+                EmptyView()
+            }
+
+            Text("Timeline Checkpoints send a gentle nudge at 25%, 50%, 75%, and 90% of a focused session so you can log how it's going. Start a session from any work item's detail screen.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var notificationStatusLabel: String {
+        switch notificationStatus {
+        case .authorized:    return "On"
+        case .provisional:   return "Quiet delivery"
+        case .ephemeral:     return "Limited"
+        case .denied:        return "Off (enable in iOS Settings)"
+        case .notDetermined: return "Not enabled yet"
+        @unknown default:    return "Unknown"
+        }
+    }
+
+    private func refreshNotificationStatus() async {
+        let status = await TimelineCheckpointScheduler.shared.authorizationStatus()
+        await MainActor.run { notificationStatus = status }
+    }
+
+    private func openSystemSettings() {
+        #if canImport(UIKit)
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+        #endif
     }
 
     private func refreshCalendarStatus() {

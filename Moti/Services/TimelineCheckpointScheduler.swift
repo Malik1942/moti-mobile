@@ -56,6 +56,12 @@ final class TimelineCheckpointScheduler: NSObject {
         }
     }
 
+    /// Current system authorization status — used by the Settings UI to show
+    /// whether notifications are on, off, or not-yet-asked.
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
     // MARK: - Scheduling
 
     /// Schedules local notifications for every unfired checkpoint in the session.
@@ -166,7 +172,8 @@ final class TimelineCheckpointScheduler: NSObject {
 extension TimelineCheckpointScheduler: UNUserNotificationCenterDelegate {
 
     /// App is foregrounded when the notification fires.
-    /// Suppress the system banner and drive the floating card instead.
+    /// Drive the in-app floating card AND let the system banner show, so a
+    /// checkpoint looks like a normal Apple notification even while in-app.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
@@ -180,9 +187,10 @@ extension TimelineCheckpointScheduler: UNUserNotificationCenterDelegate {
             self.coordinator.pendingCheckpoint = event
         }
         #if DEBUG
-        print("[Checkpoints] Foreground intercept → \(Int(event.progress * 100))%")
+        print("[Checkpoints] Foreground checkpoint → \(Int(event.progress * 100))%")
         #endif
-        completionHandler([]) // suppress system banner
+        // Banner + sound in addition to the floating card.
+        completionHandler([.banner, .sound])
     }
 
     /// User tapped a notification delivered while the app was backgrounded or killed.

@@ -197,6 +197,15 @@ struct OnboardingView: View {
             }
             try? modelContext.save()
         }
+
+        // First-run only: ask for notification permission so Timeline Checkpoints
+        // can nudge during focused sessions. Requesting here means Moti shows up
+        // in iOS Settings → Notifications from day one, rather than only after the
+        // user happens to start their first session. Replays skip this.
+        if !isReplay {
+            Task { _ = await TimelineCheckpointScheduler.shared.requestAuthorizationIfNeeded() }
+        }
+
         onComplete()
     }
 }
