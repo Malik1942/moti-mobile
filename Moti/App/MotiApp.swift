@@ -23,6 +23,9 @@ struct MotiApp: App {
                 .fontDesign(.rounded)
                 .tint(.indigo)
                 .onAppear {
+                    // Preload the (optional) cognitive-feedback sounds so the
+                    // first event has no decode hitch. No-op if assets absent.
+                    SoundManager.shared.prewarm()
                     if !didPromoteFoundationModelDefault && modeRawValue == TaskUnderstandingMode.mockSLM.rawValue {
                         modeRawValue = FoundationModelRuntime.status.isAvailable
                             ? TaskUnderstandingMode.foundationModel.rawValue

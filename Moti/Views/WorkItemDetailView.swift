@@ -152,6 +152,10 @@ struct WorkItemDetailView: View {
                 return WorkItemStatus.visibleCases.contains(item.status) ? item.status : .active
             },
             set: { newStatus in
+                // Light "release" sound only on the transition into done.
+                if newStatus == .done, item.status != .done {
+                    SoundManager.shared.play(.completed)
+                }
                 item.status = newStatus
                 item.needsReview = newStatus == .needsReview
             }

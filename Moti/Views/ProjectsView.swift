@@ -210,6 +210,7 @@ struct ProjectsView: View {
         let reordered = localOrder.compactMap { byID[$0] }
         for (index, p) in reordered.enumerated() { p.sortIndex = index }
         try? modelContext.save()
+        SoundManager.shared.play(.reorganized)   // magnetic settle after reorder
         withAnimation(reorderSwapAnimation) {
             draggedID = nil
             dragTranslation = 0
@@ -547,98 +548,69 @@ private struct ProjectDetailView: View {
     let project: Project
 
     @Environment(\.modelContext) private var modelContext
+    @AppStorage("taskUnderstandingMode") private var modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
     @State private var showingEdit = false
     @State private var selectedWorkItem: WorkItem?
     @State private var workItemPendingDeletion: WorkItem?
     @State private var openWorkItemSwipeID: UUID?
+    @State private var showingHistory = false
+    @State private var showingReplan = false
+    @State private var replanSeedText = ""
+    @State private var replanDetent: PresentationDetent = .large
 
-    private var projectItems: [WorkItem] {
-        workItems
-            .filter { $0.projectName == project.name && $0.status != .archived }
-            .sorted { lhs, rhs in
-                let lhsDate = lhs.workingStartDate ?? lhs.dueDate ?? lhs.createdAt
-                let rhsDate = rhs.workingStartDate ?? rhs.dueDate ?? rhs.createdAt
-                return lhsDate < rhsDate
-            }
+    private var isLLMMode: Bool {
+        (TaskUnderstandingMode(rawValue: modeRawValue) ?? .foundationModel) == .llm
     }
 
-    private var activeWorkCount: Int {
-        projectItems.filter { !$0.needsReview && $0.status != .done }.count
-    }
-
-    private var scheduledWorkCount: Int {
-        projectItems.filter(\.hasUsableTiming).count
-    }
-
-    private var nextDueDate: Date? {
-        projectItems
-            .filter { $0.status != .done }
-            .compactMap(\.dueDate)
-            .sorted()
-            .first
-    }
-
-    private var projectRange: (start: Date, end: Date)? {
-        let starts = projectItems.compactMap(\.workingStartDate)
-        let ends = projectItems.compactMap { item in
-            item.workingEndDate ?? item.dueDate
-        }
-        guard let start = starts.min(), let end = ends.max() else { return nil }
-        return (start, end)
+    /// All items for this project — every status, including completed and
+    /// archived. Nothing is filtered out by date; grouping happens via buckets
+    /// so a passed deadline can never hide a task.
+    private var allProjectItems: [WorkItem] {
+        workItems.filter { $0.projectName == project.name }
     }
 
     var body: some View {
-        List {
-            Section {
-                Button {
-                    showingEdit = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Circle()
-                            .fill(Color.projectToken(project.colorToken))
-                            .frame(width: 12, height: 12)
-                        Text(project.name)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+        let buckets = ProjectTaskBuckets(items: allProjectItems)
+        let pulse = ProjectPulse(items: allProjectItems, buckets: buckets)
+        let historyCount = buckets.completed.count + buckets.skipped.count + buckets.archived.count
+
+        return List {
+            headerSection
+
+            Section("Project Pulse") {
+                ProjectPulseView(pulse: pulse)
             }
 
-            Section("Summary") {
-                LabeledContent("Active Work", value: "\(activeWorkCount)")
-                LabeledContent("Scheduled Work", value: "\(scheduledWorkCount)")
-                LabeledContent("Next Due", value: nextDueLabel)
-                LabeledContent("Project Range", value: projectRangeLabel)
+            if allProjectItems.isEmpty {
+                Section { Text("No work items yet.").foregroundStyle(.secondary) }
             }
 
-            Section("Work Items") {
-                if projectItems.isEmpty {
-                    Text("No work items yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(projectItems) { item in
-                        MotiSwipeDeleteRow(
-                            isSwipeOpen: openWorkItemSwipeID == item.id,
-                            onTap: { selectedWorkItem = item },
-                            onDelete: { workItemPendingDeletion = item },
-                            onSwipeOpen: { openWorkItemSwipeID = item.id },
-                            onSwipeClose: { if openWorkItemSwipeID == item.id { openWorkItemSwipeID = nil } }
-                        ) {
-                            ProjectWorkItemRow(item: item, colorToken: project.colorToken)
-                                .padding(.vertical, 2)
-                        }
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            if !buckets.needsAttention.isEmpty {
+                itemsSection("Needs Attention", items: buckets.needsAttention, overdueActions: true)
+            }
+            if !buckets.currentFocus.isEmpty {
+                itemsSection("Current Focus", items: buckets.currentFocus)
+            }
+            if !buckets.upcoming.isEmpty {
+                itemsSection("Upcoming", items: buckets.upcoming)
+            }
+
+            if historyCount > 0 {
+                Section {
+                    DisclosureGroup(isExpanded: $showingHistory) {
+                        ForEach(buckets.completed) { historyRow(for: $0) }
+                        ForEach(buckets.skipped)   { historyRow(for: $0) }
+                        ForEach(buckets.archived)  { historyRow(for: $0) }
+                    } label: {
+                        Text("History (\(historyCount))")
+                            .font(.subheadline.weight(.medium))
                     }
                 }
             }
         }
-        // The custom tab bar sits above the system safe area, so the List's
-        // own bottom inset isn't enough — add explicit clearance so the last
-        // work-item row scrolls fully into view.
+        // The custom tab bar sits above the system safe area, so the List's own
+        // bottom inset isn't enough — add explicit clearance.
         .contentMargins(.bottom, MotiLayout.pageBottomPadding, for: .scrollContent)
         .navigationTitle(project.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -659,15 +631,105 @@ private struct ProjectDetailView: View {
         .sheet(isPresented: $showingEdit) {
             EditProjectSheet(project: project)
         }
+        .sheet(isPresented: $showingReplan) {
+            QuickCaptureView(initialText: replanSeedText, selectedDetent: $replanDetent)
+                .presentationDetents([.medium, .large], selection: $replanDetent)
+        }
     }
 
-    private var nextDueLabel: String {
-        nextDueDate?.formatted(date: .abbreviated, time: .shortened) ?? "None"
+    // MARK: - Sections
+
+    private var headerSection: some View {
+        Section {
+            Button {
+                showingEdit = true
+            } label: {
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(Color.projectToken(project.colorToken))
+                        .frame(width: 12, height: 12)
+                    Text(project.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
-    private var projectRangeLabel: String {
-        guard let projectRange else { return "No scheduled work yet" }
-        return "\(projectRange.start.formatted(date: .abbreviated, time: .omitted)) - \(projectRange.end.formatted(date: .abbreviated, time: .omitted))"
+    @ViewBuilder
+    private func itemsSection(_ title: String, items: [WorkItem], overdueActions: Bool = false) -> some View {
+        Section(title) {
+            ForEach(items) { item in
+                MotiSwipeDeleteRow(
+                    isSwipeOpen: openWorkItemSwipeID == item.id,
+                    onTap: { selectedWorkItem = item },
+                    onDelete: { workItemPendingDeletion = item },
+                    onSwipeOpen: { openWorkItemSwipeID = item.id },
+                    onSwipeClose: { if openWorkItemSwipeID == item.id { openWorkItemSwipeID = nil } }
+                ) {
+                    ProjectWorkItemRow(item: item, colorToken: project.colorToken)
+                        .padding(.vertical, 2)
+                }
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .contextMenu { rowActions(for: item, includeReplan: overdueActions) }
+            }
+        }
+    }
+
+    /// Read-mostly history rows: tap to open, no swipe gesture, but the same
+    /// quick actions via context menu (e.g. un-skip by marking done).
+    private func historyRow(for item: WorkItem) -> some View {
+        Button { selectedWorkItem = item } label: {
+            ProjectWorkItemRow(item: item, colorToken: project.colorToken)
+        }
+        .buttonStyle(.plain)
+        .contextMenu { rowActions(for: item, includeReplan: false) }
+    }
+
+    @ViewBuilder
+    private func rowActions(for item: WorkItem, includeReplan: Bool) -> some View {
+        if item.status != .done {
+            Button { markDone(item) } label: { Label("Mark Done", systemImage: "checkmark.circle") }
+        }
+        Button { selectedWorkItem = item } label: { Label("Reschedule", systemImage: "calendar") }
+        if item.status != .skipped {
+            Button { skip(item) } label: { Label("Skip", systemImage: "minus.circle") }
+        }
+        if includeReplan && isLLMMode {
+            Button { replan(item) } label: { Label("Replan with AI", systemImage: "wand.and.stars") }
+        }
+        Divider()
+        Button(role: .destructive) { workItemPendingDeletion = item } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+
+    // MARK: - Overdue / quick actions
+
+    private func markDone(_ item: WorkItem) {
+        item.status = .done
+        item.needsReview = false
+        item.updatedAt = .now
+        try? modelContext.save()
+        SoundManager.shared.play(.completed)
+    }
+
+    private func skip(_ item: WorkItem) {
+        item.status = .skipped
+        item.needsReview = false
+        item.updatedAt = .now
+        try? modelContext.save()
+    }
+
+    /// Seeds the capture sheet with a replan prompt for this item. Only offered
+    /// in LLM mode (the Smart Capture planning flow lives there).
+    private func replan(_ item: WorkItem) {
+        let due = item.dueDate.map { " (was due \($0.formatted(date: .abbreviated, time: .omitted)))" } ?? ""
+        replanSeedText = "Replan \"\(item.title)\" for \(project.name)\(due). It's overdue — give me a realistic new plan."
+        showingReplan = true
     }
 
     private var deleteWorkItemAlertBinding: Binding<Bool> {
@@ -683,6 +745,67 @@ private struct ProjectDetailView: View {
         modelContext.delete(item)
         openWorkItemSwipeID = nil
         try? modelContext.save()
+    }
+}
+
+// MARK: - Project Pulse view
+
+private struct ProjectPulseView: View {
+    let pulse: ProjectPulse
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Circle().fill(statusColor).frame(width: 8, height: 8)
+                Text(pulse.statusLabel)
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text("\(pulse.completed)/\(pulse.total) done")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                pulseChip(value: pulse.active, label: "Active", tint: .indigo)
+                pulseChip(value: pulse.overdue, label: "Overdue", tint: pulse.overdue > 0 ? .orange : .secondary)
+                pulseChip(value: pulse.upcoming, label: "Upcoming", tint: .secondary)
+            }
+
+            if let next = pulse.nextDeadline {
+                Label("Next due \(next.formatted(date: .abbreviated, time: .omitted))", systemImage: "flag.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let last = pulse.lastActivity {
+                Text("Last activity \(last.formatted(.relative(presentation: .named)))")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var statusColor: Color {
+        switch pulse.statusLabel {
+        case "Needs attention": .orange
+        case "Complete":        .green
+        case "In progress":     .indigo
+        default:                .secondary
+        }
+    }
+
+    private func pulseChip(value: Int, label: String, tint: Color) -> some View {
+        VStack(spacing: 2) {
+            Text("\(value)")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(tint)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -703,9 +826,10 @@ private struct ProjectWorkItemRow: View {
                         .font(.subheadline.weight(.medium))
                         .lineLimit(2)
                     Spacer()
-                    Text(item.status.label)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
+                    let state = item.timeState()
+                    Text(state.label)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(stateColor(state))
                 }
 
                 Text(timingSummary)
@@ -729,5 +853,15 @@ private struct ProjectWorkItemRow: View {
             return "\(period) · Due \(dueDate.formatted(date: .abbreviated, time: .shortened))"
         }
         return period
+    }
+
+    private func stateColor(_ state: WorkItemTimeState) -> Color {
+        switch state {
+        case .overdue:     .orange
+        case .completed:   .green
+        case .active:      .indigo
+        case .needsReview: .orange
+        case .upcoming, .skipped, .archived: .secondary
+        }
     }
 }

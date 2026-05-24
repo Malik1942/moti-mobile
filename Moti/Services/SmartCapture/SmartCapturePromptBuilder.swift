@@ -32,6 +32,9 @@ enum SmartCapturePromptBuilder {
         if let block = projectContextSection(context) { sections.append(block) }
         if let block = recentTasksSection(context)    { sections.append(block) }
         if let block = openTasksSection(context)      { sections.append(block) }
+        if let block = overdueSection(context)        { sections.append(block) }
+        if let block = completedSection(context)      { sections.append(block) }
+        if let block = skippedSection(context)        { sections.append(block) }
         if let block = clarificationSection(context)  { sections.append(block) }
         if let block = refinementSection(context)     { sections.append(block) }
         if let correction { sections.append(correctionSection(correction)) }
@@ -197,6 +200,26 @@ enum SmartCapturePromptBuilder {
             .map { renderTask($0) }
             .joined(separator: "\n")
         return "Open tasks for the relevant project (avoid duplicating these):\n\(rendered)"
+    }
+
+    // Project history — what already happened, so plans respect it.
+
+    private static func overdueSection(_ context: SmartCaptureContext) -> String? {
+        guard !context.overdueTasks.isEmpty else { return nil }
+        let rendered = context.overdueTasks.prefix(8).map { renderTask($0) }.joined(separator: "\n")
+        return "Overdue work (already on the timeline — reschedule rather than recreate):\n\(rendered)"
+    }
+
+    private static func completedSection(_ context: SmartCaptureContext) -> String? {
+        guard !context.recentlyCompletedTasks.isEmpty else { return nil }
+        let rendered = context.recentlyCompletedTasks.prefix(8).map { renderTask($0) }.joined(separator: "\n")
+        return "Recently completed (done — do not re-plan these):\n\(rendered)"
+    }
+
+    private static func skippedSection(_ context: SmartCaptureContext) -> String? {
+        guard !context.skippedTasks.isEmpty else { return nil }
+        let rendered = context.skippedTasks.prefix(5).map { renderTask($0) }.joined(separator: "\n")
+        return "Intentionally skipped (the user chose not to do these — don't reintroduce them):\n\(rendered)"
     }
 
     private static func clarificationSection(_ context: SmartCaptureContext) -> String? {

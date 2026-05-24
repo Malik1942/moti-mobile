@@ -31,10 +31,14 @@ enum WorkItemStatus: String, Codable, CaseIterable, Identifiable {
     case deferred
     case needsReview
     case archived
+    /// User intentionally decided not to do this. Preserved as history,
+    /// never silently deleted.
+    case skipped
 
     var id: String { rawValue }
 
-    static let visibleCases: [WorkItemStatus] = [.active, .done, .needsReview]
+    /// Statuses a user can pick in the work-item editor.
+    static let visibleCases: [WorkItemStatus] = [.active, .done, .skipped, .needsReview]
 
     var label: String {
         switch self {
@@ -44,6 +48,7 @@ enum WorkItemStatus: String, Codable, CaseIterable, Identifiable {
         case .deferred: "Deferred"
         case .needsReview: "Needs Review"
         case .archived: "Archived"
+        case .skipped: "Skipped"
         }
     }
 }

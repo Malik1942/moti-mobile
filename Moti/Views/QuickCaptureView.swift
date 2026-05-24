@@ -31,10 +31,11 @@ struct QuickCaptureView: View {
     @State private var clarificationState: ClarificationState?
     @State private var smartCaptureError: String?
 
-    init(startWithVoice: Bool = false, selectedDetent: Binding<PresentationDetent>) {
+    init(startWithVoice: Bool = false, initialText: String = "", selectedDetent: Binding<PresentationDetent>) {
         self.startWithVoice = startWithVoice
         self._selectedDetent = selectedDetent
         self._isInVoiceMode = State(initialValue: startWithVoice)
+        self._input = State(initialValue: initialText)
     }
 
     // MARK: - Intelligence mode gate
@@ -462,9 +463,11 @@ struct QuickCaptureView: View {
             defer { isSubmitting = false }
             do {
                 try await createWorkItems(from: text)
+                SoundManager.shared.play(.capture)   // thought safely captured
                 input = ""
                 dismiss()
             } catch {
+                SoundManager.shared.play(.error)     // gentle failure cue
                 errorMessage = "I could not parse that yet."
             }
         }
@@ -492,10 +495,18 @@ struct QuickCaptureView: View {
                 // No SwiftData write happens here — that waits for user confirmation.
                 let decision = try await captureAgent.analyze(context)
                 smartDecision = decision
+                // Airy "understood" when intent was interpreted; suspended
+                // "ambiguous" tone when the agent needs to ask a question.
+                if decision.needsClarification || decision.clarificationQuestion != nil {
+                    SoundManager.shared.play(.ambiguous)
+                } else {
+                    SoundManager.shared.play(.understood)
+                }
             } catch {
                 // Safe fallback: surface a small error and let the user retry or
                 // switch modes. Never auto-save partial LLM output, never crash.
                 smartDecision = nil
+                SoundManager.shared.play(.error)
                 smartCaptureError = "Smart Capture could not process that. Try again, or switch Intelligence mode in Settings."
             }
         }
@@ -574,10 +585,12 @@ struct QuickCaptureView: View {
             }
             do {
                 try await createWorkItems(from: rawText, preferredProjectName: decision.inferredProjectName)
+                SoundManager.shared.play(.capture)   // confirmed task captured
                 resetSmartCapture()
                 input = ""
                 dismiss()
             } catch {
+                SoundManager.shared.play(.error)
                 smartCaptureError = "Could not save that task. Try again."
             }
         }
@@ -640,10 +653,12 @@ struct QuickCaptureView: View {
                         )
                     }
                 }
+                SoundManager.shared.play(.reorganized)   // plan settled onto the timeline
                 resetSmartCapture()
                 input = ""
                 dismiss()
             } catch {
+                SoundManager.shared.play(.error)
                 smartCaptureError = "Could not create the plan. Try again."
             }
         }
@@ -786,6 +801,36 @@ struct QuickCaptureView: View {
                 )
             }
 
+        // Project history — derived from the shared time-state model so the
+        // LLM can plan around what already happened: overdue work it shouldn't
+        // re-propose as new, what's recently done, and what the user skipped.
+        func summarize(_ item: WorkItem) -> TaskSummary {
+            TaskSummary(
+                id: item.id,
+                title: item.title,
+                projectName: item.projectName,
+                status: item.status.rawValue,
+                dueDate: item.dueDate,
+                timeExpression: nil,
+                createdAt: item.createdAt
+            )
+        }
+        let overdueSummaries: [TaskSummary] = workItems
+            .filter { $0.timeState() == .overdue }
+            .sorted { ($0.dueDate ?? .distantPast) < ($1.dueDate ?? .distantPast) }
+            .prefix(8)
+            .map(summarize)
+        let completedSummaries: [TaskSummary] = workItems
+            .filter { $0.status == .done }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .prefix(8)
+            .map(summarize)
+        let skippedSummaries: [TaskSummary] = workItems
+            .filter { $0.status == .skipped }
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .prefix(5)
+            .map(summarize)
+
         return SmartCaptureContext(
             rawInput: rawInput,
             currentDate: .now,
@@ -798,6 +843,9 @@ struct QuickCaptureView: View {
             projectContextSummaries: contextSummaries,
             recentTasks: recentTaskSummaries,
             openTasksForRelevantProject: openTaskSummaries,
+            overdueTasks: overdueSummaries,
+            recentlyCompletedTasks: completedSummaries,
+            skippedTasks: skippedSummaries,
             clarificationState: clarification,
             planRefinement: planRefinement
         )

@@ -20,9 +20,11 @@
 		1AEF893405C4E4A42303BC97 /* MotiWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062A86233E995C5759D8096F /* MotiWidgetBundle.swift */; };
 		1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */; };
 		1F5AAA357B7EC34B20B3DFB8 /* ProjectInferrer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */; };
+		22433049FDF621DA7E7B4A49 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 029636C69262B7D4A5B7F2A0 /* SoundManager.swift */; };
 		289BEAA0C0466B216B021566 /* ParserValidationSamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47105D1BF12898C061AFC16D /* ParserValidationSamples.swift */; };
 		2CABB6BA4E8BD5A7500E43B2 /* WorkItemNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1B20831BC55754DA0E1784 /* WorkItemNotificationScheduler.swift */; };
 		2DC006A009325186AE6FBBCB /* CheckpointFloatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F138181FDCBC9EDA618DD4C2 /* CheckpointFloatingCard.swift */; };
+		2F2D5C234F699C0346CBE21C /* WorkItemTimeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BA76080978432485F1CE792 /* WorkItemTimeState.swift */; };
 		2FB5F8FA3E344597D5870D58 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F8750733AF4FC3145AA7E /* SettingsView.swift */; };
 		346017B14E3AD425CEC0C2F2 /* ProjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E6B375AA998198D74AB612 /* ProjectContext.swift */; };
 		3885669E60E2F0A2FD7243EA /* GeminiAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */; };
@@ -94,6 +96,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		029636C69262B7D4A5B7F2A0 /* SoundManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 		052732FDB298243A938D4B0F /* MotiDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDesignSystem.swift; sourceTree = "<group>"; };
 		057E24A716C36CBC1943DCBE /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		062A86233E995C5759D8096F /* MotiWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetBundle.swift; sourceTree = "<group>"; };
@@ -129,6 +132,7 @@
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
+		8BA76080978432485F1CE792 /* WorkItemTimeState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkItemTimeState.swift; sourceTree = "<group>"; };
 		8CFF3BE6B3BD2DEF2EDFE569 /* SmartCaptureKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCaptureKeyStore.swift; sourceTree = "<group>"; };
 		8EA26E306E5F27632FD785BB /* SmartCaptureResultView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCaptureResultView.swift; sourceTree = "<group>"; };
 		8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
@@ -320,6 +324,7 @@
 				D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */,
 				ACEBE23B0ED4DB6E5C9896D0 /* SmartCapture */,
 				AC1B20831BC55754DA0E1784 /* WorkItemNotificationScheduler.swift */,
+				029636C69262B7D4A5B7F2A0 /* SoundManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -335,6 +340,7 @@
 				DDECA64D676AF0FABEFF825A /* WorkSession.swift */,
 				D038F4FB65BF232B0B0B781D /* SmartCapture */,
 				15E6B375AA998198D74AB612 /* ProjectContext.swift */,
+				8BA76080978432485F1CE792 /* WorkItemTimeState.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -510,6 +516,8 @@
 				84081BE0DA1BA30FA855561B /* ProjectMatcher.swift in Sources */,
 				1802ECF32C8A192FA523F8B5 /* SmartCapturePromptBuilder.swift in Sources */,
 				2CABB6BA4E8BD5A7500E43B2 /* WorkItemNotificationScheduler.swift in Sources */,
+				22433049FDF621DA7E7B4A49 /* SoundManager.swift in Sources */,
+				2F2D5C234F699C0346CBE21C /* WorkItemTimeState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

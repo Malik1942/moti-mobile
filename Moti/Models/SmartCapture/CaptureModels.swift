@@ -900,6 +900,12 @@ struct SmartCaptureContext: Codable, Equatable {
     let recentTasks: [TaskSummary]
     let openTasksForRelevantProject: [TaskSummary]
 
+    // Project history — lets the LLM plan around what already happened: don't
+    // re-suggest overdue work as new, account for what's done, respect skips.
+    let overdueTasks: [TaskSummary]
+    let recentlyCompletedTasks: [TaskSummary]
+    let skippedTasks: [TaskSummary]
+
     // Flow state
     let clarificationState: ClarificationState?
     let planRefinement: PlanRefinementRequest?
@@ -916,6 +922,9 @@ struct SmartCaptureContext: Codable, Equatable {
         projectContextSummaries: [ProjectContextSummary] = [],
         recentTasks: [TaskSummary] = [],
         openTasksForRelevantProject: [TaskSummary] = [],
+        overdueTasks: [TaskSummary] = [],
+        recentlyCompletedTasks: [TaskSummary] = [],
+        skippedTasks: [TaskSummary] = [],
         clarificationState: ClarificationState? = nil,
         planRefinement: PlanRefinementRequest? = nil
     ) {
@@ -930,6 +939,9 @@ struct SmartCaptureContext: Codable, Equatable {
         self.projectContextSummaries = projectContextSummaries
         self.recentTasks = recentTasks
         self.openTasksForRelevantProject = openTasksForRelevantProject
+        self.overdueTasks = overdueTasks
+        self.recentlyCompletedTasks = recentlyCompletedTasks
+        self.skippedTasks = skippedTasks
         self.clarificationState = clarificationState
         self.planRefinement = planRefinement
     }
