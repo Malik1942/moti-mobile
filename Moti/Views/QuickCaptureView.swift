@@ -481,6 +481,22 @@ struct QuickCaptureView: View {
         clarification: ClarificationState? = nil,
         planRefinement: PlanRefinementRequest? = nil
     ) {
+        // Stage 1: cheap, deterministic decision — does this input actually need
+        // the deep planning agent? Clear atomic tasks skip it entirely.
+        let planning = PlanningClassifier.classify(rawInput: text, isRefinement: planRefinement != nil)
+        #if DEBUG
+        print("[Planning] \(planning.inputType.rawValue) useLLM=\(planning.shouldUseLLM) plan=\(planning.shouldGeneratePlan) conf=\(planning.confidence) — \(planning.reason)")
+        #endif
+
+        guard planning.shouldUseLLM else {
+            // Light path: a clear/atomic task. Create it directly through the
+            // existing parser — single task, due date + project extracted, no
+            // plan, no invented subtasks.
+            runStandardCapture(text: text)
+            return
+        }
+
+        // Stage 2: deep contextual planning (plan / clarify / extract context).
         isSubmitting = true
         smartCaptureError = nil
         Task { @MainActor in

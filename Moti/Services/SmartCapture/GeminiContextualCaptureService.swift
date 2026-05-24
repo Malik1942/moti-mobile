@@ -201,6 +201,14 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
     - Preserve the user's original time expression in your output. Do not resolve to exact dates — a downstream Swift resolver does that.
     - Make scheduling realistic relative to the provided date. Do not invent a date that is in the past or wildly out of horizon.
 
+    Anti-overplanning (read first):
+    - Do NOT break down a clear, atomic task. If the input is one action with one deliverable and at most one deadline, return a single proposedTask — never a proposedWorkspace.
+    - Do not invent preparation, research, or review steps the user did not ask for.
+    - Preserve the user's explicit intent and wording.
+    - Prefer the smallest useful structure; only add subtasks when they genuinely reduce ambiguity or scheduling risk.
+    - When the input is already actionable as a single task, return that task, not a plan. When in doubt between a task and a plan, choose the task.
+    - Examples that must stay a SINGLE task (no workspace): "Email Andre my portfolio link tonight", "Submit the final PDF by Friday", "Buy coffee beans tomorrow", "Upload screenshots to App Store Connect".
+
     Multi-target planning (CRITICAL — your most important responsibility):
     - A user input may contain ONE OR MORE deliverables, each with its own deadline.
     - Your first job is to identify EVERY planning target. Do not focus only on the first deadline. Do not discard later targets.

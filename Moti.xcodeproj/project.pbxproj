@@ -12,6 +12,7 @@
 		0529DCF1F697624597807713 /* MockSLMTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AEB904F6BE6B247DCC0943D /* MockSLMTaskUnderstandingService.swift */; };
 		056DD7C1EB2BF180DF9EE5F9 /* AddProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */; };
 		0D863B1DBC83E470A8131CC6 /* TimelineCheckpointScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4C2915AE1EC7C05B20377D /* TimelineCheckpointScheduler.swift */; };
+		0F98A6EC7E1E01CDE091BE94 /* PlanningClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9408F2E27B56ED888533C26 /* PlanningClassifier.swift */; };
 		144795598A70B595CDA7FD93 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF41184673063DB0A325C69D /* QuickCaptureView.swift */; };
 		15AC7CE05BB4792AE1583FCB /* ScheduleConfidenceScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */; };
 		1802ECF32C8A192FA523F8B5 /* SmartCapturePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB5A2EC0A3C8092FFA89CCE /* SmartCapturePromptBuilder.swift */; };
@@ -34,6 +35,7 @@
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
 		4ED62F04AA13A9C82B66359D /* ProjectColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */; };
 		51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F4E8BC65CE551E817F3140 /* Enums.swift */; };
+		56B56EF02AD549989E249FDC /* PlanningDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF9827DB95CFC6147417DC2 /* PlanningDecision.swift */; };
 		5D606A2EE2834715D3E6665C /* SmartCaptureKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CFF3BE6B3BD2DEF2EDFE569 /* SmartCaptureKeyStore.swift */; };
 		624D25138D022FD7AF96F265 /* DateResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B74EF4219717B138C1A0737 /* DateResolver.swift */; };
 		6EFB8BF06E607B06DDC6453C /* ContextualCaptureAgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D88FC3D30150E1065283F037 /* ContextualCaptureAgentService.swift */; };
@@ -144,6 +146,7 @@
 		A28F8750733AF4FC3145AA7E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectColor.swift; sourceTree = "<group>"; };
 		A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLogger.swift; sourceTree = "<group>"; };
+		ABF9827DB95CFC6147417DC2 /* PlanningDecision.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanningDecision.swift; sourceTree = "<group>"; };
 		AC1B20831BC55754DA0E1784 /* WorkItemNotificationScheduler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkItemNotificationScheduler.swift; sourceTree = "<group>"; };
 		ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleConfidenceScorer.swift; sourceTree = "<group>"; };
 		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -157,6 +160,7 @@
 		E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GeminiAPIClient.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		F138181FDCBC9EDA618DD4C2 /* CheckpointFloatingCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckpointFloatingCard.swift; sourceTree = "<group>"; };
+		F9408F2E27B56ED888533C26 /* PlanningClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanningClassifier.swift; sourceTree = "<group>"; };
 		FAB5A2EC0A3C8092FFA89CCE /* SmartCapturePromptBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartCapturePromptBuilder.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
 		FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDebugDataLogger.swift; sourceTree = "<group>"; };
@@ -305,6 +309,7 @@
 				E8F27B251BED51316898CB7C /* GeminiAPIClient.swift */,
 				9218237DF13576D966EDB303 /* GeminiContextualCaptureService.swift */,
 				FAB5A2EC0A3C8092FFA89CCE /* SmartCapturePromptBuilder.swift */,
+				F9408F2E27B56ED888533C26 /* PlanningClassifier.swift */,
 			);
 			path = SmartCapture;
 			sourceTree = "<group>";
@@ -349,6 +354,7 @@
 			isa = PBXGroup;
 			children = (
 				52926AC7E8877F5B43FDE1F4 /* CaptureModels.swift */,
+				ABF9827DB95CFC6147417DC2 /* PlanningDecision.swift */,
 			);
 			path = SmartCapture;
 			sourceTree = "<group>";
@@ -518,6 +524,8 @@
 				2CABB6BA4E8BD5A7500E43B2 /* WorkItemNotificationScheduler.swift in Sources */,
 				22433049FDF621DA7E7B4A49 /* SoundManager.swift in Sources */,
 				2F2D5C234F699C0346CBE21C /* WorkItemTimeState.swift in Sources */,
+				56B56EF02AD549989E249FDC /* PlanningDecision.swift in Sources */,
+				0F98A6EC7E1E01CDE091BE94 /* PlanningClassifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
