@@ -83,19 +83,14 @@ enum DeterministicPreClassifier {
             else { return nil }
             let unit = String(text[unitRange]).lowercased()
             let seconds: TimeInterval
-            let label: String
             if unit.hasPrefix("minute") {
                 seconds = TimeInterval(amount) * 60
-                label = amount == 1 ? "in 1 minute" : "in \(amount) minutes"
             } else if unit.hasPrefix("hour") {
                 seconds = TimeInterval(amount) * 3600
-                label = amount == 1 ? "in 1 hour" : "in \(amount) hours"
             } else if unit.hasPrefix("week") {
                 seconds = TimeInterval(amount) * 7 * 86_400
-                label = amount == 1 ? "in 1 week" : "in \(amount) weeks"
             } else {
                 seconds = TimeInterval(amount) * 86_400
-                label = amount == 1 ? "in 1 day" : "in \(amount) days"
             }
             let r = TemporalResolution(originalText: substring(match, in: text),
                                        interpretation: .relativeDuration, confidence: 0.95,
