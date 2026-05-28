@@ -152,11 +152,21 @@ final class WorkItemNotificationScheduler {
         for pct in Self.progressValues {
             let fire = start.addingTimeInterval(duration * pct)
             guard fire > now else { continue }
+            let id = "\(progressPrefix)\(item.id.uuidString)-\(Int(pct * 100))"
+            // Embed enough payload that the tap handler can deep-link into the
+            // right task and reach for the right dedup row in SwiftData.
+            let userInfo: [String: Any] = [
+                Self.userInfoKindKey:         Self.userInfoKindProgress,
+                Self.userInfoWorkItemIDKey:   item.id.uuidString,
+                Self.userInfoProgressKey:     pct,
+                Self.userInfoCheckpointIDKey: id
+            ]
             out.append((fire, makeRequest(
-                id: "\(progressPrefix)\(item.id.uuidString)-\(Int(pct * 100))",
+                id: id,
                 title: "Progress check",
                 body: "You're \(Int(pct * 100))% through the planned time for “\(title).” How's it going?",
-                date: fire
+                date: fire,
+                userInfo: userInfo
             )))
         }
         return out
@@ -164,14 +174,29 @@ final class WorkItemNotificationScheduler {
 
     // MARK: - Helpers
 
-    private func makeRequest(id: String, title: String, body: String, date: Date) -> UNNotificationRequest {
+    private func makeRequest(
+        id: String,
+        title: String,
+        body: String,
+        date: Date,
+        userInfo: [String: Any] = [:]
+    ) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body  = body
         content.sound = .default
+        if !userInfo.isEmpty { content.userInfo = userInfo }
 
         let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
         let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
         return UNNotificationRequest(identifier: id, content: content, trigger: trigger)
     }
+
+    // MARK: - userInfo keys (shared with the tap-routing layer)
+
+    static let userInfoKindKey         = "kind"
+    static let userInfoKindProgress    = "progress-check"
+    static let userInfoWorkItemIDKey   = "workItemID"
+    static let userInfoProgressKey     = "progress"
+    static let userInfoCheckpointIDKey = "checkpointID"
 }

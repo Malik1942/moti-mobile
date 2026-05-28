@@ -11,14 +11,21 @@ struct WorkItemDetailView: View {
     @Query(sort: \Project.createdAt) private var projects: [Project]
 
     @Query private var allSessions: [WorkSession]
+    @Query(sort: \SessionCheckIn.timestamp, order: .reverse) private var allCheckIns: [SessionCheckIn]
 
     private var activeSession: WorkSession? {
         allSessions.first { $0.workItemID == item.id && $0.isActive }
     }
 
+    /// Past pace check-ins for this work item, newest first.
+    private var taskCheckIns: [SessionCheckIn] {
+        allCheckIns.filter { $0.workItemID == item.id }
+    }
+
     @State private var showingDeleteConfirmation = false
     @State private var showingTimingEditor = false
     @State private var showingStartSession = false
+    @State private var showingManualCheckIn = false
     @State private var draftWorkingStartDate = Date.now
     @State private var draftWorkingEndDate = Date.now
     @State private var draftDueDate = Date.now
@@ -96,6 +103,24 @@ struct WorkItemDetailView: View {
                 }
             }
 
+            Section("Pace") {
+                Button {
+                    showingManualCheckIn = true
+                } label: {
+                    Label("Check in on pace", systemImage: "waveform.path.ecg")
+                }
+
+                if taskCheckIns.isEmpty {
+                    Text("No check-ins yet.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(taskCheckIns) { entry in
+                        CheckInHistoryRow(entry: entry)
+                    }
+                }
+            }
+
             Section("Original Capture") {
                 Text(item.rawInput)
                     .foregroundStyle(.secondary)
@@ -122,6 +147,23 @@ struct WorkItemDetailView: View {
         }
         .sheet(isPresented: $showingStartSession) {
             StartSessionSheet(workItem: item) {}
+        }
+        .sheet(isPresented: $showingManualCheckIn) {
+            CheckInSheet(
+                taskTitle: item.title,
+                progress: currentProgressFraction,
+                onSave: { state, note in
+                    persistManualCheckIn(state: state, note: note)
+                    showingManualCheckIn = false
+                },
+                onReplan: {
+                    showingManualCheckIn = false
+                    // User wants to revise the plan — surface the timing editor.
+                    prepareTimingEditor()
+                },
+                onLater: { showingManualCheckIn = false },
+                onCancel: { showingManualCheckIn = false }
+            )
         }
         .sheet(isPresented: $showingTimingEditor) {
             TimingEditorSheet(
@@ -333,6 +375,66 @@ struct WorkItemDetailView: View {
 
     private func endOfDay(for date: Date) -> Date {
         Calendar.current.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? date
+    }
+
+    // MARK: - Manual check-in helpers
+
+    /// Best-effort progress fraction for the chip in the manual check-in sheet.
+    /// Uses elapsed-time within the planned working window when available.
+    private var currentProgressFraction: Double? {
+        guard let start = item.workingStartDate, let end = item.workingEndDate, end > start else {
+            return nil
+        }
+        let total = end.timeIntervalSince(start)
+        let elapsed = Date.now.timeIntervalSince(start)
+        return max(0, min(1, elapsed / total))
+    }
+
+    private func persistManualCheckIn(state: SessionState, note: String) {
+        // Manual pulses use a fresh, unique checkpointID so they never collide
+        // with the dedup applied to notification-driven check-ins.
+        let id = "manual-\(item.id.uuidString)-\(Int(Date.now.timeIntervalSince1970))"
+        let entry = SessionCheckIn(
+            workItemID: item.id,
+            progress: currentProgressFraction ?? 0,
+            state: state,
+            note: note,
+            checkpointID: id
+        )
+        modelContext.insert(entry)
+        try? modelContext.save()
+    }
+}
+
+// MARK: - Check-in History Row
+
+private struct CheckInHistoryRow: View {
+    let entry: SessionCheckIn
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(entry.state.emoji)
+                Text(entry.state.label)
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                Text(entry.timestamp.formatted(.relative(presentation: .named)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if entry.progress > 0 {
+                Text("\(Int(entry.progress * 100))% through plan")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            if let note = entry.note, !note.isEmpty {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
 

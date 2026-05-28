@@ -168,6 +168,11 @@ final class TimelineCheckpointScheduler: NSObject {
 }
 
 // MARK: - UNUserNotificationCenterDelegate
+//
+// This scheduler owns the single `UNUserNotificationCenter.delegate` for the
+// app. It handles its own session-checkpoint notifications (floating card)
+// and also routes `moti-progress-*` taps from `WorkItemNotificationScheduler`
+// into `TaskCheckInCoordinator` so the Timeline Check-in sheet can present.
 
 extension TimelineCheckpointScheduler: UNUserNotificationCenterDelegate {
 
@@ -179,7 +184,19 @@ extension TimelineCheckpointScheduler: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        guard let event = extractEvent(from: notification.request.content.userInfo) else {
+        let userInfo = notification.request.content.userInfo
+
+        // Task progress check-in → present the Check-in sheet, plus banner.
+        if routeProgressCheckIfApplicable(userInfo: userInfo) {
+            #if DEBUG
+            print("[CheckIn] Foreground progress check → presenting sheet")
+            #endif
+            completionHandler([.banner, .sound])
+            return
+        }
+
+        // Session focus-block checkpoint → existing floating-card path.
+        guard let event = extractEvent(from: userInfo) else {
             completionHandler([.banner, .sound])
             return
         }
@@ -199,7 +216,17 @@ extension TimelineCheckpointScheduler: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        if let event = extractEvent(from: response.notification.request.content.userInfo) {
+        let userInfo = response.notification.request.content.userInfo
+
+        if routeProgressCheckIfApplicable(userInfo: userInfo) {
+            #if DEBUG
+            print("[CheckIn] Progress notification tapped → presenting sheet")
+            #endif
+            completionHandler()
+            return
+        }
+
+        if let event = extractEvent(from: userInfo) {
             DispatchQueue.main.async {
                 self.coordinator.pendingCheckpoint = event
             }
@@ -208,5 +235,26 @@ extension TimelineCheckpointScheduler: UNUserNotificationCenterDelegate {
             #endif
         }
         completionHandler()
+    }
+
+    /// Detects a `WorkItemNotificationScheduler` progress-check payload and
+    /// forwards it to `TaskCheckInCoordinator`. Returns `true` if handled.
+    @discardableResult
+    private func routeProgressCheckIfApplicable(userInfo: [AnyHashable: Any]) -> Bool {
+        guard
+            let kind         = userInfo[WorkItemNotificationScheduler.userInfoKindKey] as? String,
+            kind == WorkItemNotificationScheduler.userInfoKindProgress,
+            let idStr        = userInfo[WorkItemNotificationScheduler.userInfoWorkItemIDKey] as? String,
+            let workItemID   = UUID(uuidString: idStr),
+            let progress     = userInfo[WorkItemNotificationScheduler.userInfoProgressKey] as? Double,
+            let checkpointID = userInfo[WorkItemNotificationScheduler.userInfoCheckpointIDKey] as? String
+        else { return false }
+
+        TaskCheckInCoordinator.shared.request(
+            workItemID: workItemID,
+            progress: progress,
+            checkpointID: checkpointID
+        )
+        return true
     }
 }

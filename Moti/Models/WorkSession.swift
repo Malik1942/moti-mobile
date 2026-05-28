@@ -26,24 +26,68 @@ enum SessionState: String, Codable, CaseIterable {
 }
 
 // MARK: - Session Check-In
+//
+// A single pace pulse — "how is this going?" — recorded either from a
+// `WorkSession` focus block OR from a `WorkItem` progress checkpoint
+// notification / manual task pulse. One model serves both roles to avoid a
+// duplicate type:
+//
+//   • `session` set, `workItemID == nil`     → focus-block checkpoint
+//   • `session == nil`, `workItemID` set      → task progress check-in
+//
+// `checkpointID` is the deduplication key (matches the originating
+// notification's identifier, e.g. `moti-progress-<uuid>-25`) so repeated
+// notification taps don't create duplicate rows.
 
 @Model final class SessionCheckIn {
     @Attribute(.unique) var id: UUID
     var timestamp: Date
     var progress: Double
     var stateRawValue: String
+
+    /// Set when this pulse came from a `WorkSession` focus block.
     var session: WorkSession?
+
+    /// Set when this pulse came from a `WorkItem` checkpoint or a manual
+    /// check-in on the task detail screen.
+    var workItemID: UUID?
+
+    /// Optional free-text context ("What changed?").
+    var note: String?
+
+    /// Stable identifier of the originating event — used to dedup
+    /// repeated taps of the same notification. `nil` for manual pulses.
+    var checkpointID: String?
 
     var state: SessionState {
         get { SessionState(rawValue: stateRawValue) ?? .normal }
         set { stateRawValue = newValue.rawValue }
     }
 
+    /// Focus-block init kept for backward compatibility with existing call
+    /// sites (`SessionCheckIn(progress:state:)`).
     init(progress: Double, state: SessionState) {
         self.id            = UUID()
         self.timestamp     = .now
         self.progress      = progress
         self.stateRawValue = state.rawValue
+    }
+
+    /// Task-scoped init — used by checkpoint notifications and manual pulses.
+    init(
+        workItemID: UUID,
+        progress: Double,
+        state: SessionState,
+        note: String? = nil,
+        checkpointID: String? = nil
+    ) {
+        self.id            = UUID()
+        self.timestamp     = .now
+        self.progress      = progress
+        self.stateRawValue = state.rawValue
+        self.workItemID    = workItemID
+        self.note          = note?.isEmpty == true ? nil : note
+        self.checkpointID  = checkpointID
     }
 }
 

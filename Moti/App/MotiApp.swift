@@ -2,6 +2,11 @@ import SwiftData
 import SwiftUI
 import UIKit
 
+// SwiftData's @Model doesn't auto-synthesize Identifiable. WorkItem already
+// has a stable `id: UUID`, so this is an opt-in to use it with the SwiftUI
+// `sheet(item:)` modifier from the check-in re-plan flow.
+extension WorkItem: Identifiable {}
+
 @main
 struct MotiApp: App {
     @AppStorage("taskUnderstandingMode") private var modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
@@ -66,8 +71,17 @@ struct RootTabView: View {
     @Query(sort: \WorkItem.createdAt) private var workItems: [WorkItem]
     @Query(sort: \Project.createdAt) private var projects: [Project]
     @Query private var allSessions: [WorkSession]
+    @Query private var allCheckIns: [SessionCheckIn]
 
     private var scheduler: TimelineCheckpointScheduler { .shared }
+
+    /// Drives the Timeline Check-in sheet for task progress checkpoints
+    /// (banners scheduled by `WorkItemNotificationScheduler`).
+    private var checkInCoordinator: TaskCheckInCoordinator { .shared }
+
+    /// After a Bad → Re-plan tap we open the work item's detail screen so the
+    /// user can revise timing. Driven by `.sheet(item:)`.
+    @State private var taskToReplan: WorkItem?
 
     // Observed properties that trigger a widget snapshot refresh when any work item or project changes
     private var widgetChangeToken: String {
@@ -124,6 +138,34 @@ struct RootTabView: View {
                     )
                     .presentationDetents([.medium, .large], selection: $captureDetent)
                 }
+                // Timeline Check-in feedback sheet — presented when a
+                // `moti-progress-*` notification fires or is tapped.
+                .sheet(item: Binding(
+                    get: { checkInCoordinator.pendingRequest },
+                    set: { newValue in
+                        if newValue == nil { checkInCoordinator.dismiss() }
+                    }
+                )) { request in
+                    CheckInSheet(
+                        taskTitle: workItem(for: request.workItemID)?.title,
+                        progress: request.progress,
+                        onSave: { state, note in
+                            saveTaskCheckIn(for: request, state: state, note: note)
+                            checkInCoordinator.dismiss()
+                        },
+                        onReplan: {
+                            taskToReplan = workItem(for: request.workItemID)
+                            checkInCoordinator.dismiss()
+                        },
+                        onLater: { checkInCoordinator.dismiss() },
+                        onCancel: { checkInCoordinator.dismiss() }
+                    )
+                }
+                .sheet(item: $taskToReplan) { item in
+                    NavigationStack {
+                        WorkItemDetailView(item: item)
+                    }
+                }
             } else {
                 OnboardingView {
                     hasCompletedOnboarding = true
@@ -179,6 +221,47 @@ struct RootTabView: View {
         }
         #if DEBUG
         print("[Checkpoints] Checkpoint dismissed: \(Int(event.progress * 100))%")
+        #endif
+    }
+
+    // MARK: - Task check-in persistence
+
+    private func workItem(for id: UUID) -> WorkItem? {
+        workItems.first { $0.id == id }
+    }
+
+    /// Persists a `SessionCheckIn` for a task progress checkpoint.
+    ///
+    /// Repeated taps of the same notification are deduped by `checkpointID`:
+    /// if a row already exists for the same checkpoint we update its state /
+    /// note in place rather than inserting a duplicate.
+    private func saveTaskCheckIn(
+        for request: TaskCheckInCoordinator.Request,
+        state: SessionState,
+        note: String
+    ) {
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        let noteValue: String? = trimmed.isEmpty ? nil : trimmed
+        let checkpointID = request.checkpointID
+
+        if let existing = allCheckIns.first(where: { $0.checkpointID == checkpointID }) {
+            existing.state = state
+            existing.note  = noteValue
+            existing.timestamp = .now
+        } else {
+            let entry = SessionCheckIn(
+                workItemID: request.workItemID,
+                progress: request.progress,
+                state: state,
+                note: noteValue,
+                checkpointID: checkpointID
+            )
+            modelContext.insert(entry)
+        }
+
+        try? modelContext.save()
+        #if DEBUG
+        print("[CheckIn] Saved task check-in: \(state.rawValue) at \(Int(request.progress * 100))%")
         #endif
     }
 
