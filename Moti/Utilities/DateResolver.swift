@@ -144,6 +144,22 @@ enum DateResolver {
             with: "",
             options: [.regularExpression, .caseInsensitive]
         )
+        // Colon clock times, with or without a lead-in: "before 3:45",
+        // "at 3:45pm", or a bare "3:45". The dot/slash date forms above already
+        // ran, so "5.15" is gone before we get here.
+        title = title.replacingOccurrences(
+            of: #"\b(?:before|by|due|at|after|around|til|till|until)?\s*\d{1,2}:\d{2}\s*(?:am|pm)?\b"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        // Hour-only times that REQUIRE an explicit lead-in, so plain numbers in
+        // a title ("5 job applications", "Apply to 3 roles") are left intact:
+        // "at 5", "before 3", "by 9pm".
+        title = title.replacingOccurrences(
+            of: #"\b(?:before|by|due|at|around|til|till|until)\s+\d{1,2}\s*(?:am|pm)?\b"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
         for weekday in weekdayIndexes.map(\.0) {
             title = title.replacingOccurrences(of: "by \(weekday)", with: "", options: [.caseInsensitive])
             title = title.replacingOccurrences(of: "before \(weekday)", with: "", options: [.caseInsensitive])

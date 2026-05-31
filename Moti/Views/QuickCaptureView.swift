@@ -1015,12 +1015,13 @@ struct QuickCaptureView: View {
             throw TaskUnderstandingError.foundationModelUnavailable("no work items returned")
         }
 
-        // Universal duplicate guard: collapses identical parses (same title,
-        // project, dates, temporal intent) into a single item. Runs in every
-        // mode — Foundation Model, rule-based, Smart Capture confirm. Catches
-        // LLM non-determinism, segmenter over-splits, and any input the user
-        // accidentally entered twice (e.g. duplicate lines).
-        let uniqueItems = parsedItems.deduplicatedByContent()
+        // Universal duplicate guard: collapses identical parses AND temporal
+        // variants of the same task (e.g. "finish video filming" + "finish video
+        // filming before 3:45") into one richer item. Runs in every mode —
+        // Foundation Model, rule-based, Smart Capture confirm. Catches LLM
+        // non-determinism, segmenter over-splits, a temporal phrase spawning a
+        // second task, and any input the user accidentally entered twice.
+        let uniqueItems = parsedItems.deduplicatedMergingVariants()
 
         #if DEBUG
         if uniqueItems.count != parsedItems.count {

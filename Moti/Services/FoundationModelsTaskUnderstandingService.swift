@@ -106,11 +106,12 @@ private struct FoundationModelParser {
             return map(draft, rawInput: source?.isEmpty == false ? source! : fallbackSource)
         }
 
-        // Defense in depth: the model occasionally returns near-duplicate items
-        // (e.g., one capture interpreted as two slightly different intents with
-        // the same timing). Drop content-duplicates before deciding whether to
-        // fall back to the line-based splitter below.
-        let deduplicated = mapped.deduplicatedByContent()
+        // Defense in depth: the model occasionally splits one capture into a
+        // bare task plus a temporal twin (e.g. "finish video filming" +
+        // "finish video filming before 3:45"), or returns the same item twice.
+        // Collapse exact duplicates AND temporal variants into one richer task
+        // before deciding whether to fall back to the line-based splitter below.
+        let deduplicated = mapped.deduplicatedMergingVariants()
 
         #if DEBUG
         if deduplicated.count != mapped.count {
