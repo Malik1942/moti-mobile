@@ -98,7 +98,9 @@ enum SessionState: String, Codable, CaseIterable {
     var workItemID: UUID
     var startTime: Date
     var expectedEndTime: Date
-    /// All checkpoint progress fractions this session tracks — e.g. [0.25, 0.5, 0.75, 0.9].
+    /// All checkpoint progress fractions this session tracks. Derived from
+    /// `CheckpointPolicy` at creation time — e.g. [0.25, 0.5, 0.75, 1.0] for a
+    /// standard session, [0.5, 1.0] for a short one, [1.0] for a habit.
     var checkpointProgress: [Double]
     /// Subset of checkpointProgress that have already fired (responded or dismissed).
     var firedCheckpoints: [Double]
@@ -126,12 +128,15 @@ enum SessionState: String, Codable, CaseIterable {
         return mins > 0 ? "\(hours)h \(mins)m left" : "\(hours)h left"
     }
 
-    init(workItemID: UUID, startTime: Date, expectedEndTime: Date) {
+    init(workItemID: UUID, startTime: Date, expectedEndTime: Date, isRecurring: Bool = false) {
         self.id                 = UUID()
         self.workItemID         = workItemID
         self.startTime          = startTime
         self.expectedEndTime    = expectedEndTime
-        self.checkpointProgress = [0.25, 0.5, 0.75, 0.9]
+        self.checkpointProgress = CheckpointPolicy.checkpoints(
+            duration: expectedEndTime.timeIntervalSince(startTime),
+            isRecurring: isRecurring
+        )
         self.firedCheckpoints   = []
         self.isActive           = true
         self.createdAt          = .now

@@ -42,6 +42,7 @@
 		69D23A2CB44EB75B265AFA79 /* SmartCaptureKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1613D1FDECC4F6C9A4A0F52 /* SmartCaptureKeyStore.swift */; };
 		6ADB29F7F7DD24D51CA4A0C8 /* Secrets.swift.example in Resources */ = {isa = PBXBuildFile; fileRef = C92E544DFF3FE3838F77CAE7 /* Secrets.swift.example */; };
 		719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */; };
+		74E97CCA98CEAEEF0F8868BA /* CheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */; };
 		7632AF1DCE6788CCF465B83C /* PlanningDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA0D0333A0D6C49C5895497 /* PlanningDecision.swift */; };
 		7DA30CD959B2D291DD1DF0C7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 19AEB42AF5A553D92C1FCA9D /* Assets.xcassets */; };
 		7F561839FAA025ACB733677B /* CheckpointFloatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0A6640AA4DB3B6C0DED3CE /* CheckpointFloatingCard.swift */; };
@@ -206,6 +207,7 @@
 		EA71EBBF736BD816610EE36A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolverPath.swift; sourceTree = "<group>"; };
+		FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicy.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
 		FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDebugDataLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -389,6 +391,7 @@
 			isa = PBXGroup;
 			children = (
 				9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */,
+				FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */,
 				A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */,
 				207B2D0308B1B8D5F3B9E268 /* ContextualCaptureAgentService.swift */,
 				4EF157DBAE933EECAA3A5046 /* FoundationModelsTaskUnderstandingService.swift */,
@@ -588,6 +591,7 @@
 				4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */,
 				0F0CE33821D7F437ADBDC42A /* CheckInSheet.swift in Sources */,
 				7F561839FAA025ACB733677B /* CheckpointFloatingCard.swift in Sources */,
+				74E97CCA98CEAEEF0F8868BA /* CheckpointPolicy.swift in Sources */,
 				F318D271E306F2530F8E9147 /* CompletionLog.swift in Sources */,
 				C56248EF547B9F3415D4D03B /* CompletionLogger.swift in Sources */,
 				DF28B0490CD65D0320B0C983 /* ContextualCaptureAgentService.swift in Sources */,

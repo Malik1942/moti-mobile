@@ -84,7 +84,7 @@ struct StartSessionSheet: View {
                 .font(.subheadline.weight(.semibold))
 
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(TimelineCheckpointScheduler.checkpointValues, id: \.self) { progress in
+                ForEach(previewCheckpoints, id: \.self) { progress in
                     let triggerDate = Date.now.addingTimeInterval(selectedDuration.seconds * progress)
                     HStack(spacing: 10) {
                         Circle()
@@ -135,6 +135,15 @@ struct StartSessionSheet: View {
 
     // MARK: - Helpers
 
+    /// Checkpoints for the previewed session — same central policy the scheduler
+    /// uses, so the preview always matches what actually fires.
+    private var previewCheckpoints: [Double] {
+        CheckpointPolicy.checkpoints(
+            duration: selectedDuration.seconds,
+            isRecurring: workItem.isRecurring
+        )
+    }
+
     private func relativeLabel(for date: Date) -> String {
         let mins = Int(date.timeIntervalSince(.now) / 60)
         if mins < 60 { return "in \(mins)m" }
@@ -154,7 +163,8 @@ struct StartSessionSheet: View {
         let session = WorkSession(
             workItemID:      workItem.id,
             startTime:       now,
-            expectedEndTime: now.addingTimeInterval(selectedDuration.seconds)
+            expectedEndTime: now.addingTimeInterval(selectedDuration.seconds),
+            isRecurring:     workItem.isRecurring
         )
         modelContext.insert(session)
         try? modelContext.save()

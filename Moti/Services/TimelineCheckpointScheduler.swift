@@ -26,9 +26,6 @@ final class TimelineCheckpointScheduler: NSObject {
 
     static let shared = TimelineCheckpointScheduler()
 
-    /// The four progress fractions at which checkpoints fire.
-    static let checkpointValues: [Double] = [0.25, 0.5, 0.75, 0.9]
-
     /// Observable state that the SwiftUI layer reads.
     let coordinator = CheckpointCoordinator()
 
@@ -71,7 +68,7 @@ final class TimelineCheckpointScheduler: NSObject {
         guard session.duration > 0 else { return }
         let center = UNUserNotificationCenter.current()
 
-        for progress in Self.checkpointValues {
+        for progress in session.checkpointProgress {
             guard !session.firedCheckpoints.contains(progress) else { continue }
 
             let triggerDate = session.startTime.addingTimeInterval(session.duration * progress)
@@ -115,7 +112,9 @@ final class TimelineCheckpointScheduler: NSObject {
 
     /// Removes all pending notifications for the given session.
     func cancelCheckpoints(for sessionID: UUID) {
-        let ids = Self.checkpointValues.map { notificationID(sessionID: sessionID, progress: $0) }
+        // Build IDs from every fraction any policy could have scheduled so a
+        // reschedule reliably clears prior notifications regardless of cadence.
+        let ids = CheckpointPolicy.allCancellableFractions.map { notificationID(sessionID: sessionID, progress: $0) }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
         #if DEBUG
         print("[Checkpoints] Cancelled all pending checkpoints for session \(sessionID)")
@@ -131,7 +130,7 @@ final class TimelineCheckpointScheduler: NSObject {
     func resolvePassedCheckpoints(for session: WorkSession) {
         guard session.isActive, coordinator.pendingCheckpoint == nil else { return }
         let now = Date.now
-        for progress in Self.checkpointValues.sorted() {
+        for progress in session.checkpointProgress.sorted() {
             guard !session.firedCheckpoints.contains(progress) else { continue }
             let triggerDate = session.startTime.addingTimeInterval(session.duration * progress)
             guard triggerDate <= now else { break }
