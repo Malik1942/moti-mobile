@@ -11,10 +11,11 @@ struct TimelineView: View {
     @State private var horizonDays = 30
     @State private var showingAddProject = false
 
+    /// Timeline scope: past + present + future, archived hidden. Past work stays
+    /// visible — Moti is a temporal memory, not an upcoming-only scheduler.
     private var filteredItems: [WorkItem] {
-        workItems.filter { item in
-            item.status != .archived &&
-            (selectedProject == ProjectCatalog.allProjectsLabel || item.projectName == selectedProject)
+        WorkItemScope.timeline(workItems).filter { item in
+            selectedProject == ProjectCatalog.allProjectsLabel || item.projectName == selectedProject
         }
     }
 
@@ -122,20 +123,20 @@ struct TimelineView: View {
         .frame(maxWidth: 260)
     }
 
+    // Due Soon = upcoming + overdue (most-urgent first). Overdue is intentionally
+    // included so a passed deadline stays in view.
     private var upcomingDueDates: [WorkItem] {
-        filteredItems
-            .filter { !$0.needsReview && $0.dueDate != nil }
-            .filter { $0.status != .done }
-            .sorted { ($0.dueDate ?? .distantFuture) < ($1.dueDate ?? .distantFuture) }
-            .prefix(5)
-            .map { $0 }
+        Array(WorkItemScope.dueSoon(filteredItems).prefix(5))
     }
 
+    // Active Queue = work live right now (in-window, due today, or untimed-open).
     private var activeWorkPeriods: [WorkItem] {
-        filteredItems.filter { item in
-            guard let start = item.workingStartDate, let end = item.workingEndDate else { return false }
-            return start <= Date.now && Date.now <= end && !item.needsReview && item.status != .done
-        }
+        WorkItemScope.activeQueue(filteredItems)
+    }
+
+    // Recently Completed = past work kept visible as Timeline memory.
+    private var recentlyCompleted: [WorkItem] {
+        Array(WorkItemScope.recentlyCompleted(filteredItems).prefix(5))
     }
 
     private var needsReview: [WorkItem] {
@@ -153,6 +154,7 @@ struct TimelineView: View {
                 HStack(alignment: .top, spacing: 10) {
                     compactSummary("Due Soon", items: upcomingDueDates)
                     compactSummary("Active Work", items: activeWorkPeriods)
+                    compactSummary("Completed", items: recentlyCompleted)
                     compactSummary("Needs Review", items: needsReview, showRawInput: true)
                 }
             }

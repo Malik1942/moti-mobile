@@ -72,6 +72,7 @@
 		BBCFED02C82620F6B0B2E5CF /* TaskCheckInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC16CD4C608B56D0F7CB695D /* TaskCheckInCoordinator.swift */; };
 		C109B0E9870DF6AF8B982C92 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */; };
 		C276154A921126DB993D149C /* FoundationModelsTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF157DBAE933EECAA3A5046 /* FoundationModelsTaskUnderstandingService.swift */; };
+		C2FA9C41B01A69B31611444C /* WorkItemScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB2CD187C2EB8DD312C24215 /* WorkItemScope.swift */; };
 		C56248EF547B9F3415D4D03B /* CompletionLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */; };
 		C9F8212A0BF7408506A726F0 /* MotiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */; };
 		CB630B75F7462E6D806ED248 /* WorkItemCompletion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */; };
@@ -190,6 +191,7 @@
 		B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemCompletion.swift; sourceTree = "<group>"; };
 		B2ECCB44A3F1A4600E84B001 /* error.caf */ = {isa = PBXFileReference; path = error.caf; sourceTree = "<group>"; };
 		B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
+		BB2CD187C2EB8DD312C24215 /* WorkItemScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemScope.swift; sourceTree = "<group>"; };
 		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC16CD4C608B56D0F7CB695D /* TaskCheckInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCheckInCoordinator.swift; sourceTree = "<group>"; };
 		BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -421,6 +423,7 @@
 				258DC761CEA7F2DD39A97D29 /* ProjectContext.swift */,
 				48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */,
 				99639D9AB321E54C8399696F /* WorkItem.swift */,
+				BB2CD187C2EB8DD312C24215 /* WorkItemScope.swift */,
 				0715C5BF941B119FB3E01DAA /* WorkItemTimeState.swift */,
 				A76D29D54DF4775B05381C4E /* WorkSession.swift */,
 				E3920241A8B2C7CC6FCD695C /* SmartCapture */,
@@ -654,6 +657,7 @@
 				CB630B75F7462E6D806ED248 /* WorkItemCompletion.swift in Sources */,
 				1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */,
 				E40263D9310970912008449F /* WorkItemNotificationScheduler.swift in Sources */,
+				C2FA9C41B01A69B31611444C /* WorkItemScope.swift in Sources */,
 				A69D38A37BFDB03F509E50D4 /* WorkItemTimeState.swift in Sources */,
 				3108399742D43D3BC4246250 /* WorkSession.swift in Sources */,
 			);

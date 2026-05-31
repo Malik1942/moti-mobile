@@ -43,8 +43,14 @@ struct MultiWeekTimelineHeroView: View {
     private var visibleItems: [WorkItem] {
         workItems
             .filter { !$0.needsReview }
+            // The gantt is the forward planner: it plots actionable work, not
+            // archived items or completed history (completed work stays visible
+            // in the Timeline's "Completed" card and in Project History).
             .filter { $0.status != .done && $0.status != .archived }
             .filter { item in
+                // A passed deadline must never hide a task. Overdue work is kept
+                // unconditionally and clamps to the "today" line on render.
+                if item.timeState() == .overdue { return true }
                 guard let range = displayRange(for: item) else { return false }
                 return range.end >= startDate && range.start <= endDate
             }
