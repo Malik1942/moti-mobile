@@ -192,14 +192,19 @@ private struct FoundationModelParser {
             || CapturedClassifier.hasActionVerb(title)
             || (!title.isEmpty && hasUsableTimeInfo && !CapturedClassifier.isVeryVague(title))
         let missingEndDate = temporalIntent == .openEndedAfter || (workingStartDate != nil && workingEndDate == nil && dueDate == nil)
+        // An ambiguous same-day time whose AM and PM readings have both passed is
+        // an impossible deadline — route to review rather than create it past-due.
+        let timeAlreadyPassed = DateResolver.ambiguousClockTimeAlreadyPassed(in: trimmed, now: createdAt)
 
-        let needsReview = explicitlyNoDeadline || !hasUsableTimeInfo || !actionable || title.isEmpty || missingEndDate
+        let needsReview = explicitlyNoDeadline || !hasUsableTimeInfo || !actionable || title.isEmpty || missingEndDate || timeAlreadyPassed
         let reviewReason: String?
         if needsReview {
             if missingEndDate {
                 reviewReason = "Missing end date"
             } else if explicitlyNoDeadline || !hasUsableTimeInfo {
                 reviewReason = "Missing time information"
+            } else if timeAlreadyPassed {
+                reviewReason = "That time has already passed today"
             } else if !actionable || title.isEmpty {
                 reviewReason = "Needs a clearer work description"
             } else {

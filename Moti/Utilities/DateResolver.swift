@@ -77,7 +77,7 @@ enum DateResolver {
             return match
         }
         if !containsWorkingPeriodSyntax(text), let baseDate = resolveDateFragment(text, calendar: calendar, now: now) {
-            return (date(on: baseDate, matchingTimeIn: text, calendar: calendar), dateLabel(in: text) ?? "date", false)
+            return (date(on: baseDate, matchingTimeIn: text, calendar: calendar, now: now), dateLabel(in: text) ?? "date", false)
         }
         if let match = resolveStandaloneDate(in: text, calendar: calendar, now: now) {
             return match
@@ -89,16 +89,21 @@ enum DateResolver {
             return (calendar.date(bySettingHour: 21, minute: 0, second: 0, of: now) ?? now, "tonight", false)
         }
         if text.contains("today") {
-            return (date(on: now, matchingTimeIn: text, calendar: calendar), "today", false)
+            return (date(on: now, matchingTimeIn: text, calendar: calendar, now: now), "today", false)
         }
         if text.contains("tomorrow"), let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) {
-            return (date(on: tomorrow, matchingTimeIn: text, calendar: calendar), "tomorrow", false)
+            return (date(on: tomorrow, matchingTimeIn: text, calendar: calendar, now: now), "tomorrow", false)
         }
         if text.contains("this week") {
             return (upcomingFriday(from: now, calendar: calendar), "this week", false)
         }
         for (weekday, index) in weekdayIndexes where text.contains(weekday) {
             return (nextWeekday(index, from: now, calendar: calendar), weekday.capitalized, false)
+        }
+        // A bare clock time with no day word ("submit by 7", "at 5") implies
+        // today; resolve it to the nearest reasonable future time.
+        if let bare = bareClockTime(in: text) {
+            return (inferAmbiguousTime(hour: bare.hour, minute: bare.minute, on: now, now: now, calendar: calendar), "today", false)
         }
         return nil
     }
@@ -246,17 +251,17 @@ enum DateResolver {
             guard let range = text.range(of: "\(prefix) ") else { continue }
             let fragment = String(text[range.upperBound...])
             if let baseDate = resolveDateFragment(fragment, calendar: calendar, now: now) {
-                return (date(on: baseDate, matchingTimeIn: fragment, calendar: calendar), "\(prefix) \(dateLabel(in: fragment) ?? "date")", false)
+                return (date(on: baseDate, matchingTimeIn: fragment, calendar: calendar, now: now), "\(prefix) \(dateLabel(in: fragment) ?? "date")", false)
             }
             if fragment.contains("next week") {
                 return (nextMonday(after: now, calendar: calendar), "\(prefix) next week", prefix == "after")
             }
             for (weekday, index) in weekdayIndexes where fragment.contains(weekday) {
                 let day = nextWeekday(index, from: now, calendar: calendar)
-                return (date(on: day, matchingTimeIn: fragment, calendar: calendar), "\(prefix) \(weekday)", prefix == "after")
+                return (date(on: day, matchingTimeIn: fragment, calendar: calendar, now: now), "\(prefix) \(weekday)", prefix == "after")
             }
             if fragment.contains("tomorrow"), let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) {
-                return (date(on: tomorrow, matchingTimeIn: fragment, calendar: calendar), "\(prefix) tomorrow", prefix == "after")
+                return (date(on: tomorrow, matchingTimeIn: fragment, calendar: calendar, now: now), "\(prefix) tomorrow", prefix == "after")
             }
         }
         return nil
@@ -267,17 +272,17 @@ enum DateResolver {
         let hasCue = cues.contains(where: { text.contains($0) }) || text.hasPrefix("on ") || text.hasPrefix("due ")
         guard hasCue else { return nil }
         guard let baseDate = resolveDateFragment(text, calendar: calendar, now: now) else { return nil }
-        return (date(on: baseDate, matchingTimeIn: text, calendar: calendar), dateLabel(in: text) ?? "date", false)
+        return (date(on: baseDate, matchingTimeIn: text, calendar: calendar, now: now), dateLabel(in: text) ?? "date", false)
     }
 
     private static func resolveByOrAt(in text: String, calendar: Calendar, now: Date) -> (Date, String, Bool)? {
         for (weekday, index) in weekdayIndexes where text.contains("next \(weekday)") {
             let day = nextWeekday(index, from: now, calendar: calendar)
-            return (date(on: day, matchingTimeIn: text, calendar: calendar), "next \(weekday)", false)
+            return (date(on: day, matchingTimeIn: text, calendar: calendar, now: now), "next \(weekday)", false)
         }
         for (weekday, index) in weekdayIndexes where text.contains(weekday) {
             let day = nextWeekday(index, from: now, calendar: calendar)
-            return (date(on: day, matchingTimeIn: text, calendar: calendar), weekday, false)
+            return (date(on: day, matchingTimeIn: text, calendar: calendar, now: now), weekday, false)
         }
         return nil
     }
@@ -424,15 +429,15 @@ enum DateResolver {
             return isStart ? calendar.startOfDay(for: tomorrow) : endOfDay(for: tomorrow, calendar: calendar)
         }
         if let baseDate = resolveDateFragment(text, calendar: calendar, now: now) {
-            return isStart ? calendar.startOfDay(for: baseDate) : date(on: baseDate, matchingTimeIn: text, calendar: calendar)
+            return isStart ? calendar.startOfDay(for: baseDate) : date(on: baseDate, matchingTimeIn: text, calendar: calendar, now: now)
         }
         for (weekday, index) in weekdayIndexes where text.contains("next \(weekday)") {
             let day = nextWeekday(index, from: now, calendar: calendar)
-            return isStart ? calendar.startOfDay(for: day) : date(on: day, matchingTimeIn: text, calendar: calendar)
+            return isStart ? calendar.startOfDay(for: day) : date(on: day, matchingTimeIn: text, calendar: calendar, now: now)
         }
         for (weekday, index) in weekdayIndexes where text.contains(weekday) {
             let day = upcomingWeekday(index, from: now, calendar: calendar)
-            return isStart ? calendar.startOfDay(for: day) : date(on: day, matchingTimeIn: text, calendar: calendar)
+            return isStart ? calendar.startOfDay(for: day) : date(on: day, matchingTimeIn: text, calendar: calendar, now: now)
         }
         return nil
     }
@@ -441,9 +446,16 @@ enum DateResolver {
         calendar.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? date
     }
 
-    private static func date(on day: Date, matchingTimeIn text: String, calendar: Calendar) -> Date {
+    private static func date(on day: Date, matchingTimeIn text: String, calendar: Calendar, now: Date = .now) -> Date {
         if let explicit = explicitTime(in: text) {
             return calendar.date(bySettingHour: explicit.hour, minute: explicit.minute, second: 0, of: day) ?? day
+        }
+        // Ambiguous bare clock time ("before 3:45", "at 5") with no AM/PM. Only
+        // inferred for *today* — pick the nearest reasonable FUTURE occurrence
+        // rather than defaulting to a passed morning time. Other days keep the
+        // existing time-of-day handling below.
+        if calendar.isDate(day, inSameDayAs: now), let bare = bareClockTime(in: text) {
+            return inferAmbiguousTime(hour: bare.hour, minute: bare.minute, on: day, now: now, calendar: calendar)
         }
         if text.contains("morning") {
             return calendar.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
@@ -489,6 +501,95 @@ enum DateResolver {
 
         guard (0...23).contains(hour), (0...59).contains(minute) else { return nil }
         return (hour, minute)
+    }
+
+    // MARK: - Ambiguous (no AM/PM) clock times
+
+    /// Extracts a bare clock time that carries NO meridiem — either an explicit
+    /// `HH:MM` ("3:45", "15:45") or a lead-in hour ("at 5", "by 7", "before 3").
+    /// Plain numbers without a clock lead-in ("5 job applications", "Apply to 3
+    /// roles") are deliberately NOT matched. Returns nil when an AM/PM time is
+    /// present (that's `explicitTime`'s job).
+    private static func bareClockTime(in text: String) -> (hour: Int, minute: Int)? {
+        guard explicitTime(in: text) == nil else { return nil }
+
+        if let g = regexGroups(#"\b(\d{1,2}):(\d{2})\b"#, in: text),
+           let hour = Int(g[0]), let minute = Int(g[1]),
+           (0...23).contains(hour), (0...59).contains(minute) {
+            return (hour, minute)
+        }
+        // Lead-in hour, not followed by ":" or another digit (so we don't grab
+        // the "5" of "5:45" or part of a longer number).
+        if let g = regexGroups(#"\b(?:before|by|due|at|around|til|till|until)\s+(\d{1,2})(?![:\d])"#, in: text),
+           let hour = Int(g[0]), (0...23).contains(hour) {
+            return (hour, 0)
+        }
+        return nil
+    }
+
+    /// Resolves an ambiguous clock reading to the most likely time on `day`,
+    /// preferring the next FUTURE occurrence relative to `now`:
+    ///   - A 24-hour reading (>= 13) or midnight (0) is used as-is.
+    ///   - For 1–12, try the AM reading first, then PM; pick the earliest that
+    ///     is still ahead of `now`. If both have passed, prefer PM (the caller
+    ///     flags the resulting past-due item for review).
+    private static func inferAmbiguousTime(hour: Int, minute: Int, on day: Date, now: Date, calendar: Calendar) -> Date {
+        if hour == 0 || hour >= 13 {
+            return calendar.date(bySettingHour: hour, minute: minute, second: 0, of: day) ?? day
+        }
+        let amHour = (hour == 12) ? 0 : hour
+        let pmHour = (hour == 12) ? 12 : hour + 12
+        let amDate = calendar.date(bySettingHour: amHour, minute: minute, second: 0, of: day) ?? day
+        let pmDate = calendar.date(bySettingHour: pmHour, minute: minute, second: 0, of: day) ?? day
+        if amDate > now { return amDate }
+        if pmDate > now { return pmDate }
+        return pmDate
+    }
+
+    /// True when the input names an ambiguous (no AM/PM) clock time for *today*
+    /// whose AM and PM readings have BOTH already passed — an impossible same-day
+    /// deadline. Callers route these to review instead of creating a past-due
+    /// task silently.
+    static func ambiguousClockTimeAlreadyPassed(in input: String, calendar: Calendar = .current, now: Date = .now) -> Bool {
+        let text = input.lowercased()
+        guard explicitTime(in: text) == nil, let bare = bareClockTime(in: text) else { return false }
+        guard !mentionsNonTodayDate(text, now: now, calendar: calendar) else { return false }
+
+        if bare.hour == 0 || bare.hour >= 13 {
+            let exact = calendar.date(bySettingHour: bare.hour, minute: bare.minute, second: 0, of: now) ?? now
+            return exact < now
+        }
+        let amHour = (bare.hour == 12) ? 0 : bare.hour
+        let pmHour = (bare.hour == 12) ? 12 : bare.hour + 12
+        guard
+            let amDate = calendar.date(bySettingHour: amHour, minute: bare.minute, second: 0, of: now),
+            let pmDate = calendar.date(bySettingHour: pmHour, minute: bare.minute, second: 0, of: now)
+        else { return false }
+        return amDate < now && pmDate < now
+    }
+
+    /// Whether the text references a day other than today (so an ambiguous clock
+    /// time should not be treated as a same-day deadline).
+    private static func mentionsNonTodayDate(_ text: String, now: Date, calendar: Calendar) -> Bool {
+        if text.contains("tomorrow") || text.contains("next week") || text.contains("tonight") { return true }
+        if weekdayIndexes.contains(where: { text.contains($0.0) }) { return true }
+        if resolveDateFragment(text, calendar: calendar, now: now) != nil { return true }
+        return false
+    }
+
+    /// Returns the capture groups (1…n) of the first match, or nil if no match.
+    private static func regexGroups(_ pattern: String, in text: String) -> [String]? {
+        guard
+            let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
+            let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+            match.numberOfRanges > 1
+        else { return nil }
+        var groups: [String] = []
+        for i in 1..<match.numberOfRanges {
+            guard let r = Range(match.range(at: i), in: text) else { return nil }
+            groups.append(String(text[r]))
+        }
+        return groups
     }
 
     private static func nextWeekday(_ weekday: Int, from now: Date, calendar: Calendar) -> Date {
