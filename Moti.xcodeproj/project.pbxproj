@@ -29,9 +29,11 @@
 		3A1F9C01B89D0031D20EF419 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16051795458D002FFE029597 /* ReviewView.swift */; };
 		3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4CB83BECF9B15618F7FA70 /* TemporalInterpretation.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
+		489F843800D616F3F0DD3EBE /* RecurrenceRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */; };
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
 		4B57021A911E77583E5FECE3 /* reorganized.caf in Resources */ = {isa = PBXBuildFile; fileRef = 77BBE151CF9E4115BC8306B6 /* reorganized.caf */; };
 		4ED62F04AA13A9C82B66359D /* ProjectColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */; };
+		4F7667A1BACC37455C690E39 /* RecurrenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3526038302978193BA832464 /* RecurrenceParser.swift */; };
 		51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F4E8BC65CE551E817F3140 /* Enums.swift */; };
 		605C6E620F133E9F8C6A1B79 /* DeterministicPreClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C76A980F0DA9C241E53EEC1 /* DeterministicPreClassifier.swift */; };
 		619473673DE127605CD34B4D /* TemporalResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA42563F0B8AB8CCEB653723 /* TemporalResolution.swift */; };
@@ -71,6 +73,7 @@
 		C276154A921126DB993D149C /* FoundationModelsTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF157DBAE933EECAA3A5046 /* FoundationModelsTaskUnderstandingService.swift */; };
 		C56248EF547B9F3415D4D03B /* CompletionLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */; };
 		C9F8212A0BF7408506A726F0 /* MotiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */; };
+		CB630B75F7462E6D806ED248 /* WorkItemCompletion.swift in Sources */ = {isa = PBXBuildFile; fileRef = B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */; };
 		D138F0FB9BA34BDF8421D1EC /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */; };
 		D31E185392D4B107FE242590 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */; };
 		D4EE63DD1598DFD1C593B47B /* ResolverPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */; };
@@ -139,12 +142,14 @@
 		2840F3629086A7BE59AFEB13 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		29E16979A0DAAED5CF27B706 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2A3A3F0F686739AFC74C1E2E /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		3526038302978193BA832464 /* RecurrenceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParser.swift; sourceTree = "<group>"; };
 		382ABA033145311D10EF58FD /* Moti.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moti.entitlements; sourceTree = "<group>"; };
 		383EA9D03ACDB97879F001F8 /* CaptureModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureModels.swift; sourceTree = "<group>"; };
 		3B759D32BD872B331850A728 /* GeminiContextualCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiContextualCaptureService.swift; sourceTree = "<group>"; };
 		407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingService.swift; sourceTree = "<group>"; };
 		43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleBasedTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		47105D1BF12898C061AFC16D /* ParserValidationSamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParserValidationSamples.swift; sourceTree = "<group>"; };
+		48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceRule.swift; sourceTree = "<group>"; };
 		494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingServiceFactory.swift; sourceTree = "<group>"; };
 		4AEB904F6BE6B247DCC0943D /* MockSLMTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSLMTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		4EF157DBAE933EECAA3A5046 /* FoundationModelsTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsTaskUnderstandingService.swift; sourceTree = "<group>"; };
@@ -181,6 +186,7 @@
 		AA42563F0B8AB8CCEB653723 /* TemporalResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalResolution.swift; sourceTree = "<group>"; };
 		AC1520A86C04E2BEA6525BF5 /* understood.caf */ = {isa = PBXFileReference; path = understood.caf; sourceTree = "<group>"; };
 		ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleConfidenceScorer.swift; sourceTree = "<group>"; };
+		B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemCompletion.swift; sourceTree = "<group>"; };
 		B2ECCB44A3F1A4600E84B001 /* error.caf */ = {isa = PBXFileReference; path = error.caf; sourceTree = "<group>"; };
 		B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -250,6 +256,7 @@
 				15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */,
 				3B759D32BD872B331850A728 /* GeminiContextualCaptureService.swift */,
 				74F1D358E9001940945FF637 /* PlanningClassifier.swift */,
+				3526038302978193BA832464 /* RecurrenceParser.swift */,
 				C1613D1FDECC4F6C9A4A0F52 /* SmartCaptureKeyStore.swift */,
 				DE70FBEAE485926D30A04BC7 /* SmartCapturePromptBuilder.swift */,
 			);
@@ -393,6 +400,7 @@
 				407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */,
 				494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */,
 				B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */,
+				B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */,
 				C38DC60B64419D04F5E5D7F6 /* WorkItemNotificationScheduler.swift */,
 				1D79EBAB3D46211AD0971602 /* SmartCapture */,
 				61B878C86A247149E568CDC0 /* Temporal */,
@@ -408,6 +416,7 @@
 				DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */,
 				2A3A3F0F686739AFC74C1E2E /* Project.swift */,
 				258DC761CEA7F2DD39A97D29 /* ProjectContext.swift */,
+				48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */,
 				99639D9AB321E54C8399696F /* WorkItem.swift */,
 				0715C5BF941B119FB3E01DAA /* WorkItemTimeState.swift */,
 				A76D29D54DF4775B05381C4E /* WorkSession.swift */,
@@ -610,6 +619,8 @@
 				BA3AC6649C8702969AB85897 /* ProjectPill.swift in Sources */,
 				E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */,
 				144795598A70B595CDA7FD93 /* QuickCaptureView.swift in Sources */,
+				4F7667A1BACC37455C690E39 /* RecurrenceParser.swift in Sources */,
+				489F843800D616F3F0DD3EBE /* RecurrenceRule.swift in Sources */,
 				D4EE63DD1598DFD1C593B47B /* ResolverPath.swift in Sources */,
 				3A1F9C01B89D0031D20EF419 /* ReviewView.swift in Sources */,
 				E784BA20607523415553AE8F /* RuleBasedTaskUnderstandingService.swift in Sources */,
@@ -636,6 +647,7 @@
 				430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */,
 				A2FBBCE31B1C284935A4B5A8 /* WorkItem.swift in Sources */,
 				1900B36E129922D919431A46 /* WorkItemCard.swift in Sources */,
+				CB630B75F7462E6D806ED248 /* WorkItemCompletion.swift in Sources */,
 				1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */,
 				E40263D9310970912008449F /* WorkItemNotificationScheduler.swift in Sources */,
 				A69D38A37BFDB03F509E50D4 /* WorkItemTimeState.swift in Sources */,

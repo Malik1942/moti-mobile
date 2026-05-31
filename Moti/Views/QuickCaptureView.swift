@@ -462,7 +462,7 @@ struct QuickCaptureView: View {
         Task { @MainActor in
             defer { isSubmitting = false }
             do {
-                try await createWorkItems(from: text)
+                try await createWorkItems(from: text, recurrence: RecurrenceParser.parse(text))
                 SoundManager.shared.play(.capture)   // thought safely captured
                 input = ""
                 dismiss()
@@ -485,7 +485,7 @@ struct QuickCaptureView: View {
         // the deep planning agent? Clear atomic tasks skip it entirely.
         let planning = PlanningClassifier.classify(rawInput: text, isRefinement: planRefinement != nil)
         #if DEBUG
-        print("[Planning] \(planning.inputType.rawValue) useLLM=\(planning.shouldUseLLM) plan=\(planning.shouldGeneratePlan) conf=\(planning.confidence) — \(planning.reason)")
+        print("[Planning] \(planning.inputType.rawValue) depth=\(planning.planningDepth.rawValue) useLLM=\(planning.shouldUseLLM) plan=\(planning.shouldGeneratePlan) subtasks=\(planning.shouldCreateSubtasks) conf=\(planning.confidence) — \(planning.reason)")
         #endif
 
         guard planning.shouldUseLLM else {
@@ -504,7 +504,8 @@ struct QuickCaptureView: View {
             let context = buildSmartCaptureContext(
                 rawInput: text,
                 clarification: clarification,
-                planRefinement: planRefinement
+                planRefinement: planRefinement,
+                planningDepth: planning.planningDepth
             )
             do {
                 // ContextualCaptureAgentService only returns a structured decision.
@@ -599,8 +600,19 @@ struct QuickCaptureView: View {
                 smartCaptureError = "That task has no title to save."
                 return
             }
+            // Detect a recurring habit from the user's original wording first
+            // (the LLM may rephrase the title), falling back to the proposed
+            // task text. One recurring WorkItem — never decomposed.
+            var recurrence = RecurrenceParser.parse(input)
+            if !recurrence.isRecurring {
+                recurrence = RecurrenceParser.parse(rawText)
+            }
             do {
-                try await createWorkItems(from: rawText, preferredProjectName: decision.inferredProjectName)
+                try await createWorkItems(
+                    from: rawText,
+                    preferredProjectName: decision.inferredProjectName,
+                    recurrence: recurrence
+                )
                 SoundManager.shared.play(.capture)   // confirmed task captured
                 resetSmartCapture()
                 input = ""
@@ -743,7 +755,8 @@ struct QuickCaptureView: View {
     private func buildSmartCaptureContext(
         rawInput: String,
         clarification: ClarificationState? = nil,
-        planRefinement: PlanRefinementRequest? = nil
+        planRefinement: PlanRefinementRequest? = nil,
+        planningDepth: PlanningDepth = .none
     ) -> SmartCaptureContext {
         // Active project lightweight summaries (used in the projects list line).
         let projectSummaries = projects.map { project in
@@ -863,7 +876,8 @@ struct QuickCaptureView: View {
             recentlyCompletedTasks: completedSummaries,
             skippedTasks: skippedSummaries,
             clarificationState: clarification,
-            planRefinement: planRefinement
+            planRefinement: planRefinement,
+            planningDepth: planningDepth
         )
     }
 
@@ -991,7 +1005,11 @@ struct QuickCaptureView: View {
     /// Used by both standard capture and confirmed Smart Capture output so date
     /// resolution always flows through the existing `TaskUnderstandingService`.
     @MainActor
-    private func createWorkItems(from text: String, preferredProjectName: String? = nil) async throws {
+    private func createWorkItems(
+        from text: String,
+        preferredProjectName: String? = nil,
+        recurrence: RecurrenceRule = .none
+    ) async throws {
         let parsedItems = try await parser.parseMany(text)
         guard !parsedItems.isEmpty else {
             throw TaskUnderstandingError.foundationModelUnavailable("no work items returned")
@@ -1026,6 +1044,17 @@ struct QuickCaptureView: View {
                }) {
                 item.projectName = matched.name
                 item.suggestedProjectName = nil
+            }
+
+            // Persist structured recurrence and anchor the item to its next
+            // occurrence so it shows once on the Timeline (never expanded into
+            // infinite instances). Only the lightweight single-task path passes
+            // a recurring rule; structured/deep plans stay one-off.
+            if recurrence.isRecurring {
+                item.recurrence = recurrence
+                if item.dueDate == nil {
+                    item.dueDate = recurrence.nextOccurrence(after: .now)
+                }
             }
 
             if parsed.needsReview {

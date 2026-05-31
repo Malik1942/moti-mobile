@@ -27,6 +27,7 @@ enum SmartCapturePromptBuilder {
     ) -> String {
         var sections: [String] = []
         sections.append(inputSection(context))
+        sections.append(planningDepthSection(context))
         sections.append(dateAndLocaleSection(context))
         sections.append(projectsSection(context))
         if let block = projectContextSection(context) { sections.append(block) }
@@ -95,6 +96,51 @@ enum SmartCapturePromptBuilder {
 
     private static func inputSection(_ context: SmartCaptureContext) -> String {
         "Input: \"\(context.rawInput)\""
+    }
+
+    /// The hard gate on how much structure the model may produce. Stage 1
+    /// (the deterministic classifier) already decided this; the model must not
+    /// exceed it. This is what stops the LLM from over-planning a simple
+    /// capture into invented procedural steps.
+    private static func planningDepthSection(_ context: SmartCaptureContext) -> String {
+        // A refinement carries its own, more specific instructions later; don't
+        // pin it to the original depth.
+        if context.planRefinement != nil {
+            return "PLANNING DEPTH: structured (the user is refining an existing plan — follow the refinement instructions below)."
+        }
+        switch context.planningDepth {
+        case .none:
+            return """
+            PLANNING DEPTH: none.
+            The user did NOT ask for a plan, breakdown, schedule, sequence, roadmap, or steps. \
+            Create exactly ONE atomic task (or reminder) that preserves the user's original intent. \
+            Do NOT generate a plan, phases, or subtasks. Do NOT invent procedural or interface steps \
+            (e.g. "log in", "open the app", "search", "review") — capture the intent as the user stated it. \
+            If the input is too vague to act on, ask ONE short clarifying question instead.
+            """
+        case .lightweight:
+            return """
+            PLANNING DEPTH: lightweight.
+            This is a recurring behaviour / habit. Create exactly ONE recurring task that preserves the \
+            user's intent, enriched only with metadata: cadence/recurrence, an estimated duration, a \
+            project, and an optional one-line note. \
+            Do NOT decompose it. Do NOT invent procedural or interface subtasks (e.g. "log in", "open app", \
+            "search", "review"). One recurring task — nothing more.
+            """
+        case .structured:
+            return """
+            PLANNING DEPTH: structured.
+            The user asked for structure (or the capture contains several distinct items). You MAY create \
+            multiple top-level tasks and break them into subtasks where it genuinely helps. \
+            Keep subtasks meaningful — never pad with obvious interface steps.
+            """
+        case .deep:
+            return """
+            PLANNING DEPTH: deep.
+            This intent is project-scale (or the user explicitly asked for a full plan). Produce a \
+            multi-phase plan / workspace with phased targets and subtasks. Keep every step substantive.
+            """
+        }
     }
 
     private static func dateAndLocaleSection(_ context: SmartCaptureContext) -> String {

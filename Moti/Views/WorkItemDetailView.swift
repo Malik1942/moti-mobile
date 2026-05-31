@@ -84,6 +84,17 @@ struct WorkItemDetailView: View {
                 if let elapsedTime = item.elapsedTime() {
                     timeElapsedRow(elapsedTime)
                 }
+
+                if item.isRecurring {
+                    HStack {
+                        Label("Repeats", systemImage: "repeat")
+                            .foregroundStyle(.indigo)
+                        Spacer()
+                        Text(item.recurrence.displayLabel)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.subheadline)
+                }
             }
 
             Section("Session") {
@@ -197,6 +208,13 @@ struct WorkItemDetailView: View {
                 // Light "release" sound only on the transition into done.
                 if newStatus == .done, item.status != .done {
                     SoundManager.shared.play(.completed)
+                    // A recurring item is a living habit: completing it logs the
+                    // occurrence and rolls forward to the next due date instead
+                    // of going permanently done. The picker snaps back to active.
+                    if item.isRecurring {
+                        WorkItemCompletion.complete(item, in: modelContext)
+                        return
+                    }
                 }
                 item.status = newStatus
                 item.needsReview = newStatus == .needsReview

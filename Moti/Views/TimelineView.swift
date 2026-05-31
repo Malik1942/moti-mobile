@@ -215,6 +215,11 @@ struct TimelineView: View {
                                 .font(.caption.weight(.medium))
                                 .lineLimit(2)
                             ProjectPill(project: item.projectName)
+                            if item.isRecurring {
+                                Label(item.recurrence.displayLabel, systemImage: "repeat")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.indigo)
+                            }
                             if let dueDate = item.dueDate {
                                 Text(dueDate.formatted(date: .abbreviated, time: .shortened))
                                     .font(.caption2)
