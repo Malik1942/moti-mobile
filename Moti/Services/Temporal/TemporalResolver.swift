@@ -36,9 +36,14 @@ enum TemporalResolver {
             candidates = SemanticContextResolver.resolve(candidates: candidates, input: input)
         }
 
-        // Step 3 — LLM tiebreaker, applied per-candidate
+        // Step 3 — LLM tiebreaker, applied per-candidate.
+        // A deterministic `.unknown` is a *confident rejection* (a currency /
+        // quantity / version guard fired, or the value is out of date range),
+        // not an ambiguity — escalating it to the tiebreaker would waste the call
+        // and inflate the tiebreaker rate, so skip it.
         candidates = candidates.map { candidate in
             guard candidate.resolverPath != .noSignal,
+                  candidate.interpretation != .unknown,
                   candidate.confidence < 0.70 || candidate.interpretation == .ambiguous
             else { return candidate }
             return LLMTiebreaker.resolve(candidates: [candidate], input: input)

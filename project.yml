@@ -29,6 +29,10 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_ENTITLEMENTS: Moti/Moti.entitlements
+      configs:
+        # Required so MotiTests can use `@testable import Moti`.
+        Debug:
+          ENABLE_TESTABILITY: YES
     dependencies:
       - target: MotiWidget
         embed: true
@@ -52,6 +56,23 @@ targets:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
 
+  MotiTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MotiTests
+    dependencies:
+      - target: Moti
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.malik.MotiTests
+        GENERATE_INFOPLIST_FILE: YES
+        # Host the tests inside the Moti app so SwiftData / app code runs in the
+        # real app process on the simulator.
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Moti.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Moti"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
 schemes:
   Moti:
     build:
@@ -61,6 +82,8 @@ schemes:
       config: Debug
     test:
       config: Debug
+      targets:
+        - MotiTests
     profile:
       config: Release
     analyze:

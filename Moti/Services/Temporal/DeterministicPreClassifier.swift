@@ -313,7 +313,24 @@ enum DeterministicPreClassifier {
     // MARK: - Guards
 
     private static func hasCurrencySignal(in text: String) -> Bool {
-        SemanticBias.currencySignals.contains { text.contains($0) }
+        // Symbols ("$5.15") sit flush against digits, so match them as
+        // substrings. Alphabetic signals ("fee", "cost", "usd") must match whole
+        // words, otherwise "fee" fires inside "coffee", "cost" inside "costume",
+        // etc. — silently turning a real date ("Coffee with Sarah 5.15") into a
+        // rejected currency value.
+        SemanticBias.currencySignals.contains { signal in
+            let isWord = signal.allSatisfy { $0.isLetter }
+            return isWord ? containsWord(signal, in: text) : text.contains(signal)
+        }
+    }
+
+    /// Whole-word containment test (case-insensitive on already-lowercased text).
+    private static func containsWord(_ word: String, in text: String) -> Bool {
+        let pattern = #"\b"# + NSRegularExpression.escapedPattern(for: word) + #"\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return text.contains(word)
+        }
+        return regex.firstMatch(in: text, range: fullRange(text)) != nil
     }
 
     private static func hasQuantitySignal(in text: String) -> Bool {
