@@ -910,6 +910,12 @@ struct SmartCaptureContext: Codable, Equatable {
     let clarificationState: ClarificationState?
     let planRefinement: PlanRefinementRequest?
 
+    // How much structure Stage 1 authorized for this capture. The LLM must not
+    // exceed it: `.none`/`.lightweight` mean a single task (no plan, no
+    // subtasks), `.structured`/`.deep` permit decomposition. Defaults to
+    // `.none` so any context built without an explicit decision stays atomic.
+    let planningDepth: PlanningDepth
+
     init(
         rawInput: String,
         currentDate: Date,
@@ -926,7 +932,8 @@ struct SmartCaptureContext: Codable, Equatable {
         recentlyCompletedTasks: [TaskSummary] = [],
         skippedTasks: [TaskSummary] = [],
         clarificationState: ClarificationState? = nil,
-        planRefinement: PlanRefinementRequest? = nil
+        planRefinement: PlanRefinementRequest? = nil,
+        planningDepth: PlanningDepth = .none
     ) {
         self.rawInput = rawInput
         self.currentDate = currentDate
@@ -944,5 +951,6 @@ struct SmartCaptureContext: Codable, Equatable {
         self.skippedTasks = skippedTasks
         self.clarificationState = clarificationState
         self.planRefinement = planRefinement
+        self.planningDepth = planningDepth
     }
 }

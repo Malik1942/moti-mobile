@@ -710,10 +710,9 @@ private struct ProjectDetailView: View {
     // MARK: - Overdue / quick actions
 
     private func markDone(_ item: WorkItem) {
-        item.status = .done
-        item.needsReview = false
-        item.updatedAt = .now
-        try? modelContext.save()
+        // Recurring items roll forward and stay active; non-recurring items
+        // complete normally. Centralized so every surface agrees.
+        WorkItemCompletion.complete(item, in: modelContext)
         SoundManager.shared.play(.completed)
     }
 

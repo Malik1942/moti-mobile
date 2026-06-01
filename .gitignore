@@ -17,6 +17,11 @@ Build/
 # Swift Package Manager build output
 .build/
 
+# Generated sound intermediates — local-only WAVs produced by
+# tools/sounds/generate_sounds.py. The shipped .caf assets live in the app
+# bundle; these intermediates are regenerated on demand.
+tools/sounds/wav/
+
 # Temporary files
 *.tmp
 *.temp

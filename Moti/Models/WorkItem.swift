@@ -26,6 +26,14 @@ final class WorkItem {
     var lastCalendarSyncAt: Date?
     var suggestedProjectName: String?
 
+    // Structured recurrence. Stored as flat columns (with defaults so existing
+    // stores migrate lightweightly) and surfaced through the `recurrence`
+    // computed property. A recurring item is a single WorkItem whose `dueDate`
+    // is its next occurrence — it is never expanded into infinite instances.
+    var recurrenceFrequencyRawValue: String = RecurrenceFrequency.none.rawValue
+    var recurrenceInterval: Int = 1
+    var recurrenceWeekday: Int?
+
     init(
         id: UUID = UUID(),
         rawInput: String,
@@ -90,6 +98,43 @@ final class WorkItem {
     var status: WorkItemStatus {
         get { WorkItemStatus(rawValue: statusRawValue) ?? .active }
         set { statusRawValue = newValue.rawValue }
+    }
+
+    /// Structured recurrence rule, assembled from the flat stored columns.
+    var recurrence: RecurrenceRule {
+        get {
+            RecurrenceRule(
+                frequency: RecurrenceFrequency(rawValue: recurrenceFrequencyRawValue) ?? .none,
+                interval: max(1, recurrenceInterval),
+                weekday: recurrenceWeekday
+            )
+        }
+        set {
+            recurrenceFrequencyRawValue = newValue.frequency.rawValue
+            recurrenceInterval = max(1, newValue.interval)
+            recurrenceWeekday = newValue.weekday
+        }
+    }
+
+    var isRecurring: Bool { recurrence.isRecurring }
+
+    /// Completes one occurrence of a recurring item: rolls `dueDate` forward to
+    /// the next occurrence and leaves the item **active** so the habit keeps
+    /// living. Storing a single rolled-forward item — rather than spawning a new
+    /// one — is what prevents infinite future duplication.
+    ///
+    /// Returns the occurrence date that was just completed (for logging), or
+    /// `nil` for non-recurring items, signalling the caller to fall back to
+    /// normal `.done` completion.
+    @discardableResult
+    func completeRecurringOccurrence(now: Date = .now, calendar: Calendar = .current) -> Date? {
+        guard isRecurring else { return nil }
+        // Advance from the current due date when present (the occurrence the user
+        // just finished), otherwise from now. Recurrence fields are untouched.
+        let completedOccurrence = dueDate ?? now
+        dueDate = recurrence.nextOccurrence(after: completedOccurrence, calendar: calendar)
+        updatedAt = now
+        return completedOccurrence
     }
 
     var suggestedSessions: [SuggestedSession] {

@@ -6,8 +6,10 @@ import UserNotifications
 ///
 ///   - **Due-date reminders** — a "morning of" heads-up at 9:00 and a
 ///     "1 hour before" nudge, both ahead of the deadline (never at/after it).
-///   - **Progress check-ins** — at 25 / 50 / 75 / 90% of a task's planned
-///     working period (workingStartDate → workingEndDate).
+///   - **Progress check-ins** — at the pacing moments chosen by
+///     `CheckpointPolicy` across a task's planned working period
+///     (workingStartDate → workingEndDate): quarter/half/three-quarter/done for
+///     a standard task, half/done for a short one, done-only for a habit.
 ///
 /// Distinct from `TimelineCheckpointScheduler`, which handles manually-started
 /// `WorkSession` focus blocks and drives the in-app floating card. This one is
@@ -20,8 +22,6 @@ final class WorkItemNotificationScheduler {
 
     static let shared = WorkItemNotificationScheduler()
     private init() {}
-
-    static let progressValues: [Double] = [0.25, 0.5, 0.75, 0.9]
 
     // UserDefaults keys — shared with the Settings @AppStorage toggles.
     static let dueRemindersKey   = "notifyDueReminders"
@@ -149,7 +149,8 @@ final class WorkItemNotificationScheduler {
         let title = displayTitle(item)
         let duration = end.timeIntervalSince(start)
         var out: [(Date, UNNotificationRequest)] = []
-        for pct in Self.progressValues {
+        let checkpoints = CheckpointPolicy.checkpoints(duration: duration, isRecurring: item.isRecurring)
+        for pct in checkpoints {
             let fire = start.addingTimeInterval(duration * pct)
             guard fire > now else { continue }
             let id = "\(progressPrefix)\(item.id.uuidString)-\(Int(pct * 100))"

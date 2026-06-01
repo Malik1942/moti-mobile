@@ -6,6 +6,7 @@ import Foundation
 enum PlanningInputType: String, CaseIterable {
     case simpleTask            // one action, no/loose timing — create directly
     case atomicTask            // one action + one deadline — create directly, never decompose
+    case recurringTask         // habit / cadence ("every day") — one recurring task, never decompose
     case deadlineOnly          // a date with little/no action
     case reminder              // "remind me to …"
     case projectNote           // framing / knowledge about a project, not a task
@@ -19,6 +20,7 @@ enum PlanningInputType: String, CaseIterable {
         switch self {
         case .simpleTask:            "Simple task"
         case .atomicTask:            "Atomic task"
+        case .recurringTask:         "Recurring task"
         case .deadlineOnly:          "Deadline"
         case .reminder:              "Reminder"
         case .projectNote:           "Project note"
@@ -31,12 +33,41 @@ enum PlanningInputType: String, CaseIterable {
     }
 }
 
+/// How much structure the capture is allowed to produce. Explicit gate so the
+/// default path can never silently over-plan: Smart Capture starts at `.none`
+/// (or `.lightweight` when recurring metadata is present) and only escalates to
+/// `.structured` / `.deep` when the user explicitly asks, refines, or the
+/// captured intent is genuinely project-scale.
+enum PlanningDepth: String, CaseIterable, Codable {
+    /// One atomic task that preserves the original intent. No subtasks, no plan.
+    case none
+    /// One task enriched with metadata (recurrence/cadence, duration, project,
+    /// optional note). Still a single task — never decomposed.
+    case lightweight
+    /// One or more top-level tasks with subtask decomposition.
+    case structured
+    /// A multi-phase plan / workspace.
+    case deep
+
+    var label: String {
+        switch self {
+        case .none:        "Atomic"
+        case .lightweight: "Lightweight"
+        case .structured:  "Structured"
+        case .deep:        "Deep plan"
+        }
+    }
+}
+
 /// The output of Stage 1 (classification). Drives whether Stage 2 (deep LLM
 /// planning) runs at all. Produced deterministically by `PlanningClassifier`
 /// — no network, no model — so the common atomic-task path is instant and
 /// never over-plans.
 struct PlanningDecision: Equatable {
     let inputType: PlanningInputType
+    /// How much structure this capture may produce. The single source of truth
+    /// for over-planning prevention; defaults to `.none`.
+    let planningDepth: PlanningDepth
     /// Whether to invoke the deep contextual capture agent at all. When false,
     /// the input is handled by the lightweight parser (single task, date +
     /// project extracted, no plan).
@@ -54,6 +85,7 @@ struct PlanningDecision: Equatable {
 
     init(
         inputType: PlanningInputType,
+        planningDepth: PlanningDepth = .none,
         shouldUseLLM: Bool,
         shouldGeneratePlan: Bool,
         shouldCreateSubtasks: Bool = false,
@@ -62,6 +94,7 @@ struct PlanningDecision: Equatable {
         confidence: Double
     ) {
         self.inputType = inputType
+        self.planningDepth = planningDepth
         self.shouldUseLLM = shouldUseLLM
         self.shouldGeneratePlan = shouldGeneratePlan
         self.shouldCreateSubtasks = shouldCreateSubtasks

@@ -40,7 +40,10 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
             parserConfidence = 0.55
         }
 
-        let needsReview = DateResolver.explicitlyHasNoDeadline(trimmed) || !hasUsableSchedule || !actionable || title.isEmpty || isOpenEndedAfter
+        // An ambiguous same-day time whose AM and PM readings have both passed is
+        // an impossible deadline — route to review rather than create it past-due.
+        let timeAlreadyPassed = DateResolver.ambiguousClockTimeAlreadyPassed(in: trimmed)
+        let needsReview = DateResolver.explicitlyHasNoDeadline(trimmed) || !hasUsableSchedule || !actionable || title.isEmpty || isOpenEndedAfter || timeAlreadyPassed
         let reviewReason: String?
         if isOpenEndedAfter {
             reviewReason = "Missing end date"
@@ -48,6 +51,8 @@ struct RuleBasedTaskUnderstandingService: TaskUnderstandingService {
             reviewReason = "Missing time information"
         } else if !actionable || title.isEmpty {
             reviewReason = "Needs a clearer work description"
+        } else if timeAlreadyPassed {
+            reviewReason = "That time has already passed today"
         } else {
             reviewReason = nil
         }
