@@ -93,6 +93,11 @@ struct RecurrenceRule: Equatable, Codable {
     /// enough for our labels (uses the Gregorian symbols).
     static func weekdayName(_ weekday: Int) -> String? {
         guard (1...7).contains(weekday) else { return nil }
-        return Calendar(identifier: .gregorian).weekdaySymbols[weekday - 1]
+        // Pin a fixed English locale so the label is deterministic ("Friday",
+        // not a locale-abbreviated form) regardless of device region — matching
+        // the hard-coded English "Every …" prefix it is composed with.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+        return calendar.weekdaySymbols[weekday - 1]
     }
 }

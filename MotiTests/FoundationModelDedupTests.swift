@@ -27,11 +27,16 @@ import XCTest
 final class FoundationModelDedupTests: XCTestCase {
 
     private let cal = Calendar.current
+    // A single reference instant for the whole test case so a date built for a
+    // fixture (e.g. `days(3)`) is exactly equal to the same expression used in an
+    // assertion. Calling `.now` at each site drifts by sub-seconds and makes the
+    // `dueDate` equality checks flaky even though the dedup logic is correct.
+    private let now = Date()
     private func today(_ h: Int, _ m: Int) -> Date {
-        cal.date(bySettingHour: h, minute: m, second: 0, of: .now)!
+        cal.date(bySettingHour: h, minute: m, second: 0, of: now)!
     }
     private func days(_ n: Int) -> Date {
-        cal.date(byAdding: .day, value: n, to: .now)!
+        cal.date(byAdding: .day, value: n, to: now)!
     }
 
     private func parsed(

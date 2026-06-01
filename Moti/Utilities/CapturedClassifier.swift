@@ -6,7 +6,7 @@ enum CapturedClassifier {
         "apply", "buy", "schedule", "review", "draft", "build", "ship", "post", "read",
         "watch", "organize", "plan", "fix", "update", "add", "remove", "contact",
         "talk", "follow up", "reach out", "ask", "work", "meet", "interview",
-        "complete", "start", "make", "create", "study"
+        "complete", "start", "make", "create", "study", "upload", "record"
     ]
 
     static let vagueFillers = ["stuff", "thing", "figure out", "deal with", "handle"]
