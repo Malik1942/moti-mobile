@@ -10,6 +10,10 @@ struct SmartCaptureResultView: View {
     let onConfirmContext: (ExtractedProjectContext, UUID?) -> Void
     let onConfirmWorkspace: (PlanningWorkspace) -> Void
     let onRefinePlan: (String) -> Void
+    /// Universal refine for non-plan results (atomic task, lightweight, context).
+    /// Lets the user clarify, add context, make recurring, add a deadline,
+    /// simplify, expand, or convert into a plan — the affordance always exists.
+    let onRefine: (String) -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -34,6 +38,7 @@ struct SmartCaptureResultView: View {
                     decision: decision,
                     task: task,
                     onConfirm: onConfirmTask,
+                    onRefine: onRefine,
                     onDismiss: onDismiss
                 )
             } else if let context = decision.extractedContext, !context.isEmpty {
@@ -41,6 +46,7 @@ struct SmartCaptureResultView: View {
                     decision: decision,
                     extractedContext: context,
                     onConfirm: onConfirmContext,
+                    onRefine: onRefine,
                     onDismiss: onDismiss
                 )
             } else {
@@ -190,7 +196,12 @@ private struct TaskPreviewCard: View {
     let decision: ContextualCaptureDecision
     let task: ProposedTask
     let onConfirm: (ProposedTask) -> Void
+    let onRefine: (String) -> Void
     let onDismiss: () -> Void
+
+    @State private var isRefining = false
+    @State private var feedbackText = ""
+    @FocusState private var feedbackFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -245,6 +256,18 @@ private struct TaskPreviewCard: View {
 
             Divider()
 
+            if isRefining {
+                RefineField(text: $feedbackText, focused: $feedbackFocused) { feedback in
+                    onRefine(feedback)
+                    isRefining = false
+                    feedbackText = ""
+                } onCancel: {
+                    isRefining = false
+                    feedbackText = ""
+                    feedbackFocused = false
+                }
+            }
+
             // Actions
             HStack(spacing: 12) {
                 Button {
@@ -259,6 +282,8 @@ private struct TaskPreviewCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
+                RefineButton(isRefining: $isRefining, focused: $feedbackFocused)
+
                 Button("Dismiss") {
                     onDismiss()
                 }
@@ -268,6 +293,86 @@ private struct TaskPreviewCard: View {
         }
         .padding(20)
         .cardStyle()
+        .animation(.snappy, value: isRefining)
+    }
+}
+
+// MARK: - Reusable Refine Controls
+//
+// The Refine affordance is universal in Smart Capture — it exists on every
+// result (atomic task, lightweight, context, and plans), not just plans. The
+// behavior differs by depth, but the user can always clarify, add context, make
+// a capture recurring, add a deadline, simplify, expand, or convert it into a
+// plan. These two small views give the non-plan cards the same control the plan
+// card already has.
+
+/// The "Refine" pill that reveals the feedback field.
+private struct RefineButton: View {
+    @Binding var isRefining: Bool
+    var focused: FocusState<Bool>.Binding
+
+    var body: some View {
+        Button {
+            withAnimation(.snappy) {
+                isRefining = true
+                focused.wrappedValue = true
+            }
+        } label: {
+            Label("Refine", systemImage: "wand.and.stars")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.indigo)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Color.indigo.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// The expanding feedback field shown once Refine is tapped.
+private struct RefineField: View {
+    @Binding var text: String
+    var focused: FocusState<Bool>.Binding
+    let onSend: (String) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("Tell Moti what to change — clarify, add a deadline, make it recurring, turn it into a plan…", text: $text, axis: .vertical)
+                .font(.subheadline)
+                .lineLimit(2...4)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.secondary.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .focused(focused)
+
+            HStack {
+                Button("Cancel", action: onCancel)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Button {
+                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    onSend(trimmed)
+                } label: {
+                    Text("Send")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.indigo)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .transition(.opacity)
     }
 }
 
@@ -277,7 +382,12 @@ private struct ProjectContextPreviewCard: View {
     let decision: ContextualCaptureDecision
     let extractedContext: ExtractedProjectContext
     let onConfirm: (ExtractedProjectContext, UUID?) -> Void
+    let onRefine: (String) -> Void
     let onDismiss: () -> Void
+
+    @State private var isRefining = false
+    @State private var feedbackText = ""
+    @FocusState private var feedbackFocused: Bool
 
     private var saveLabel: String {
         if let name = decision.inferredProjectName {
@@ -331,6 +441,18 @@ private struct ProjectContextPreviewCard: View {
 
             Divider()
 
+            if isRefining {
+                RefineField(text: $feedbackText, focused: $feedbackFocused) { feedback in
+                    onRefine(feedback)
+                    isRefining = false
+                    feedbackText = ""
+                } onCancel: {
+                    isRefining = false
+                    feedbackText = ""
+                    feedbackFocused = false
+                }
+            }
+
             // Actions
             HStack(spacing: 12) {
                 Button {
@@ -345,6 +467,8 @@ private struct ProjectContextPreviewCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
+                RefineButton(isRefining: $isRefining, focused: $feedbackFocused)
+
                 Button("Dismiss") {
                     onDismiss()
                 }
@@ -354,6 +478,7 @@ private struct ProjectContextPreviewCard: View {
         }
         .padding(20)
         .cardStyle()
+        .animation(.snappy, value: isRefining)
     }
 }
 

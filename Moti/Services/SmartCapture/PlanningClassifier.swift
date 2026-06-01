@@ -43,23 +43,29 @@ enum PlanningClassifier {
             )
         }
 
-        // 2. Explicit request to plan / break down / organize / make a routine.
-        //    Project-scale wording bumps this to a full multi-phase plan.
-        if containsPlanningKeyword(lower) {
-            let deep = containsProjectScaleKeyword(lower)
+        // Semantic planning desire (none / mild / explicit) + project-scale scope
+        // are the two signals that gate structure. Detected up front so the rest
+        // of the rules can stay focused on shape (recurrence, notes, deadlines).
+        let intent = PlanningIntentDetector.detect(lower)
+        let projectScale = containsProjectScaleKeyword(lower)
+
+        // 2. Explicit ask to plan / structure / organize / break down / map out /
+        //    make a timeline. Project-scale wording bumps it to a full multi-phase
+        //    plan; otherwise structured. This is the primary planning entry point
+        //    and is intentionally semantic, not keyword-exact.
+        if intent == .explicit {
             return PlanningDecision(
                 inputType: .complexPlanning,
-                planningDepth: deep ? .deep : .structured,
+                planningDepth: projectScale ? .deep : .structured,
                 shouldUseLLM: true, shouldGeneratePlan: true, shouldCreateSubtasks: true,
-                reason: "User explicitly asked to plan, break down, or organize.",
+                reason: "User explicitly asked to plan, structure, or break this down.",
                 confidence: 0.9
             )
         }
 
-        // 3. Project-scale intent — clearly too large to be one task. This is the
-        //    only place breadth is inferred without an explicit ask, and it keys
-        //    off scope wording, never sentence length.
-        if containsProjectScaleKeyword(lower) {
+        // 3. Project-scale intent — clearly too large to be one task even without
+        //    an explicit ask. Keys off scope wording, never sentence length.
+        if projectScale {
             return PlanningDecision(
                 inputType: .complexPlanning,
                 planningDepth: .deep,
@@ -194,17 +200,6 @@ enum PlanningClassifier {
     }
 
     // MARK: - Keyword groups
-
-    private static func containsPlanningKeyword(_ lower: String) -> Bool {
-        let keywords = [
-            "plan ", "plan my", "plan the", "plan out", "make a plan", "come up with a plan",
-            "break down", "break it down", "break this down", "breakdown",
-            "organize", "roadmap", "map out", "lay out", "step by step", "help me plan",
-            "schedule out", "create steps", "into steps", "sequence", "split this", "split it",
-            "into a routine", "make this a routine", "create a routine", "build a routine"
-        ]
-        return keywords.contains { lower.contains($0) }
-    }
 
     /// Scope words that mark an intent as genuinely project-scale — too large to
     /// be a single task even when phrased in a few words. Deliberately tight:

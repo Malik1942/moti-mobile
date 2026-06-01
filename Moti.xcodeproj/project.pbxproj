@@ -85,6 +85,7 @@
 		DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5831017862C61EA3E73AAB1F /* TimelineView.swift */; };
 		DD22ADD7466AC06310A32A7D /* SemanticContextResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8117BB4A837027777533E234 /* SemanticContextResolver.swift */; };
 		DF28B0490CD65D0320B0C983 /* ContextualCaptureAgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207B2D0308B1B8D5F3B9E268 /* ContextualCaptureAgentService.swift */; };
+		DF29E5581FF6865B920719CB /* PlanningIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A561B65CF2E9DC58DE33CE1 /* PlanningIntent.swift */; };
 		E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */; };
 		E40263D9310970912008449F /* WorkItemNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C38DC60B64419D04F5E5D7F6 /* WorkItemNotificationScheduler.swift */; };
 		E5369605A71211D78BAC913B /* SmartCapturePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE70FBEAE485926D30A04BC7 /* SmartCapturePromptBuilder.swift */; };
@@ -147,6 +148,7 @@
 		3526038302978193BA832464 /* RecurrenceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParser.swift; sourceTree = "<group>"; };
 		382ABA033145311D10EF58FD /* Moti.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moti.entitlements; sourceTree = "<group>"; };
 		383EA9D03ACDB97879F001F8 /* CaptureModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureModels.swift; sourceTree = "<group>"; };
+		3A561B65CF2E9DC58DE33CE1 /* PlanningIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningIntent.swift; sourceTree = "<group>"; };
 		3B759D32BD872B331850A728 /* GeminiContextualCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiContextualCaptureService.swift; sourceTree = "<group>"; };
 		407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingService.swift; sourceTree = "<group>"; };
 		43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleBasedTaskUnderstandingService.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 				15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */,
 				3B759D32BD872B331850A728 /* GeminiContextualCaptureService.swift */,
 				74F1D358E9001940945FF637 /* PlanningClassifier.swift */,
+				3A561B65CF2E9DC58DE33CE1 /* PlanningIntent.swift */,
 				3526038302978193BA832464 /* RecurrenceParser.swift */,
 				C1613D1FDECC4F6C9A4A0F52 /* SmartCaptureKeyStore.swift */,
 				DE70FBEAE485926D30A04BC7 /* SmartCapturePromptBuilder.swift */,
@@ -618,6 +621,7 @@
 				289BEAA0C0466B216B021566 /* ParserValidationSamples.swift in Sources */,
 				97C5F977AA63005664A4A384 /* PlanningClassifier.swift in Sources */,
 				7632AF1DCE6788CCF465B83C /* PlanningDecision.swift in Sources */,
+				DF29E5581FF6865B920719CB /* PlanningIntent.swift in Sources */,
 				F24E15F107FEFC1E37099429 /* Project.swift in Sources */,
 				4ED62F04AA13A9C82B66359D /* ProjectColor.swift in Sources */,
 				8BE2E2CB8F0D243AB5BD4428 /* ProjectContext.swift in Sources */,

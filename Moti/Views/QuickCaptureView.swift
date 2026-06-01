@@ -343,6 +343,7 @@ struct QuickCaptureView: View {
                     },
                     onConfirmWorkspace: { workspace in confirmWorkspace(workspace, decision: decision) },
                     onRefinePlan: { feedback in refinePlan(feedback, decision: decision) },
+                    onRefine: { feedback in refineCapture(feedback, decision: decision) },
                     onDismiss: { resetSmartCapture() }
                 )
 
@@ -557,6 +558,36 @@ struct QuickCaptureView: View {
         )
 
         runSmartCapture(text: originalInput, clarification: nil, planRefinement: refinement)
+    }
+
+    /// Universal refine for non-plan results (atomic task, lightweight capture, or
+    /// extracted context). Re-runs Smart Capture with the original capture PLUS
+    /// the user's follow-up instruction, so they can clarify, add a deadline,
+    /// make it recurring, simplify, expand, or convert it into a plan — without
+    /// the affordance being gated to plans only.
+    ///
+    /// The combined text is re-classified, so a refine like "break this down"
+    /// escalates the depth (Stage 1 sees the planning intent), while "make it
+    /// recurring" stays lightweight. If the result is already a plan/workspace,
+    /// we route through the richer workspace-revision path instead.
+    @MainActor
+    private func refineCapture(_ feedback: String, decision: ContextualCaptureDecision) {
+        if decision.proposedWorkspace != nil {
+            refinePlan(feedback, decision: decision)
+            return
+        }
+        guard !isSubmitting else { return }
+        let trimmed = feedback.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let original = (clarificationState?.previousInput ?? input)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let combined = original.isEmpty
+            ? trimmed
+            : "\(original)\n\nFollow-up instruction: \(trimmed)"
+
+        clarificationState = nil
+        runSmartCapture(text: combined)
     }
 
     /// Continues a clarification round: re-runs the agent with the prior question

@@ -133,15 +133,32 @@ enum SmartCapturePromptBuilder {
             The user asked for structure (or the capture contains several distinct items). You MAY create \
             multiple top-level tasks and break them into subtasks where it genuinely helps. \
             Keep subtasks meaningful — never pad with obvious interface steps.
+            \(contextGroundingInstruction)
             """
         case .deep:
             return """
             PLANNING DEPTH: deep.
             This intent is project-scale (or the user explicitly asked for a full plan). Produce a \
             multi-phase plan / workspace with phased targets and subtasks. Keep every step substantive.
+            \(contextGroundingInstruction)
             """
         }
     }
+
+    /// Appended to every planning (structured/deep) instruction so the model
+    /// builds a plan that CONTINUES the user's real project rather than emitting
+    /// a generic answer. The concrete project context, open/overdue/completed
+    /// tasks, and deadlines are supplied in their own sections below.
+    private static let contextGroundingInstruction = """
+    BEFORE PLANNING, read and use the context provided below — the relevant project's known context \
+    (goal, audience, deadline, constraints, preferences, notes), its existing open tasks, overdue work, \
+    recently completed work, and any deadlines. Build the plan to CONTINUE that project: extend what is \
+    already there, do NOT restate or duplicate tasks that already exist, reschedule overdue items rather \
+    than recreating them, never re-add completed or intentionally skipped work, and respect existing \
+    deadlines and the user's stated constraints. If little or no project context exists, plan from the \
+    user's description but keep assumptions explicit. The plan should feel like the next step in an \
+    ongoing project, not a fresh generic plan.
+    """
 
     private static func dateAndLocaleSection(_ context: SmartCaptureContext) -> String {
         var calendar = Calendar(identifier: .gregorian)
