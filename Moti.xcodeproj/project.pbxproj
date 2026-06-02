@@ -50,6 +50,7 @@
 		719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */; };
 		74E97CCA98CEAEEF0F8868BA /* CheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */; };
 		7632AF1DCE6788CCF465B83C /* PlanningDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA0D0333A0D6C49C5895497 /* PlanningDecision.swift */; };
+		79A9C6AC4192E8BB0335D99D /* LifelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88E15D916ECD16632A3291AB /* LifelineView.swift */; };
 		7ACBB10E098E99EFCBE5FC28 /* ClockTimeInferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */; };
 		7DA30CD959B2D291DD1DF0C7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 19AEB42AF5A553D92C1FCA9D /* Assets.xcassets */; };
 		7F561839FAA025ACB733677B /* CheckpointFloatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0A6640AA4DB3B6C0DED3CE /* CheckpointFloatingCard.swift */; };
@@ -62,6 +63,7 @@
 		85BBE8D2FD0CDF0149CEA7B2 /* error.caf in Resources */ = {isa = PBXBuildFile; fileRef = B2ECCB44A3F1A4600E84B001 /* error.caf */; };
 		861737AB3B2C4D3641443884 /* understood.caf in Resources */ = {isa = PBXBuildFile; fileRef = AC1520A86C04E2BEA6525BF5 /* understood.caf */; };
 		87157B0DF211467C57084F15 /* PlanningIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */; };
+		879A7B5489B526D36AB76F29 /* LifelineGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00C9F5C78A6EBFDD1D6BE9A8 /* LifelineGeometry.swift */; };
 		8A63DD6CDDA74788AB200C7A /* ParsedWorkItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */; };
 		8A72977F2DD020B21F2471D2 /* capture.caf in Resources */ = {isa = PBXBuildFile; fileRef = 18CB7EDFC2A8B4ECFD55505A /* capture.caf */; };
 		8BE2E2CB8F0D243AB5BD4428 /* ProjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 258DC761CEA7F2DD39A97D29 /* ProjectContext.swift */; };
@@ -147,6 +149,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		00C9F5C78A6EBFDD1D6BE9A8 /* LifelineGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineGeometry.swift; sourceTree = "<group>"; };
 		010AB30E3B59A0C4EFA92A2A /* StrandTimelineBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandTimelineBuilder.swift; sourceTree = "<group>"; };
 		052732FDB298243A938D4B0F /* MotiDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDesignSystem.swift; sourceTree = "<group>"; };
 		05FBB8B16265D9208F9C8AE0 /* StartSessionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartSessionSheet.swift; sourceTree = "<group>"; };
@@ -207,6 +210,7 @@
 		8117BB4A837027777533E234 /* SemanticContextResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticContextResolver.swift; sourceTree = "<group>"; };
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		88E15D916ECD16632A3291AB /* LifelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineView.swift; sourceTree = "<group>"; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
 		906BFB59874C4A42DEEBE40D /* StrandEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandEvent.swift; sourceTree = "<group>"; };
 		93A6C352C479B03C118265AD /* FoundationModelDedupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelDedupTests.swift; sourceTree = "<group>"; };
@@ -297,6 +301,15 @@
 				25CA2D86CEDE46C753E8B37C /* SmartCaptureResultView.swift */,
 			);
 			path = SmartCapture;
+			sourceTree = "<group>";
+		};
+		0C811C7EECBC5DFACBE005A2 /* Lifeline */ = {
+			isa = PBXGroup;
+			children = (
+				00C9F5C78A6EBFDD1D6BE9A8 /* LifelineGeometry.swift */,
+				88E15D916ECD16632A3291AB /* LifelineView.swift */,
+			);
+			path = Lifeline;
 			sourceTree = "<group>";
 		};
 		1D79EBAB3D46211AD0971602 /* SmartCapture */ = {
@@ -550,6 +563,7 @@
 				1DE26C3A5DE2A83990656065 /* MultiWeekTimelineHeroView.swift */,
 				5AE2A9C322628F35353C0B5D /* ProjectPill.swift */,
 				5DC688CE513900DA62FC4E2C /* WorkItemCard.swift */,
+				0C811C7EECBC5DFACBE005A2 /* Lifeline */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -724,6 +738,8 @@
 				835414BE2D2BE8C8BE95002B /* GeminiAPIClient.swift in Sources */,
 				2D6E81A232B8329420F89BA2 /* GeminiContextualCaptureService.swift in Sources */,
 				2DEE146A39BFB8A572F35CEA /* LLMTiebreaker.swift in Sources */,
+				879A7B5489B526D36AB76F29 /* LifelineGeometry.swift in Sources */,
+				79A9C6AC4192E8BB0335D99D /* LifelineView.swift in Sources */,
 				19D60336519AB492F56B8F2A /* MissingInfoChip.swift in Sources */,
 				0529DCF1F697624597807713 /* MockSLMTaskUnderstandingService.swift in Sources */,
 				C9F8212A0BF7408506A726F0 /* MotiApp.swift in Sources */,
