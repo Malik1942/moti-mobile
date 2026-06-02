@@ -12,6 +12,18 @@ struct MotiApp: App {
     @AppStorage("taskUnderstandingMode") private var modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
     @AppStorage("didPromoteFoundationModelDefault") private var didPromoteFoundationModelDefault = false
 
+    /// Explicit container so DEBUG verification seeding can reach its context.
+    private let sharedModelContainer: ModelContainer = {
+        do {
+            return try ModelContainer(for:
+                WorkItem.self, CompletionLog.self, Project.self, WorkSession.self,
+                SessionCheckIn.self, ProjectContext.self, ContextNote.self
+            )
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }()
+
     private var requestedMode: TaskUnderstandingMode {
         TaskUnderstandingMode(rawValue: modeRawValue) ?? .foundationModel
     }
@@ -28,6 +40,9 @@ struct MotiApp: App {
                 .fontDesign(.rounded)
                 .tint(.indigo)
                 .onAppear {
+                    #if DEBUG
+                    LifelineSampleData.seedIfRequested(into: sharedModelContainer.mainContext)
+                    #endif
                     // Preload the (optional) cognitive-feedback sounds so the
                     // first event has no decode hitch. No-op if assets absent.
                     SoundManager.shared.prewarm()
@@ -44,15 +59,7 @@ struct MotiApp: App {
                     #endif
                 }
         }
-        .modelContainer(for: [
-            WorkItem.self,
-            CompletionLog.self,
-            Project.self,
-            WorkSession.self,
-            SessionCheckIn.self,
-            ProjectContext.self,
-            ContextNote.self
-        ])
+        .modelContainer(sharedModelContainer)
     }
 }
 
