@@ -112,6 +112,46 @@ enum TimelineNarrator {
         guard let first = s.first else { return s }
         return first.uppercased() + s.dropFirst()
     }
+
+    // MARK: - Peek sheet copy
+
+    /// Achievement current-state line, in behavioral terms (PRD §6.2):
+    /// "Moving toward deadline · 4 done, 2 deferred".
+    static func achievementStatus(for strand: Strand) -> String {
+        let done = strand.forwardNodes.filter(\.isReached).count
+        var lead = "In progress"
+        if strand.deadline != nil { lead = strand.isPaused ? "Paused before deadline" : "Moving toward deadline" }
+        var tail: [String] = []
+        if done > 0 { tail.append("\(done) done") }
+        if strand.deferredCount > 0 { tail.append("\(strand.deferredCount) deferred") }
+        return tail.isEmpty ? lead : "\(lead) · \(tail.joined(separator: ", "))"
+    }
+
+    /// Maintenance rhythm line (PRD §6.2): "Usually weekly · quiet for 18 days".
+    static func maintenanceRhythm(for strand: Strand) -> String {
+        var parts: [String] = []
+        if let cadence = strand.presence.baselineCadenceDays,
+           strand.presence.baselineSource == .recurrence || strand.presence.baselineSource == .history {
+            parts.append("Usually \(cadenceWord(cadence))")
+        }
+        if let days = strand.presence.daysSinceLastActivity {
+            switch strand.presence.state {
+            case .drifted, .quiet: parts.append("quiet for \(days) \(days == 1 ? "day" : "days")")
+            case .active:          parts.append(days == 0 ? "tended today" : "last tended \(days) \(days == 1 ? "day" : "days") ago")
+            }
+        } else {
+            parts.append("no rhythm yet")
+        }
+        return capitalizingFirst(parts.joined(separator: " · "))
+    }
+
+    /// "Why it went quiet" — co-occurrence, never causation, never "crowded out"
+    /// (PRD §6.2). Returns nil when there is nothing honest to say.
+    static func whyQuiet(for strand: Strand) -> String? {
+        guard strand.presence.state != .active,
+              !strand.coOccurringStrandNames.isEmpty else { return nil }
+        return "It faded as \(joined(strand.coOccurringStrandNames)) rose during the same weeks."
+    }
 }
 
 /// The Main Timeline's single bottom focus: either calm reassurance or the one

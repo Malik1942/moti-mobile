@@ -8,6 +8,7 @@ import SwiftUI
 /// exception raising its voice (PRD §6.1).
 struct LifelineTimelineView: View {
     var onAddToTimeline: () -> Void = {}
+    var onOpenInProjects: (String) -> Void = { _ in }
 
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
     @Query(sort: \Project.createdAt) private var projects: [Project]
@@ -57,6 +58,19 @@ struct LifelineTimelineView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Timeline")
+            .sheet(item: $peekStrand) { strand in
+                StrandPeekSheet(strand: strand, onOpenInProjects: onOpenInProjects)
+            }
+            #if DEBUG
+            .onAppear {
+                // Verification hook: -MotiPeekStrand <name> auto-opens that peek.
+                if let name = UserDefaults.standard.string(forKey: "MotiPeekStrand"),
+                   peekStrand == nil,
+                   let match = strands.first(where: { $0.name == name }) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { peekStrand = match }
+                }
+            }
+            #endif
         }
     }
 

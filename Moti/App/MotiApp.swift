@@ -296,9 +296,10 @@ struct RootTabView: View {
         switch selectedTab {
         case .timeline:
             if useLifelineTimeline {
-                LifelineTimelineView {
-                    presentCapture(.text)
-                }
+                LifelineTimelineView(
+                    onAddToTimeline: { presentCapture(.text) },
+                    onOpenInProjects: { _ in selectedTab = .projects }
+                )
             } else {
                 TimelineView {
                     presentCapture(.text)

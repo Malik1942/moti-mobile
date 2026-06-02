@@ -108,4 +108,49 @@ final class TimelineNarratorTests: XCTestCase {
         XCTAssertEqual(TimelineNarrator.joined(["A", "B"]), "A and B")
         XCTAssertEqual(TimelineNarrator.joined(["A", "B", "C"]), "A, B, and C")
     }
+
+    // MARK: - Peek copy
+
+    private func achievement(
+        done: Int, deferred: Int, hasDeadline: Bool
+    ) -> Strand {
+        let nodes = (0..<done).map {
+            StrandForwardNode(id: UUID(), title: "Step \($0)", date: nil, isDeadline: false, isReached: true)
+        }
+        return Strand(
+            id: "S", name: "Move", colorToken: "purple", kind: .achievement,
+            presence: StrandPresence(state: .active, reach: 0.9, lastActivity: nil,
+                                     daysSinceLastActivity: 1, baselineCadenceDays: nil, baselineSource: .none),
+            isPaused: false, recurrenceCadenceDays: nil, openCount: 3, deferredCount: deferred,
+            deadline: hasDeadline ? Date() : nil, forwardNodes: nodes, lastTraces: [], coOccurringStrandNames: []
+        )
+    }
+
+    func test_achievementStatus_isBehavioral() {
+        XCTAssertEqual(TimelineNarrator.achievementStatus(for: achievement(done: 4, deferred: 2, hasDeadline: true)),
+                       "Moving toward deadline · 4 done, 2 deferred")
+        XCTAssertEqual(TimelineNarrator.achievementStatus(for: achievement(done: 0, deferred: 0, hasDeadline: false)),
+                       "In progress")
+    }
+
+    func test_maintenanceRhythm_showsQuietDuration() {
+        let s = strand("Fitness", .drifted, days: 18, baseline: 7)
+        XCTAssertEqual(TimelineNarrator.maintenanceRhythm(for: s), "Usually weekly · quiet for 18 days")
+    }
+
+    func test_whyQuiet_isCoOccurrenceNotCausation() {
+        var s = strand("Fitness", .drifted, days: 18)
+        s = Strand(id: s.id, name: s.name, colorToken: s.colorToken, kind: .maintenance,
+                   presence: s.presence, isPaused: false, recurrenceCadenceDays: 7, openCount: 1,
+                   deferredCount: 0, deadline: nil, forwardNodes: [], lastTraces: [],
+                   coOccurringStrandNames: ["Work", "Move"])
+        let why = TimelineNarrator.whyQuiet(for: s)
+        XCTAssertEqual(why, "It faded as Work and Move rose during the same weeks.")
+        XCTAssertFalse(why!.lowercased().contains("crowded out")) // never blame
+    }
+
+    func test_whyQuiet_nilWhenActiveOrNoRisers() {
+        XCTAssertNil(TimelineNarrator.whyQuiet(for: strand("Work", .active)))
+        XCTAssertNil(TimelineNarrator.whyQuiet(for: strand("Fitness", .drifted, days: 18)))
+    }
 }

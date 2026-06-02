@@ -73,6 +73,7 @@
 		91B250EF94F1178429D5B32A /* TaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */; };
 		92DC868804783E9B9A6442F4 /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD412970ED5D739AC844251 /* SpeechTranscriptionService.swift */; };
 		97C5F977AA63005664A4A384 /* PlanningClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F1D358E9001940945FF637 /* PlanningClassifier.swift */; };
+		99CBA18E84E865833FC480AD /* StrandPeekSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B201853540CECA5DA7E7E117 /* StrandPeekSheet.swift */; };
 		9AD45895DB47206E03DF10C2 /* CheckpointPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75AE02F70F6655486F7ED88B /* CheckpointPolicyTests.swift */; };
 		9D874612CC9D62742B5D5723 /* LifelineSampleData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CE5F6FBE11744FE5698A88F /* LifelineSampleData.swift */; };
 		A0CCB66EA2EA22137E6A606B /* StrandEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 906BFB59874C4A42DEEBE40D /* StrandEvent.swift */; };
@@ -239,6 +240,7 @@
 		AD0D9FC621E620EB77D0AF98 /* TemporalResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalResolverTests.swift; sourceTree = "<group>"; };
 		AE5BD783181FD781ECCF8D64 /* Strand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strand.swift; sourceTree = "<group>"; };
 		B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemCompletion.swift; sourceTree = "<group>"; };
+		B201853540CECA5DA7E7E117 /* StrandPeekSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPeekSheet.swift; sourceTree = "<group>"; };
 		B2ECCB44A3F1A4600E84B001 /* error.caf */ = {isa = PBXFileReference; path = error.caf; sourceTree = "<group>"; };
 		B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningIntentTests.swift; sourceTree = "<group>"; };
@@ -316,6 +318,7 @@
 			children = (
 				00C9F5C78A6EBFDD1D6BE9A8 /* LifelineGeometry.swift */,
 				88E15D916ECD16632A3291AB /* LifelineView.swift */,
+				B201853540CECA5DA7E7E117 /* StrandPeekSheet.swift */,
 				3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */,
 			);
 			path = Lifeline;
@@ -793,6 +796,7 @@
 				1556BCF3D4BAD2F5A1007CE0 /* StartSessionSheet.swift in Sources */,
 				83C857977220D2E751F2146A /* Strand.swift in Sources */,
 				A0CCB66EA2EA22137E6A606B /* StrandEvent.swift in Sources */,
+				99CBA18E84E865833FC480AD /* StrandPeekSheet.swift in Sources */,
 				E0F8E93182C4892F1D4E9F91 /* StrandPreferenceStore.swift in Sources */,
 				AA243050769FE8D9756E64F8 /* StrandPresence.swift in Sources */,
 				8391333848FAEEA206F3118A /* StrandTimelineBuilder.swift in Sources */,
