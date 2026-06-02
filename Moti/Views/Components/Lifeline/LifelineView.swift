@@ -1,5 +1,13 @@
 import SwiftUI
 
+/// Shared geometry so every row's Now axis lines up into one column and the
+/// parent can draw a single vertical "Now" rule through the nodes.
+enum LifelineMetrics {
+    static let nodeRadius: CGFloat = 5
+    /// Distance from the track's trailing edge to the node centers.
+    static let axisTrailingInset: CGFloat = nodeRadius + 1
+}
+
 /// One strand rendered as a lifeline: a label, a line that flows from the past
 /// (left, receding) toward the fixed Now axis (right), a recency fade, and a
 /// node — or, for a drifted strand, an **empty slot** at the axis.
@@ -57,7 +65,7 @@ struct LifelineView: View {
     private var track: some View {
         Canvas { context, size in
             let midY = size.height / 2
-            let nowX = size.width - nodeRadius - 1 // leave room for the node
+            let nowX = size.width - LifelineMetrics.axisTrailingInset // node column
             let startX: CGFloat = 0
             let endX = startX + (nowX - startX) * geo.endFraction
 
@@ -121,7 +129,7 @@ struct LifelineView: View {
 
     // MARK: - Derived presentation
 
-    private let nodeRadius: CGFloat = 5
+    private var nodeRadius: CGFloat { LifelineMetrics.nodeRadius }
 
     private var lineWidth: CGFloat {
         switch strand.presence.state {

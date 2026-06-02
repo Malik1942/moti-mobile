@@ -47,6 +47,7 @@
 		665C34E258EF626B611FF7C9 /* SmartCaptureResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CA2D86CEDE46C753E8B37C /* SmartCaptureResultView.swift */; };
 		69D23A2CB44EB75B265AFA79 /* SmartCaptureKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1613D1FDECC4F6C9A4A0F52 /* SmartCaptureKeyStore.swift */; };
 		6ADB29F7F7DD24D51CA4A0C8 /* Secrets.swift.example in Resources */ = {isa = PBXBuildFile; fileRef = C92E544DFF3FE3838F77CAE7 /* Secrets.swift.example */; };
+		6EF9F12F8ECC8E4824F15F51 /* TimelineNarratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757E196764677A82655E3F6B /* TimelineNarratorTests.swift */; };
 		719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */; };
 		74E97CCA98CEAEEF0F8868BA /* CheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */; };
 		7632AF1DCE6788CCF465B83C /* PlanningDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA0D0333A0D6C49C5895497 /* PlanningDecision.swift */; };
@@ -60,6 +61,7 @@
 		835414BE2D2BE8C8BE95002B /* GeminiAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */; };
 		8391333848FAEEA206F3118A /* StrandTimelineBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010AB30E3B59A0C4EFA92A2A /* StrandTimelineBuilder.swift */; };
 		83C857977220D2E751F2146A /* Strand.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5BD783181FD781ECCF8D64 /* Strand.swift */; };
+		84E503771DDFC7561C238CFA /* TimelineNarrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */; };
 		85BBE8D2FD0CDF0149CEA7B2 /* error.caf in Resources */ = {isa = PBXBuildFile; fileRef = B2ECCB44A3F1A4600E84B001 /* error.caf */; };
 		861737AB3B2C4D3641443884 /* understood.caf in Resources */ = {isa = PBXBuildFile; fileRef = AC1520A86C04E2BEA6525BF5 /* understood.caf */; };
 		87157B0DF211467C57084F15 /* PlanningIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */; };
@@ -83,6 +85,7 @@
 		ACCA94165CDDEFDD94530283 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */; };
 		AD6210438742AAC67EEEF5C3 /* MotiWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */; };
 		AFA15869AE41E5331338B141 /* TimelineCheckpointScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */; };
+		B4482A4D7F6E1E1CBDEEA432 /* LifelineTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A3828199B22A05B815E6896 /* LifelineTimelineView.swift */; };
 		B849D3137358A34B6EB7BED6 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */; };
 		BA3AC6649C8702969AB85897 /* ProjectPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2A9C322628F35353C0B5D /* ProjectPill.swift */; };
 		BBCFED02C82620F6B0B2E5CF /* TaskCheckInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC16CD4C608B56D0F7CB695D /* TaskCheckInCoordinator.swift */; };
@@ -178,8 +181,10 @@
 		3526038302978193BA832464 /* RecurrenceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParser.swift; sourceTree = "<group>"; };
 		382ABA033145311D10EF58FD /* Moti.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moti.entitlements; sourceTree = "<group>"; };
 		383EA9D03ACDB97879F001F8 /* CaptureModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureModels.swift; sourceTree = "<group>"; };
+		3A3828199B22A05B815E6896 /* LifelineTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineTimelineView.swift; sourceTree = "<group>"; };
 		3A561B65CF2E9DC58DE33CE1 /* PlanningIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningIntent.swift; sourceTree = "<group>"; };
 		3B759D32BD872B331850A728 /* GeminiContextualCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiContextualCaptureService.swift; sourceTree = "<group>"; };
+		3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineNarrator.swift; sourceTree = "<group>"; };
 		3DBBA4ED81824BC799B88B50 /* StrandPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPresence.swift; sourceTree = "<group>"; };
 		407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingService.swift; sourceTree = "<group>"; };
 		43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleBasedTaskUnderstandingService.swift; sourceTree = "<group>"; };
@@ -200,6 +205,7 @@
 		6B74EF4219717B138C1A0737 /* DateResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateResolver.swift; sourceTree = "<group>"; };
 		7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectInferrer.swift; sourceTree = "<group>"; };
 		74F1D358E9001940945FF637 /* PlanningClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningClassifier.swift; sourceTree = "<group>"; };
+		757E196764677A82655E3F6B /* TimelineNarratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineNarratorTests.swift; sourceTree = "<group>"; };
 		75AE02F70F6655486F7ED88B /* CheckpointPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicyTests.swift; sourceTree = "<group>"; };
 		75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemDetailView.swift; sourceTree = "<group>"; };
 		77BBE151CF9E4115BC8306B6 /* reorganized.caf */ = {isa = PBXFileReference; path = reorganized.caf; sourceTree = "<group>"; };
@@ -308,6 +314,7 @@
 			children = (
 				00C9F5C78A6EBFDD1D6BE9A8 /* LifelineGeometry.swift */,
 				88E15D916ECD16632A3291AB /* LifelineView.swift */,
+				3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */,
 			);
 			path = Lifeline;
 			sourceTree = "<group>";
@@ -385,6 +392,7 @@
 				54B91EB266B219549576CB12 /* StrandPresenceTests.swift */,
 				9DCFF5E6B664378EF5AC80FF /* StrandTimelineBuilderTests.swift */,
 				AD0D9FC621E620EB77D0AF98 /* TemporalResolverTests.swift */,
+				757E196764677A82655E3F6B /* TimelineNarratorTests.swift */,
 				D3AED7C517C32264EF77676D /* WorkItemScopeTests.swift */,
 			);
 			path = MotiTests;
@@ -458,6 +466,7 @@
 				ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */,
 				58F2D03D24B2A09BF30D52DE /* CheckInSheet.swift */,
 				CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */,
+				3A3828199B22A05B815E6896 /* LifelineTimelineView.swift */,
 				BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */,
 				53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */,
 				BF41184673063DB0A325C69D /* QuickCaptureView.swift */,
@@ -711,6 +720,7 @@
 				C7FDDD7D358E7B969564FA3F /* StrandPresenceTests.swift in Sources */,
 				285A968B52BB019CEA004E86 /* StrandTimelineBuilderTests.swift in Sources */,
 				4DC374B8BF5729E245BFB49D /* TemporalResolverTests.swift in Sources */,
+				6EF9F12F8ECC8E4824F15F51 /* TimelineNarratorTests.swift in Sources */,
 				8F340BE901DCC2CC8B2DEDB4 /* WorkItemScopeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -739,6 +749,7 @@
 				2D6E81A232B8329420F89BA2 /* GeminiContextualCaptureService.swift in Sources */,
 				2DEE146A39BFB8A572F35CEA /* LLMTiebreaker.swift in Sources */,
 				879A7B5489B526D36AB76F29 /* LifelineGeometry.swift in Sources */,
+				B4482A4D7F6E1E1CBDEEA432 /* LifelineTimelineView.swift in Sources */,
 				79A9C6AC4192E8BB0335D99D /* LifelineView.swift in Sources */,
 				19D60336519AB492F56B8F2A /* MissingInfoChip.swift in Sources */,
 				0529DCF1F697624597807713 /* MockSLMTaskUnderstandingService.swift in Sources */,
@@ -788,6 +799,7 @@
 				619473673DE127605CD34B4D /* TemporalResolution.swift in Sources */,
 				A9E8586A102D3375618F5F59 /* TemporalResolver.swift in Sources */,
 				AFA15869AE41E5331338B141 /* TimelineCheckpointScheduler.swift in Sources */,
+				84E503771DDFC7561C238CFA /* TimelineNarrator.swift in Sources */,
 				DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */,
 				C109B0E9870DF6AF8B982C92 /* WidgetSnapshot.swift in Sources */,
 				430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */,

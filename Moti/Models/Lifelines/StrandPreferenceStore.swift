@@ -19,6 +19,8 @@ final class StrandPreferenceStore: ObservableObject {
     private let loweredKey = "lifelines.loweredStrandIDs"
     /// Maps strand id → ISO week string it was parked in ("Not this week").
     private let parkedKey = "lifelines.parkedStrandWeek"
+    /// Maps strand id → ISO week string the user chose to "Make space" in.
+    private let spacedKey = "lifelines.spacedStrandWeek"
 
     /// Bumped on every mutation so SwiftUI views observing the store refresh.
     @Published private(set) var revision = 0
@@ -75,11 +77,40 @@ final class StrandPreferenceStore: ObservableObject {
         bump()
     }
 
+    // MARK: "Make space" (intent to re-engage this week — also stops the nudge)
+
+    func isSpacedThisWeek(_ strandID: String, now: Date = .now, calendar: Calendar = .current) -> Bool {
+        guard let stored = spacedMap[strandID] else { return false }
+        return stored == Self.weekKey(for: now, calendar: calendar)
+    }
+
+    func makeSpaceThisWeek(_ strandID: String, now: Date = .now, calendar: Calendar = .current) {
+        var map = spacedMap
+        map[strandID] = Self.weekKey(for: now, calendar: calendar)
+        defaults.set(map, forKey: spacedKey)
+        bump()
+    }
+
+    func clearSpace(_ strandID: String) {
+        var map = spacedMap
+        map.removeValue(forKey: strandID)
+        defaults.set(map, forKey: spacedKey)
+        bump()
+    }
+
+    /// A strand the user has consciously attended to this week (parked or spaced)
+    /// — excluded from the "What matters now" nudge so neither choice nags.
+    func isAttendedThisWeek(_ strandID: String, now: Date = .now, calendar: Calendar = .current) -> Bool {
+        isParkedThisWeek(strandID, now: now, calendar: calendar)
+            || isSpacedThisWeek(strandID, now: now, calendar: calendar)
+    }
+
     // MARK: - Internals
 
     private var pausedIDs: Set<String> { Set(defaults.stringArray(forKey: pausedKey) ?? []) }
     private var loweredIDs: Set<String> { Set(defaults.stringArray(forKey: loweredKey) ?? []) }
     private var parkedMap: [String: String] { (defaults.dictionary(forKey: parkedKey) as? [String: String]) ?? [:] }
+    private var spacedMap: [String: String] { (defaults.dictionary(forKey: spacedKey) as? [String: String]) ?? [:] }
 
     private func bump() { revision &+= 1 }
 

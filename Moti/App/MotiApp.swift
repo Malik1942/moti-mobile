@@ -58,6 +58,9 @@ struct MotiApp: App {
 
 struct RootTabView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    /// Feature flag for the v2.0 Lifelines Timeline redesign. Off by default so
+    /// the existing Timeline ships unchanged until the redesign is proven.
+    @AppStorage("useLifelineTimeline") private var useLifelineTimeline = false
     @State private var selectedTab: MotiTab = .timeline
     @State private var showingCapture = false
     @State private var captureStartMode: CaptureStartMode = .text
@@ -285,8 +288,14 @@ struct RootTabView: View {
     private var selectedContent: some View {
         switch selectedTab {
         case .timeline:
-            TimelineView {
-                presentCapture(.text)
+            if useLifelineTimeline {
+                LifelineTimelineView {
+                    presentCapture(.text)
+                }
+            } else {
+                TimelineView {
+                    presentCapture(.text)
+                }
             }
         case .projects:
             ProjectsView()
