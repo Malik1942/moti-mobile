@@ -1,6 +1,7 @@
 #if DEBUG
 import SwiftData
 import SwiftUI
+import UIKit
 
 /// DEBUG-only read-out for the Lifelines instrumentation (PRD §9). Local data
 /// only — nothing here leaves the device. Surfaces the gating signals so the
@@ -52,10 +53,15 @@ struct LifelineMetricsDebugView: View {
             row("Zero-event · all", percent(snap.zeroFraction(for: nil), snap.zeroEvents, snap.total))
             row("Zero-event · achievement", percent(snap.zeroFraction(for: "achievement"), snap.achievementZeroEvents, snap.achievementTotal))
             row("Zero-event · maintenance", percent(snap.zeroFraction(for: "maintenance"), snap.maintenanceZeroEvents, snap.maintenanceTotal))
+            Button {
+                UIPasteboard.general.string = coverageClipboardText(for: snap)
+            } label: {
+                Label("Copy metrics to clipboard", systemImage: "doc.on.doc")
+            }
         } header: {
-            Text("Coverage (live)")
+            Text("Coverage snapshot (live)")
         } footer: {
-            Text("High zero-event maintenance coverage = strands rendering drifted/absent only because nothing feeds them. This gates whether v1 needs a maintenance touch path.")
+            Text("Zero-event means a strand has no actual behavioral events feeding it. If maintenance zero-event coverage is high, solve maintenance feeding before v1.5.")
         }
     }
 
@@ -135,6 +141,14 @@ struct LifelineMetricsDebugView: View {
 
     private func percent(_ fraction: Double, _ n: Int, _ d: Int) -> String {
         d == 0 ? "—" : "\(Int((fraction * 100).rounded()))% (\(n)/\(d))"
+    }
+
+    private func coverageClipboardText(for snap: StrandCoverageSnapshot) -> String {
+        [
+            "total strands: \(snap.total)",
+            "achievement: \(snap.achievementZeroEvents)/\(snap.achievementTotal) zero-event",
+            "maintenance: \(snap.maintenanceZeroEvents)/\(snap.maintenanceTotal) zero-event"
+        ].joined(separator: "\n")
     }
 }
 #endif

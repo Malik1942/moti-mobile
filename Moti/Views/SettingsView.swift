@@ -142,7 +142,7 @@ struct SettingsView: View {
                 }
 
                 Section("Timeline") {
-                    Toggle("Trajectory Timeline (v2.0)", isOn: $useLifelineTimeline)
+                    Toggle("Use Trajectory Timeline", isOn: $useLifelineTimeline)
                     Text("A redesigned Timeline as a trajectory engine: time runs downward from Now, and each future is projected from your actual pace — on-time, slipping, fading, or sustained.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
