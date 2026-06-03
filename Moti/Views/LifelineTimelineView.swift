@@ -14,9 +14,18 @@ struct LifelineTimelineView: View {
     @Query(sort: \Project.createdAt) private var projects: [Project]
     @Query private var completionLogs: [CompletionLog]
     @ObservedObject private var prefs = StrandPreferenceStore.shared
+    @ObservedObject private var metrics = LifelineInstrumentation.shared
+    #if DEBUG
+    @ObservedObject private var typeOverrideStore = LifelineTypeOverrideStore.shared
+    #endif
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var peekStrand: Strand?
+
+    // Per-session instrumentation state (PRD §9 glance-and-close / outcomes).
+    @State private var didTapStrand = false
+    @State private var surfacedStrandID: String?
+    @State private var surfacedOutcomeRecorded = false
 
     // MARK: - Derived (computed truth → render-ready strands)
 
@@ -25,17 +34,30 @@ struct LifelineTimelineView: View {
         return Set(candidateIDs.filter { prefs.isPaused($0) })
     }
 
+    private var typeOverrides: [String: StrandType] {
+        #if DEBUG
+        return typeOverrideStore.overrides
+        #else
+        return [:]
+        #endif
+    }
+
     private var strands: [Strand] {
         StrandTimelineBuilder(
             projects: projects,
             workItems: WorkItemScope.timeline(workItems),
             completionLogs: completionLogs,
-            pausedStrandIDs: pausedIDs
+            pausedStrandIDs: pausedIDs,
+            typeOverrides: typeOverrides
         ).build()
     }
 
     private var attendedIDs: Set<String> {
         Set(strands.map(\.id).filter { prefs.isAttendedThisWeek($0) })
+    }
+
+    private var focus: TimelineFocus {
+        TimelineNarrator.focus(for: strands, parkedIDs: attendedIDs)
     }
 
     private var hasContent: Bool { !projects.isEmpty || !workItems.isEmpty }
@@ -58,6 +80,8 @@ struct LifelineTimelineView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Timeline")
+            .onAppear { recordOpen() }
+            .onDisappear { recordClose() }
             .sheet(item: $peekStrand) { strand in
                 StrandPeekSheet(strand: strand, onOpenInProjects: onOpenInProjects)
             }
@@ -94,7 +118,7 @@ struct LifelineTimelineView: View {
                 nowRule
                 VStack(spacing: 2) {
                     ForEach(strands) { strand in
-                        LifelineView(strand: strand) { peekStrand = strand }
+                        LifelineView(strand: strand) { recordPeek(strand) }
                     }
                 }
             }
@@ -133,7 +157,7 @@ struct LifelineTimelineView: View {
 
     @ViewBuilder
     private var focusCard: some View {
-        switch TimelineNarrator.focus(for: strands, parkedIDs: attendedIDs) {
+        switch focus {
         case .calm(let message):
             calmCard(message)
         case .attention(let id, let title, let detail):
@@ -175,10 +199,12 @@ struct LifelineTimelineView: View {
             HStack(spacing: 10) {
                 gentleButton("Make space", filled: true) {
                     haptic()
+                    recordOutcome(strandID: strandID, detail: "make-space")
                     prefs.makeSpaceThisWeek(strandID)
                 }
                 gentleButton("Not this week", filled: false) {
                     haptic()
+                    recordOutcome(strandID: strandID, detail: "not-this-week")
                     prefs.parkForThisWeek(strandID)
                 }
             }
@@ -229,6 +255,46 @@ struct LifelineTimelineView: View {
         .padding(MotiLayout.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+    }
+
+    // MARK: - Instrumentation (local-only; PRD §9)
+
+    private func recordOpen() {
+        didTapStrand = false
+        surfacedOutcomeRecorded = false
+        let snap = metrics.coverage(for: strands)
+        metrics.record(.open, detail: "drifted:\(strands.filter { $0.presence.state == .drifted }.count) zero:\(snap.zeroEvents)/\(snap.total)")
+
+        // Record which (if any) drifted strand was surfaced this session.
+        if case let .attention(id, _, _) = focus, let s = strands.first(where: { $0.id == id }) {
+            surfacedStrandID = id
+            metrics.record(.surface, strandID: id,
+                           effectiveType: s.effectiveType.rawValue,
+                           presenceState: s.presence.state.rawValue)
+        } else {
+            surfacedStrandID = nil
+        }
+    }
+
+    private func recordClose() {
+        // A surfaced strand left untouched = ignored.
+        if let id = surfacedStrandID, !surfacedOutcomeRecorded {
+            metrics.record(.outcome, strandID: id, detail: "ignored")
+        }
+        metrics.record(.close, detail: didTapStrand ? "tapped" : "glance-close")
+    }
+
+    private func recordPeek(_ strand: Strand) {
+        didTapStrand = true
+        metrics.record(.peek, strandID: strand.id,
+                       effectiveType: strand.effectiveType.rawValue,
+                       presenceState: strand.presence.state.rawValue)
+        peekStrand = strand
+    }
+
+    private func recordOutcome(strandID: String, detail: String) {
+        if strandID == surfacedStrandID { surfacedOutcomeRecorded = true }
+        metrics.record(.outcome, strandID: strandID, detail: detail)
     }
 
     private func haptic() {

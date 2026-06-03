@@ -68,7 +68,7 @@ final class StrandTimelineBuilderTests: XCTestCase {
             completionLogs: [], now: now
         )
         let move = builder.build().first { $0.name == "Move" }
-        XCTAssertEqual(move?.kind, .achievement)
+        XCTAssertEqual(move?.effectiveType, .achievement)
         XCTAssertNotNil(move?.deadline)
         XCTAssertFalse(move?.forwardNodes.isEmpty ?? true)
     }
@@ -81,7 +81,50 @@ final class StrandTimelineBuilderTests: XCTestCase {
             completionLogs: [], now: now
         )
         let fitness = builder.build().first { $0.name == "Fitness" }
-        XCTAssertEqual(fitness?.kind, .maintenance)
+        XCTAssertEqual(fitness?.effectiveType, .maintenance)
+    }
+
+    func test_deadlinePlusRecurringActivity_staysMaintenance() {
+        // Tightened rule: any recurring activity makes the strand maintenance,
+        // even alongside a real one-time deadline.
+        let builder = StrandTimelineBuilder(
+            projects: [project("Health")],
+            workItems: [
+                item("Annual physical", project: "Health", created: daysAgo(3), due: daysAgo(-20)),
+                item("Walk", project: "Health", created: daysAgo(3), due: daysAgo(-1),
+                     recurrence: RecurrenceRule(frequency: .daily))
+            ],
+            completionLogs: [], now: now
+        )
+        let health = builder.build().first { $0.name == "Health" }
+        XCTAssertEqual(health?.computedType, .maintenance)
+        XCTAssertEqual(health?.effectiveType, .maintenance)
+    }
+
+    func test_userOverrideType_winsOverComputed() {
+        let proj = project("Fitness")
+        let builder = StrandTimelineBuilder(
+            projects: [proj],
+            workItems: [item("Gym", project: "Fitness", created: daysAgo(2),
+                             recurrence: RecurrenceRule(frequency: .weekly))],
+            completionLogs: [], now: now,
+            typeOverrides: [proj.id.uuidString: .achievement]
+        )
+        let fitness = builder.build().first { $0.name == "Fitness" }
+        XCTAssertEqual(fitness?.computedType, .maintenance)
+        XCTAssertEqual(fitness?.userOverrideType, .achievement)
+        XCTAssertEqual(fitness?.effectiveType, .achievement) // override wins
+    }
+
+    func test_eventCount_isZeroForEmptyProject_nonzeroOtherwise() {
+        let builder = StrandTimelineBuilder(
+            projects: [project("Empty"), project("Work")],
+            workItems: [item("Ship", project: "Work", created: daysAgo(1))],
+            completionLogs: [], now: now
+        )
+        let strands = builder.build()
+        XCTAssertEqual(strands.first { $0.name == "Empty" }?.eventCount, 0)
+        XCTAssertGreaterThan(strands.first { $0.name == "Work" }?.eventCount ?? 0, 0)
     }
 
     // MARK: - Unassigned strand

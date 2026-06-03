@@ -4,10 +4,11 @@ import Foundation
 /// the same kind of thing and must not share one generic checklist (PRD §6.2):
 /// the peek sheet branches on this.
 ///
-/// Inferred, not stored (per the v1 decision): a strand is `achievement` when it
-/// carries a real one-time deadline; otherwise it is `maintenance`. Recurrence
-/// biases toward maintenance — a weekly habit is a rhythm, not a deadline.
-enum StrandKind: String, Equatable {
+/// **Maintenance is the default; achievement is the qualified exception** — a
+/// strand reads as achievement only when it has a single terminal deadline AND
+/// no recurring activity (a habit is a rhythm, not a deadline). This is computed,
+/// not stored.
+enum StrandType: String, Equatable {
     case achievement
     case maintenance
 }
@@ -45,7 +46,24 @@ struct Strand: Identifiable, Equatable {
     let name: String
     /// Identity color token (stable per future). Never a status scale.
     let colorToken: String
-    let kind: StrandKind
+
+    // MARK: Type ladder (override-ready; PRD §9 type/override path)
+
+    /// What the algorithm decided this strand is, from behavior alone.
+    let computedType: StrandType
+    /// A deliberate override of the computed type. v1 has **no user entry point**
+    /// — this is populated only by a DEBUG override map, present so a later phase
+    /// can add user override (and, later still, a `computedTypeAtOverride` audit
+    /// field) without a data migration: strands are computed per render, never
+    /// persisted, so nothing here touches the SwiftData model.
+    let userOverrideType: StrandType?
+    /// What the rest of the app should treat this strand as.
+    var effectiveType: StrandType { userOverrideType ?? computedType }
+
+    /// Count of behavioral events backing this strand. Surfaced so the
+    /// instrumentation can measure zero-event coverage by type (the
+    /// maintenance-starvation signal); not used for rendering.
+    let eventCount: Int
 
     /// The computed truth: does this line still reach Now?
     let presence: StrandPresence
@@ -77,7 +95,8 @@ struct Strand: Identifiable, Equatable {
     /// Names of strands that *rose while this one fell*, in the same recent
     /// window. Stated as co-occurrence — never causation, never "crowded out"
     /// (PRD §6.2). This is the computed truth; the model layer phrases it.
-    let coOccurringStrandNames: [String]
+    /// Filled in a second pass once the whole field is known.
+    var coOccurringStrandNames: [String]
 
     static let unassignedID = "strand.unassigned"
 

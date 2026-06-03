@@ -146,6 +146,11 @@ struct SettingsView: View {
                     Text("A redesigned Timeline that shows presence, not schedule: each future is a line reaching toward Now, so you can see at a glance what's still alive and what has quietly drifted.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    #if DEBUG
+                    NavigationLink("Lifelines Metrics (DEBUG)") {
+                        LifelineMetricsDebugView()
+                    }
+                    #endif
                 }
 
                 Section("About") {

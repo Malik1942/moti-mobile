@@ -18,7 +18,8 @@ final class TimelineNarratorTests: XCTestCase {
         baseline: Double? = 7, source: BaselineSource = .recurrence
     ) -> Strand {
         Strand(
-            id: name, name: name, colorToken: "blue", kind: .maintenance,
+            id: name, name: name, colorToken: "blue",
+            computedType: .maintenance, userOverrideType: nil, eventCount: 1,
             presence: StrandPresence(
                 state: state, reach: 0.5, lastActivity: nil,
                 daysSinceLastActivity: days, baselineCadenceDays: baseline, baselineSource: source
@@ -118,7 +119,8 @@ final class TimelineNarratorTests: XCTestCase {
             StrandForwardNode(id: UUID(), title: "Step \($0)", date: nil, isDeadline: false, isReached: true)
         }
         return Strand(
-            id: "S", name: "Move", colorToken: "purple", kind: .achievement,
+            id: "S", name: "Move", colorToken: "purple",
+            computedType: .achievement, userOverrideType: nil, eventCount: max(done, 1),
             presence: StrandPresence(state: .active, reach: 0.9, lastActivity: nil,
                                      daysSinceLastActivity: 1, baselineCadenceDays: nil, baselineSource: .none),
             isPaused: false, recurrenceCadenceDays: nil, openCount: 3, deferredCount: deferred,
@@ -140,10 +142,7 @@ final class TimelineNarratorTests: XCTestCase {
 
     func test_whyQuiet_isCoOccurrenceNotCausation() {
         var s = strand("Fitness", .drifted, days: 18)
-        s = Strand(id: s.id, name: s.name, colorToken: s.colorToken, kind: .maintenance,
-                   presence: s.presence, isPaused: false, recurrenceCadenceDays: 7, openCount: 1,
-                   deferredCount: 0, deadline: nil, forwardNodes: [], lastTraces: [],
-                   coOccurringStrandNames: ["Work", "Move"])
+        s.coOccurringStrandNames = ["Work", "Move"]
         let why = TimelineNarrator.whyQuiet(for: s)
         XCTAssertEqual(why, "It faded as Work and Move rose during the same weeks.")
         XCTAssertFalse(why!.lowercased().contains("crowded out")) // never blame

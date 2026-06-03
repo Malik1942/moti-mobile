@@ -20,7 +20,7 @@ struct StrandPeekSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
-                if strand.kind == .achievement {
+                if strand.effectiveType == .achievement {
                     achievementBody
                 } else {
                     maintenanceBody

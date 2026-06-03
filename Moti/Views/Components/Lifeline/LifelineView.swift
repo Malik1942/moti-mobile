@@ -176,7 +176,8 @@ private func previewStrand(
     days: Int?, paused: Bool = false, baseline: Double? = 7
 ) -> Strand {
     Strand(
-        id: name, name: name, colorToken: color, kind: .maintenance,
+        id: name, name: name, colorToken: color,
+        computedType: .maintenance, userOverrideType: nil, eventCount: days == nil ? 0 : 3,
         presence: StrandPresence(
             state: state,
             reach: state == .active ? 0.9 : (state == .quiet ? 0.3 : 0),

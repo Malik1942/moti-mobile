@@ -41,6 +41,7 @@
 		4ED62F04AA13A9C82B66359D /* ProjectColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */; };
 		4F7667A1BACC37455C690E39 /* RecurrenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3526038302978193BA832464 /* RecurrenceParser.swift */; };
 		51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F4E8BC65CE551E817F3140 /* Enums.swift */; };
+		526FE227CD83C73487E58629 /* LifelineInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE16912DC25D029FDEF39D20 /* LifelineInstrumentation.swift */; };
 		605C6E620F133E9F8C6A1B79 /* DeterministicPreClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C76A980F0DA9C241E53EEC1 /* DeterministicPreClassifier.swift */; };
 		619473673DE127605CD34B4D /* TemporalResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA42563F0B8AB8CCEB653723 /* TemporalResolution.swift */; };
 		624D25138D022FD7AF96F265 /* DateResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B74EF4219717B138C1A0737 /* DateResolver.swift */; };
@@ -50,6 +51,7 @@
 		6EF9F12F8ECC8E4824F15F51 /* TimelineNarratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757E196764677A82655E3F6B /* TimelineNarratorTests.swift */; };
 		719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */; };
 		74E97CCA98CEAEEF0F8868BA /* CheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */; };
+		759ED39309C4722EBC42FBC8 /* LifelineTypeOverrideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */; };
 		7632AF1DCE6788CCF465B83C /* PlanningDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA0D0333A0D6C49C5895497 /* PlanningDecision.swift */; };
 		79A9C6AC4192E8BB0335D99D /* LifelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88E15D916ECD16632A3291AB /* LifelineView.swift */; };
 		7ACBB10E098E99EFCBE5FC28 /* ClockTimeInferenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */; };
@@ -84,6 +86,7 @@
 		A9E8586A102D3375618F5F59 /* TemporalResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193DA3CD4AB4AAB6E28DE7C8 /* TemporalResolver.swift */; };
 		AA243050769FE8D9756E64F8 /* StrandPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBBA4ED81824BC799B88B50 /* StrandPresence.swift */; };
 		AA5A8956C53E4DE978879608 /* ambiguous.caf in Resources */ = {isa = PBXBuildFile; fileRef = E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */; };
+		AB5B5B7665657D0E7B6962FE /* LifelineMetricsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14483CF49A5D2A077ABEC5F2 /* LifelineMetricsDebugView.swift */; };
 		ACCA94165CDDEFDD94530283 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */; };
 		AD6210438742AAC67EEEF5C3 /* MotiWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */; };
 		AFA15869AE41E5331338B141 /* TimelineCheckpointScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */; };
@@ -164,6 +167,7 @@
 		0CE5F6FBE11744FE5698A88F /* LifelineSampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineSampleData.swift; sourceTree = "<group>"; };
 		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1255853C224FE82B08E575F5 /* DateResolverTemporalParse+TemporalResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateResolverTemporalParse+TemporalResolution.swift"; sourceTree = "<group>"; };
+		14483CF49A5D2A077ABEC5F2 /* LifelineMetricsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineMetricsDebugView.swift; sourceTree = "<group>"; };
 		15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiAPIClient.swift; sourceTree = "<group>"; };
 		16051795458D002FFE029597 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
 		164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningClassifierTests.swift; sourceTree = "<group>"; };
@@ -262,6 +266,7 @@
 		DE7FD27B9CB6E62193659197 /* SmartCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCaptureTests.swift; sourceTree = "<group>"; };
 		DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedWorkItem.swift; sourceTree = "<group>"; };
 		E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */ = {isa = PBXFileReference; path = ambiguous.caf; sourceTree = "<group>"; };
+		E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineTypeOverrideStore.swift; sourceTree = "<group>"; };
 		EA71EBBF736BD816610EE36A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolverPath.swift; sourceTree = "<group>"; };
@@ -269,6 +274,7 @@
 		F71B2181A41236F91C6D7F52 /* RecurrenceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParserTests.swift; sourceTree = "<group>"; };
 		FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicy.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
+		FE16912DC25D029FDEF39D20 /* LifelineInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineInstrumentation.swift; sourceTree = "<group>"; };
 		FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDebugDataLogger.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -351,6 +357,8 @@
 		42E73DA90A7EFF36B707BDE9 /* Lifelines */ = {
 			isa = PBXGroup;
 			children = (
+				FE16912DC25D029FDEF39D20 /* LifelineInstrumentation.swift */,
+				E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */,
 				AE5BD783181FD781ECCF8D64 /* Strand.swift */,
 				906BFB59874C4A42DEEBE40D /* StrandEvent.swift */,
 				CD726DF946CA683C826207C3 /* StrandPreferenceStore.swift */,
@@ -472,6 +480,7 @@
 				ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */,
 				58F2D03D24B2A09BF30D52DE /* CheckInSheet.swift */,
 				CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */,
+				14483CF49A5D2A077ABEC5F2 /* LifelineMetricsDebugView.swift */,
 				3A3828199B22A05B815E6896 /* LifelineTimelineView.swift */,
 				BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */,
 				53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */,
@@ -755,8 +764,11 @@
 				2D6E81A232B8329420F89BA2 /* GeminiContextualCaptureService.swift in Sources */,
 				2DEE146A39BFB8A572F35CEA /* LLMTiebreaker.swift in Sources */,
 				879A7B5489B526D36AB76F29 /* LifelineGeometry.swift in Sources */,
+				526FE227CD83C73487E58629 /* LifelineInstrumentation.swift in Sources */,
+				AB5B5B7665657D0E7B6962FE /* LifelineMetricsDebugView.swift in Sources */,
 				9D874612CC9D62742B5D5723 /* LifelineSampleData.swift in Sources */,
 				B4482A4D7F6E1E1CBDEEA432 /* LifelineTimelineView.swift in Sources */,
+				759ED39309C4722EBC42FBC8 /* LifelineTypeOverrideStore.swift in Sources */,
 				79A9C6AC4192E8BB0335D99D /* LifelineView.swift in Sources */,
 				19D60336519AB492F56B8F2A /* MissingInfoChip.swift in Sources */,
 				0529DCF1F697624597807713 /* MockSLMTaskUnderstandingService.swift in Sources */,

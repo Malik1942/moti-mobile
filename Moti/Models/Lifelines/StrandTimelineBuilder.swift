@@ -37,6 +37,9 @@ struct StrandTimelineBuilder {
     var policy: PresencePolicy = .default
     /// Paused strand ids (deliberate set-down).
     var pausedStrandIDs: Set<String> = []
+    /// DEBUG-only type overrides keyed by strand id. Empty in release (no user
+    /// entry point); see `Strand.userOverrideType`.
+    var typeOverrides: [String: StrandType] = [:]
 
     /// Build every strand, most-attention-needed first, then calm strands receding.
     func build() -> [Strand] {
@@ -85,13 +88,15 @@ struct StrandTimelineBuilder {
             now: now,
             policy: policy
         )
-        let kind = inferKind(for: items)
+        let computedType = inferComputedType(for: items)
 
         return Strand(
             id: id,
             name: name,
             colorToken: colorToken,
-            kind: kind,
+            computedType: computedType,
+            userOverrideType: typeOverrides[id],
+            eventCount: events.count,
             presence: presence,
             isPaused: pausedStrandIDs.contains(id),
             recurrenceCadenceDays: cadence,
@@ -145,11 +150,15 @@ struct StrandTimelineBuilder {
         items.compactMap { $0.isRecurring ? $0.recurrence.approximateCadenceDays : nil }.min()
     }
 
-    /// Achievement iff the strand carries a real one-time deadline — a
-    /// non-recurring dated item. Recurring due dates are rhythm, not deadlines.
-    private func inferKind(for items: [WorkItem]) -> StrandKind {
-        let hasRealDeadline = items.contains { !$0.isRecurring && $0.dueDate != nil }
-        return hasRealDeadline ? .achievement : .maintenance
+    /// Maintenance is the default; achievement is the **qualified exception** —
+    /// a strand reads as achievement only when it has a terminal deadline (a
+    /// non-recurring dated item) AND no recurring activity at all. Any habit in
+    /// the strand makes it maintenance, even alongside a deadline (PRD §9 type
+    /// path: bias toward maintenance so habits are never starved as achievements).
+    private func inferComputedType(for items: [WorkItem]) -> StrandType {
+        let hasTerminalDeadline = items.contains { !$0.isRecurring && $0.dueDate != nil }
+        let hasRecurringActivity = items.contains { $0.isRecurring }
+        return (hasTerminalDeadline && !hasRecurringActivity) ? .achievement : .maintenance
     }
 
     // MARK: - Achievement detail
@@ -241,14 +250,9 @@ struct StrandTimelineBuilder {
             .prefix(2)
             .compactMap { id, _ in nameForStrand(id: id) }
 
-        return Strand(
-            id: strand.id, name: strand.name, colorToken: strand.colorToken,
-            kind: strand.kind, presence: strand.presence, isPaused: strand.isPaused,
-            recurrenceCadenceDays: strand.recurrenceCadenceDays, openCount: strand.openCount,
-            deferredCount: strand.deferredCount, deadline: strand.deadline,
-            forwardNodes: strand.forwardNodes, lastTraces: strand.lastTraces,
-            coOccurringStrandNames: Array(risers)
-        )
+        var updated = strand
+        updated.coOccurringStrandNames = Array(risers)
+        return updated
     }
 
     // MARK: - Ordering
