@@ -182,9 +182,10 @@ enum TimelineNarrator {
     // MARK: - Peek sheet copy
 
     /// Achievement current-state line, in behavioral terms (PRD §6.2):
-    /// "Moving toward deadline · 4 done, 2 deferred".
+    /// "Moving toward deadline · 4 done, 2 deferred". Counts completed actions
+    /// whether or not they carry a date (P2).
     static func achievementStatus(for strand: Strand) -> String {
-        let done = strand.forwardNodes.filter(\.isReached).count
+        let done = strand.completedActionCount
         var lead = "In progress"
         if strand.deadline != nil { lead = strand.isPaused ? "Paused before deadline" : "Moving toward deadline" }
         var tail: [String] = []
@@ -217,6 +218,35 @@ enum TimelineNarrator {
         guard strand.presence.state != .active,
               !strand.coOccurringStrandNames.isEmpty else { return nil }
         return "It faded as \(joined(strand.coOccurringStrandNames)) rose during the same weeks."
+    }
+
+    /// The why-quiet line, with a **non-causal fallback** when no co-occurring
+    /// rise can be honestly computed (P2). Never fabricates a cause.
+    static func whyQuietOrFallback(for strand: Strand) -> String? {
+        if let why = whyQuiet(for: strand) { return why }
+        switch strand.presence.state {
+        case .drifted: return "It's been quiet a while."
+        case .quiet:   return "It's been slowing lately."
+        case .active:  return nil
+        }
+    }
+
+    /// Achievement **milestone-health** as one natural-language line — the
+    /// trajectory read for the Peek (PRD §6.2). Directional, non-shaming, no
+    /// day-counts (§9.6).
+    static func milestoneHealth(for strand: Strand) -> String {
+        switch strand.trajectory.outcome {
+        case .onTime:
+            return strand.completedActionCount >= max(strand.totalActionCount, 1)
+                ? "Done — every step complete."
+                : "On track for the pace you set."
+        case .behind:
+            return "Behind the pace you set — but the deadline's still in view."
+        case .sustained:
+            return "Holding a steady rhythm."
+        case .fading:
+            return "Slipping off the pace — it's starting to fade."
+        }
     }
 }
 

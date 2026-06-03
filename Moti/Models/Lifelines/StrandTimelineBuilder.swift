@@ -127,6 +127,8 @@ struct StrandTimelineBuilder {
             recurrenceCadenceDays: cadence,
             openCount: items.filter { $0.status != .done && $0.status != .archived }.count,
             deferredCount: items.filter { $0.status == .deferred || $0.status == .skipped }.count,
+            completedActionCount: completedCount,
+            totalActionCount: totalCount,
             deadline: strandDeadline,
             forwardNodes: forwardNodes(for: items),
             lastTraces: lastTraces(for: items),

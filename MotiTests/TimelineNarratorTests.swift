@@ -27,6 +27,7 @@ final class TimelineNarratorTests: XCTestCase {
             ),
             trajectory: .directional(outcome ?? (state == .drifted ? .fading : .sustained)),
             isPaused: paused, recurrenceCadenceDays: baseline, openCount: 1, deferredCount: 0,
+            completedActionCount: 0, totalActionCount: 0,
             deadline: nil, forwardNodes: [], lastTraces: [], coOccurringStrandNames: []
         )
     }
@@ -170,6 +171,7 @@ final class TimelineNarratorTests: XCTestCase {
                                      daysSinceLastActivity: 1, baselineCadenceDays: nil, baselineSource: .none),
             trajectory: .directional(.onTime),
             isPaused: false, recurrenceCadenceDays: nil, openCount: 3, deferredCount: deferred,
+            completedActionCount: done, totalActionCount: max(done, 4),
             deadline: hasDeadline ? Date() : nil, forwardNodes: nodes, lastTraces: [], coOccurringStrandNames: []
         )
     }
@@ -197,5 +199,26 @@ final class TimelineNarratorTests: XCTestCase {
     func test_whyQuiet_nilWhenActiveOrNoRisers() {
         XCTAssertNil(TimelineNarrator.whyQuiet(for: strand("Work", .active)))
         XCTAssertNil(TimelineNarrator.whyQuiet(for: strand("Fitness", .drifted, days: 18)))
+    }
+
+    func test_whyQuietOrFallback_nonCausalWhenNoCoOccurrence() {
+        // Drifted with no computable riser → a non-causal fallback, never a cause.
+        let line = TimelineNarrator.whyQuietOrFallback(for: strand("Fitness", .drifted, days: 18))
+        XCTAssertEqual(line, "It's been quiet a while.")
+        XCTAssertFalse(line!.lowercased().contains("crowded"))
+        XCTAssertNil(TimelineNarrator.whyQuietOrFallback(for: strand("Work", .active)))
+    }
+
+    func test_milestoneHealth_isDirectionalAndNonShaming() {
+        XCTAssertEqual(TimelineNarrator.milestoneHealth(for: strand("Move", .active, outcome: .onTime)),
+                       "On track for the pace you set.")
+        XCTAssertEqual(TimelineNarrator.milestoneHealth(for: strand("Launch", .quiet, outcome: .behind)),
+                       "Behind the pace you set — but the deadline's still in view.")
+        // No day-counts anywhere in the milestone-health copy (§9.6).
+        for o in TrajectoryOutcome.allCases {
+            let line = TimelineNarrator.milestoneHealth(for: strand("S", .active, outcome: o))
+            XCTAssertFalse(line.contains("week"))
+            XCTAssertFalse(line.contains("day"))
+        }
     }
 }

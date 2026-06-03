@@ -188,6 +188,7 @@ private func previewStrand(
         ),
         trajectory: .directional(state == .drifted ? .fading : .sustained),
         isPaused: paused, recurrenceCadenceDays: baseline, openCount: 2, deferredCount: 0,
+        completedActionCount: 0, totalActionCount: 0,
         deadline: nil, forwardNodes: [], lastTraces: [], coOccurringStrandNames: []
     )
 }

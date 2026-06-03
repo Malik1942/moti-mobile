@@ -74,6 +74,8 @@ struct StrandPeekSheet: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
 
+            milestoneHealth
+
             if strand.forwardNodes.isEmpty {
                 Text("No steps mapped yet. Open in Projects to lay out the path.")
                     .font(.system(size: 13))
@@ -95,6 +97,38 @@ struct StrandPeekSheet: View {
         }
     }
 
+    /// Milestone health (PRD §6.2): a continuous **felt texture** of whether the
+    /// line is tracking its expected pace, plus one natural-language line. The
+    /// detail lives here in the Peek, never on the main axis (§8 detail-vs-load).
+    private var milestoneHealth: some View {
+        let progress = strand.trajectory.progressFraction ?? 0
+        // Where you'd "expect" to be = progress / pace (time elapsed). The gap
+        // between fill and this tick is the felt read; no numbers shown.
+        let expected: Double = {
+            guard let pace = strand.trajectory.paceRatio, pace > 0, pace.isFinite else { return progress }
+            return min(1, max(0, progress / pace))
+        }()
+        return VStack(alignment: .leading, spacing: 7) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.quaternary.opacity(0.5)).frame(height: 6)
+                    Capsule().fill(color.opacity(0.85))
+                        .frame(width: max(4, geo.size.width * progress), height: 6)
+                    // expected-pace marker
+                    Rectangle().fill(.secondary)
+                        .frame(width: 1.5, height: 12)
+                        .offset(x: geo.size.width * expected - 0.75, y: -3)
+                }
+            }
+            .frame(height: 12)
+            Text(TimelineNarrator.milestoneHealth(for: strand))
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Milestone health: \(TimelineNarrator.milestoneHealth(for: strand))")
+    }
+
     // MARK: - Maintenance
 
     private var maintenanceBody: some View {
@@ -104,7 +138,7 @@ struct StrandPeekSheet: View {
 
             lastTraces
 
-            if let why = TimelineNarrator.whyQuiet(for: strand) {
+            if let why = TimelineNarrator.whyQuietOrFallback(for: strand) {
                 Text(why)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)

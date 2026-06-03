@@ -86,6 +86,11 @@ struct Strand: Identifiable, Equatable {
     let openCount: Int
     /// How many things the user has set down in this strand.
     let deferredCount: Int
+    /// Completed actions — counted whether or not they carry a date (P2). Feeds
+    /// the achievement peek's "N done" and milestone-health texture.
+    let completedActionCount: Int
+    /// Total actions (non-recurring items) in the strand.
+    let totalActionCount: Int
 
     // MARK: Achievement peek
 
