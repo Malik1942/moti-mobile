@@ -65,8 +65,14 @@ struct Strand: Identifiable, Equatable {
     /// maintenance-starvation signal); not used for rendering.
     let eventCount: Int
 
-    /// The computed truth: does this line still reach Now?
+    /// The computed present-moment truth (Active/Quiet/Drifted) — the **input**
+    /// to the trajectory, read at the Now band.
     let presence: StrandPresence
+
+    /// The forward read (the hero): where the current pace lands this future
+    /// (On-time / Behind / Sustained / Fading). Extrapolated from actual
+    /// behavior, never from scheduled-but-maybe-not-done work (§14).
+    let trajectory: TrajectoryProjection
 
     /// Deliberately set down by the user — drawn dashed + labeled, and held
     /// visually distinct from silent drift (PRD §5.1).

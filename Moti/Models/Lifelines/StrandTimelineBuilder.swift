@@ -35,6 +35,7 @@ struct StrandTimelineBuilder {
     var now: Date = .now
     var calendar: Calendar = .current
     var policy: PresencePolicy = .default
+    var trajectoryPolicy: TrajectoryPolicy = .default
     /// Paused strand ids (deliberate set-down).
     var pausedStrandIDs: Set<String> = []
     /// DEBUG-only type overrides keyed by strand id. Empty in release (no user
@@ -89,6 +90,29 @@ struct StrandTimelineBuilder {
             policy: policy
         )
         let computedType = inferComputedType(for: items)
+        let effectiveType = typeOverrides[id] ?? computedType
+        let strandDeadline = deadline(for: items)
+
+        // Achievement progress = COMPLETED actions / total actions, counting
+        // completed tasks regardless of whether they carry a date (P2). A
+        // strand's "actions" are its non-recurring items.
+        let actions = items.filter { !$0.isRecurring }
+        let completedCount = actions.filter { $0.status == .done }.count
+        let totalCount = actions.count
+
+        let trajectory = TrajectoryProjector.project(
+            events: events,
+            type: effectiveType,
+            presence: presence,
+            deadline: strandDeadline,
+            completedCount: completedCount,
+            totalCount: totalCount,
+            recurrenceCadenceDays: cadence,
+            firstActivity: events.map(\.date).min(),
+            now: now,
+            calendar: calendar,
+            policy: trajectoryPolicy
+        )
 
         return Strand(
             id: id,
@@ -98,11 +122,12 @@ struct StrandTimelineBuilder {
             userOverrideType: typeOverrides[id],
             eventCount: events.count,
             presence: presence,
+            trajectory: trajectory,
             isPaused: pausedStrandIDs.contains(id),
             recurrenceCadenceDays: cadence,
             openCount: items.filter { $0.status != .done && $0.status != .archived }.count,
             deferredCount: items.filter { $0.status == .deferred || $0.status == .skipped }.count,
-            deadline: deadline(for: items),
+            deadline: strandDeadline,
             forwardNodes: forwardNodes(for: items),
             lastTraces: lastTraces(for: items),
             coOccurringStrandNames: [] // filled in a second pass with the full field

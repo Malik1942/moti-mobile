@@ -186,6 +186,7 @@ private func previewStrand(
             baselineCadenceDays: baseline,
             baselineSource: .recurrence
         ),
+        trajectory: .directional(state == .drifted ? .fading : .sustained),
         isPaused: paused, recurrenceCadenceDays: baseline, openCount: 2, deferredCount: 0,
         deadline: nil, forwardNodes: [], lastTraces: [], coOccurringStrandNames: []
     )

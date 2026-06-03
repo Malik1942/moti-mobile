@@ -24,6 +24,7 @@ final class TimelineNarratorTests: XCTestCase {
                 state: state, reach: 0.5, lastActivity: nil,
                 daysSinceLastActivity: days, baselineCadenceDays: baseline, baselineSource: source
             ),
+            trajectory: .directional(state == .drifted ? .fading : .sustained),
             isPaused: paused, recurrenceCadenceDays: baseline, openCount: 1, deferredCount: 0,
             deadline: nil, forwardNodes: [], lastTraces: [], coOccurringStrandNames: []
         )
@@ -123,6 +124,7 @@ final class TimelineNarratorTests: XCTestCase {
             computedType: .achievement, userOverrideType: nil, eventCount: max(done, 1),
             presence: StrandPresence(state: .active, reach: 0.9, lastActivity: nil,
                                      daysSinceLastActivity: 1, baselineCadenceDays: nil, baselineSource: .none),
+            trajectory: .directional(.onTime),
             isPaused: false, recurrenceCadenceDays: nil, openCount: 3, deferredCount: deferred,
             deadline: hasDeadline ? Date() : nil, forwardNodes: nodes, lastTraces: [], coOccurringStrandNames: []
         )
