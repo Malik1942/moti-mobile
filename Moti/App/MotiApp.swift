@@ -296,7 +296,9 @@ struct RootTabView: View {
         switch selectedTab {
         case .timeline:
             if useLifelineTimeline {
-                LifelineTimelineView(
+                // v2.0 trajectory engine (revised PRD). Supersedes the
+                // presence-first LifelineTimelineView (kept in git history).
+                TrajectoryTimelineView(
                     onAddToTimeline: { presentCapture(.text) },
                     onOpenInProjects: { _ in selectedTab = .projects }
                 )

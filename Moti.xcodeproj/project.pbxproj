@@ -35,6 +35,7 @@
 		3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4CB83BECF9B15618F7FA70 /* TemporalInterpretation.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
 		45120A834AF95A5695003317 /* TrajectoryProjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DD315F4C846EE1F95FF160F /* TrajectoryProjector.swift */; };
+		48822C2563300A2ED3707162 /* TrajectoryTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9654B2FA1CD11DEA50DD87 /* TrajectoryTimelineView.swift */; };
 		489F843800D616F3F0DD3EBE /* RecurrenceRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */; };
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
 		4B57021A911E77583E5FECE3 /* reorganized.caf in Resources */ = {isa = PBXBuildFile; fileRef = 77BBE151CF9E4115BC8306B6 /* reorganized.caf */; };
@@ -118,11 +119,13 @@
 		E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */; };
 		E40263D9310970912008449F /* WorkItemNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C38DC60B64419D04F5E5D7F6 /* WorkItemNotificationScheduler.swift */; };
 		E5369605A71211D78BAC913B /* SmartCapturePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE70FBEAE485926D30A04BC7 /* SmartCapturePromptBuilder.swift */; };
+		E6D7D046E7091F90FB524447 /* TrajectoryColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */; };
 		E784BA20607523415553AE8F /* RuleBasedTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */; };
 		EA9EF71C9A4FCD827A5D4E55 /* MotiDebugDataLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */; };
 		ED8045DAA94D532CB6778A70 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */; };
 		F24E15F107FEFC1E37099429 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3A3F0F686739AFC74C1E2E /* Project.swift */; };
 		F318D271E306F2530F8E9147 /* CompletionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */; };
+		F451BFB352E2BDC374D8ABC1 /* TrajectoryAxis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403CF9AE8E1A03ED6D5B7CB5 /* TrajectoryAxis.swift */; };
 		F4564D7B26F5BB56721EEE31 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = EA71EBBF736BD816610EE36A /* README.md */; };
 		FA77399088A3C3EF42BFD518 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0209A5FAA692F0C783A106C /* SoundManager.swift */; };
 /* End PBXBuildFile section */
@@ -187,6 +190,7 @@
 		2840F3629086A7BE59AFEB13 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		29E16979A0DAAED5CF27B706 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2A3A3F0F686739AFC74C1E2E /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+		2C9654B2FA1CD11DEA50DD87 /* TrajectoryTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryTimelineView.swift; sourceTree = "<group>"; };
 		31AE34A01BD28B70A1750DF8 /* RecurringCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringCompletionTests.swift; sourceTree = "<group>"; };
 		3526038302978193BA832464 /* RecurrenceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParser.swift; sourceTree = "<group>"; };
 		382ABA033145311D10EF58FD /* Moti.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moti.entitlements; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 		3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineNarrator.swift; sourceTree = "<group>"; };
 		3DBBA4ED81824BC799B88B50 /* StrandPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPresence.swift; sourceTree = "<group>"; };
 		3FC647D6B583F8D35B77DD8F /* TrajectoryProjectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryProjectorTests.swift; sourceTree = "<group>"; };
+		403CF9AE8E1A03ED6D5B7CB5 /* TrajectoryAxis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryAxis.swift; sourceTree = "<group>"; };
 		407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingService.swift; sourceTree = "<group>"; };
 		43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleBasedTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		46DF16B0DF325FE7D41D18AE /* MotiTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MotiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -272,6 +277,7 @@
 		E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */ = {isa = PBXFileReference; path = ambiguous.caf; sourceTree = "<group>"; };
 		E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineTypeOverrideStore.swift; sourceTree = "<group>"; };
 		EA71EBBF736BD816610EE36A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryColumnView.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolverPath.swift; sourceTree = "<group>"; };
 		F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockTimeInferenceTests.swift; sourceTree = "<group>"; };
@@ -330,6 +336,8 @@
 				88E15D916ECD16632A3291AB /* LifelineView.swift */,
 				B201853540CECA5DA7E7E117 /* StrandPeekSheet.swift */,
 				3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */,
+				403CF9AE8E1A03ED6D5B7CB5 /* TrajectoryAxis.swift */,
+				EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */,
 			);
 			path = Lifeline;
 			sourceTree = "<group>";
@@ -494,6 +502,7 @@
 				16051795458D002FFE029597 /* ReviewView.swift */,
 				A28F8750733AF4FC3145AA7E /* SettingsView.swift */,
 				5831017862C61EA3E73AAB1F /* TimelineView.swift */,
+				2C9654B2FA1CD11DEA50DD87 /* TrajectoryTimelineView.swift */,
 				75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */,
 				E58A15E7F9B849A120A02744 /* Components */,
 				8D90E3DD8E335725455E3A53 /* Sessions */,
@@ -828,7 +837,10 @@
 				AFA15869AE41E5331338B141 /* TimelineCheckpointScheduler.swift in Sources */,
 				84E503771DDFC7561C238CFA /* TimelineNarrator.swift in Sources */,
 				DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */,
+				F451BFB352E2BDC374D8ABC1 /* TrajectoryAxis.swift in Sources */,
+				E6D7D046E7091F90FB524447 /* TrajectoryColumnView.swift in Sources */,
 				45120A834AF95A5695003317 /* TrajectoryProjector.swift in Sources */,
+				48822C2563300A2ED3707162 /* TrajectoryTimelineView.swift in Sources */,
 				C109B0E9870DF6AF8B982C92 /* WidgetSnapshot.swift in Sources */,
 				430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */,
 				A2FBBCE31B1C284935A4B5A8 /* WorkItem.swift in Sources */,

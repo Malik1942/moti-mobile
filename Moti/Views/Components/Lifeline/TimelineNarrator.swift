@@ -113,6 +113,72 @@ enum TimelineNarrator {
         return first.uppercased() + s.dropFirst()
     }
 
+    // MARK: - Trajectory (forward-looking) copy
+
+    /// One forward-looking sentence about where current pace is heading. Directional
+    /// only — no day-counts (PRD §6.1 example shows day-counts, but those are v2;
+    /// §9.6). Names what's slipping/fading; reassures when all is on track.
+    static func trajectoryHeadline(for strands: [Strand]) -> String {
+        if strands.isEmpty {
+            return "Your futures will appear here as you use Moti."
+        }
+        let live = strands.filter { !$0.isPaused }
+        let slipping = live.filter { $0.trajectory.outcome == .behind }.map(\.name)
+        let fading = live.filter { $0.trajectory.outcome == .fading }.map(\.name)
+
+        var clauses: [String] = []
+        if !slipping.isEmpty {
+            clauses.append("\(joined(slipping)) \(slipping.count == 1 ? "is" : "are") slipping")
+        }
+        if !fading.isEmpty {
+            clauses.append("\(joined(fading)) \(fading.count == 1 ? "is" : "are") fading")
+        }
+
+        guard !clauses.isEmpty else {
+            return "On current pace, everything's on track."
+        }
+        return "On current pace: \(oxfordClauses(clauses))."
+    }
+
+    /// The single forward-looking focus: the one future heading the wrong way, or
+    /// calm reassurance. Behind sorts above fading; paused/parked never surface.
+    static func trajectoryFocus(for strands: [Strand], parkedIDs: Set<String> = []) -> TimelineFocus {
+        let candidates = strands
+            .filter { !$0.isPaused && !parkedIDs.contains($0.id) }
+            .filter { $0.trajectory.outcome.needsAttention }
+
+        // Behind (a deadline at risk) outranks fading (a rhythm dimming).
+        let chosen = candidates.first { $0.trajectory.outcome == .behind }
+            ?? candidates.first { $0.trajectory.outcome == .fading }
+
+        guard let strand = chosen else {
+            return .calm("Everything's on track.")
+        }
+
+        let title: String
+        let detail: String
+        if strand.trajectory.outcome == .behind {
+            title = "\(strand.name) is slipping"
+            detail = "Behind its deadline at the current pace."
+        } else {
+            title = "\(strand.name) is fading"
+            detail = "At the current pace, this fades out."
+        }
+        return .attention(strandID: strand.id, title: title, detail: detail)
+    }
+
+    /// Join already-built clauses with Oxford style ("A", "A and B", "A, B, and C").
+    private static func oxfordClauses(_ clauses: [String]) -> String {
+        switch clauses.count {
+        case 0:  return ""
+        case 1:  return clauses[0]
+        case 2:  return "\(clauses[0]) and \(clauses[1])"
+        default:
+            let head = clauses.dropLast().joined(separator: ", ")
+            return "\(head), and \(clauses.last!)"
+        }
+    }
+
     // MARK: - Peek sheet copy
 
     /// Achievement current-state line, in behavioral terms (PRD §6.2):

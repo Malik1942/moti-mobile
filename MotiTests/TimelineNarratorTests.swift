@@ -15,7 +15,8 @@ final class TimelineNarratorTests: XCTestCase {
     private func strand(
         _ name: String, _ state: PresenceState,
         days: Int? = nil, paused: Bool = false,
-        baseline: Double? = 7, source: BaselineSource = .recurrence
+        baseline: Double? = 7, source: BaselineSource = .recurrence,
+        outcome: TrajectoryOutcome? = nil
     ) -> Strand {
         Strand(
             id: name, name: name, colorToken: "blue",
@@ -24,10 +25,53 @@ final class TimelineNarratorTests: XCTestCase {
                 state: state, reach: 0.5, lastActivity: nil,
                 daysSinceLastActivity: days, baselineCadenceDays: baseline, baselineSource: source
             ),
-            trajectory: .directional(state == .drifted ? .fading : .sustained),
+            trajectory: .directional(outcome ?? (state == .drifted ? .fading : .sustained)),
             isPaused: paused, recurrenceCadenceDays: baseline, openCount: 1, deferredCount: 0,
             deadline: nil, forwardNodes: [], lastTraces: [], coOccurringStrandNames: []
         )
+    }
+
+    // MARK: - Trajectory (forward-looking) copy
+
+    func test_trajectoryHeadline_namesSlippingAndFading() {
+        let h = TimelineNarrator.trajectoryHeadline(for: [
+            strand("Launch", .active, outcome: .behind),
+            strand("Fitness", .drifted, outcome: .fading),
+            strand("Work", .active, outcome: .onTime)
+        ])
+        XCTAssertEqual(h, "On current pace: Launch is slipping and Fitness is fading.")
+    }
+
+    func test_trajectoryHeadline_calmWhenAllOnTrack() {
+        let h = TimelineNarrator.trajectoryHeadline(for: [
+            strand("Work", .active, outcome: .onTime),
+            strand("Parents", .quiet, outcome: .sustained)
+        ])
+        XCTAssertEqual(h, "On current pace, everything's on track.")
+    }
+
+    func test_trajectoryFocus_behindOutranksFading() {
+        let focus = TimelineNarrator.trajectoryFocus(for: [
+            strand("Fitness", .drifted, outcome: .fading),
+            strand("Launch", .active, outcome: .behind)
+        ])
+        guard case let .attention(id, title, _) = focus else { return XCTFail("expected attention") }
+        XCTAssertEqual(id, "Launch")
+        XCTAssertEqual(title, "Launch is slipping")
+    }
+
+    func test_trajectoryFocus_calmWhenNoneNeedAttention() {
+        let focus = TimelineNarrator.trajectoryFocus(for: [strand("Work", .active, outcome: .onTime)])
+        XCTAssertEqual(focus, .calm("Everything's on track."))
+    }
+
+    func test_trajectoryFocus_excludesPausedAndParked() {
+        let focus = TimelineNarrator.trajectoryFocus(
+            for: [strand("Launch", .active, paused: true, outcome: .behind),
+                  strand("Fitness", .drifted, outcome: .fading)],
+            parkedIDs: ["Fitness"]
+        )
+        XCTAssertEqual(focus, .calm("Everything's on track."))
     }
 
     // MARK: - Headline

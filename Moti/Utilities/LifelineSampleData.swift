@@ -53,42 +53,40 @@ enum LifelineSampleData {
             ))
         }
 
-        // Work — achievement, active. Real deadline + forward steps.
-        _ = project("Work", "blue")
-        item("Ship release notes", project: "Work", created: daysAgo(10), updated: daysAgo(1), status: .done)
-        item("Fix onboarding bug", project: "Work", created: daysAgo(6), updated: daysAgo(2), status: .done)
-        item("Review PRs", project: "Work", created: daysAgo(3), updated: daysAgo(1))
-        item("Launch v2", project: "Work", created: daysAgo(20), due: daysAhead(12))
-        item("QA pass", project: "Work", created: daysAgo(4), due: daysAhead(5))
+        // A representative spread — one of each trajectory outcome — so the
+        // grammar reads calm-by-default (two healthy, two needing a voice, one
+        // paused), not "everything is slipping."
 
-        // Move — achievement, active, closing in on a deadline.
+        // Move — achievement, ON-TIME: well ahead of pace (50% done, 25% of time).
         _ = project("Move", "purple")
-        item("Book movers", project: "Move", created: daysAgo(8), updated: daysAgo(3), status: .done)
-        item("Pack kitchen", project: "Move", created: daysAgo(5), due: daysAhead(3))
-        item("Change address", project: "Move", created: daysAgo(5), due: daysAhead(7))
-        item("Move day", project: "Move", created: daysAgo(15), due: daysAhead(10))
+        item("Book movers", project: "Move", created: daysAgo(10), updated: daysAgo(6), status: .done)
+        item("Pack kitchen", project: "Move", created: daysAgo(9), updated: daysAgo(2), status: .done)
+        item("Change address", project: "Move", created: daysAgo(8), due: daysAhead(18))
+        item("Move day", project: "Move", created: daysAgo(10), due: daysAhead(30))
 
-        // Fitness — maintenance, drifted (weekly, last fed 22 days ago).
+        // Launch — achievement, BEHIND: little progress, most of the time gone.
+        _ = project("Launch", "blue")
+        item("Spec", project: "Launch", created: daysAgo(40), updated: daysAgo(34), status: .done)
+        item("Build core", project: "Launch", created: daysAgo(38), due: daysAhead(6))
+        item("Beta", project: "Launch", created: daysAgo(38), due: daysAhead(8))
+        item("Polish", project: "Launch", created: daysAgo(38), due: daysAhead(9))
+        item("Ship", project: "Launch", created: daysAgo(40), due: daysAhead(10))
+
+        // Parents — maintenance, SUSTAINED: weekly, fed 2 days ago.
+        _ = project("Parents", "green")
+        let call = item("Call home", project: "Parents", created: daysAgo(60),
+                        due: daysAhead(5), recurrence: RecurrenceRule(frequency: .weekly))
+        completion(call, daysAgo(23)); completion(call, daysAgo(16))
+        completion(call, daysAgo(9)); completion(call, daysAgo(2))
+
+        // Fitness — maintenance, FADING: weekly rhythm, silent for 24 days.
         _ = project("Fitness", "orange")
         let gym = item("Gym", project: "Fitness", created: daysAgo(70),
                        due: daysAhead(1), recurrence: RecurrenceRule(frequency: .weekly))
-        completion(gym, daysAgo(50)); completion(gym, daysAgo(43)); completion(gym, daysAgo(36))
-        completion(gym, daysAgo(29)); completion(gym, daysAgo(22))
+        completion(gym, daysAgo(52)); completion(gym, daysAgo(45))
+        completion(gym, daysAgo(38)); completion(gym, daysAgo(24))
 
-        // Parents — maintenance, quiet (weekly-ish, ~9 days since).
-        _ = project("Parents", "green")
-        let call = item("Call home", project: "Parents", created: daysAgo(60),
-                        due: daysAhead(1), recurrence: RecurrenceRule(frequency: .weekly))
-        completion(call, daysAgo(30)); completion(call, daysAgo(23))
-        completion(call, daysAgo(16)); completion(call, daysAgo(9))
-
-        // Friends — maintenance, drifted longest (→ "What matters now").
-        _ = project("Friends", "indigo")
-        let friends = item("See friends", project: "Friends", created: daysAgo(80),
-                           due: daysAhead(1), recurrence: RecurrenceRule(frequency: .weekly))
-        completion(friends, daysAgo(60)); completion(friends, daysAgo(48)); completion(friends, daysAgo(34))
-
-        // Reading — paused (deliberate set-down, dashed + label).
+        // Reading — PAUSED (deliberate set-down, dashed + label).
         let reading = project("Reading", "gray")
         item("Read 20 pages", project: "Reading", created: daysAgo(40), updated: daysAgo(35),
              due: daysAhead(1), recurrence: RecurrenceRule(frequency: .daily))
