@@ -16,11 +16,12 @@ final class TimelineNarratorTests: XCTestCase {
         _ name: String, _ state: PresenceState,
         days: Int? = nil, paused: Bool = false,
         baseline: Double? = 7, source: BaselineSource = .recurrence,
-        outcome: TrajectoryOutcome? = nil
+        outcome: TrajectoryOutcome? = nil,
+        eventCount: Int = 1
     ) -> Strand {
         Strand(
             id: name, name: name, colorToken: "blue",
-            computedType: .maintenance, userOverrideType: nil, eventCount: 1,
+            computedType: .maintenance, userOverrideType: nil, eventCount: eventCount,
             presence: StrandPresence(
                 state: state, reach: 0.5, lastActivity: nil,
                 daysSinceLastActivity: days, baselineCadenceDays: baseline, baselineSource: source
@@ -207,6 +208,17 @@ final class TimelineNarratorTests: XCTestCase {
         XCTAssertEqual(line, "It's been quiet a while.")
         XCTAssertFalse(line!.lowercased().contains("crowded"))
         XCTAssertNil(TimelineNarrator.whyQuietOrFallback(for: strand("Work", .active)))
+    }
+
+    func test_whyQuietOrFallback_noHistoryDoesNotClaimCurrentSlowing() {
+        let line = TimelineNarrator.whyQuietOrFallback(
+            for: strand("Personal", .quiet, baseline: nil, source: .none, eventCount: 0)
+        )
+        XCTAssertEqual(
+            line,
+            "This strand is just getting started. Once it has a few real traces, Moti can show whether it is building rhythm or fading."
+        )
+        XCTAssertFalse(line!.lowercased().contains("slowing"))
     }
 
     func test_milestoneHealth_isDirectionalAndNonShaming() {

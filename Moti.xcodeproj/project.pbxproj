@@ -171,14 +171,14 @@
 		0715C5BF941B119FB3E01DAA /* WorkItemTimeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemTimeState.swift; sourceTree = "<group>"; };
 		0CE5F6FBE11744FE5698A88F /* LifelineSampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineSampleData.swift; sourceTree = "<group>"; };
 		0DD315F4C846EE1F95FF160F /* TrajectoryProjector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryProjector.swift; sourceTree = "<group>"; };
-		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1255853C224FE82B08E575F5 /* DateResolverTemporalParse+TemporalResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateResolverTemporalParse+TemporalResolution.swift"; sourceTree = "<group>"; };
 		14483CF49A5D2A077ABEC5F2 /* LifelineMetricsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineMetricsDebugView.swift; sourceTree = "<group>"; };
 		15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiAPIClient.swift; sourceTree = "<group>"; };
 		16051795458D002FFE029597 /* ReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewView.swift; sourceTree = "<group>"; };
 		164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningClassifierTests.swift; sourceTree = "<group>"; };
 		16A8E35EB4E1E95654A55651 /* MissingInfoChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissingInfoChip.swift; sourceTree = "<group>"; };
-		18CB7EDFC2A8B4ECFD55505A /* capture.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = capture.caf; sourceTree = "<group>"; };
+		18CB7EDFC2A8B4ECFD55505A /* capture.caf */ = {isa = PBXFileReference; path = capture.caf; sourceTree = "<group>"; };
 		193DA3CD4AB4AAB6E28DE7C8 /* TemporalResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalResolver.swift; sourceTree = "<group>"; };
 		19AEB42AF5A553D92C1FCA9D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1C76A980F0DA9C241E53EEC1 /* DeterministicPreClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeterministicPreClassifier.swift; sourceTree = "<group>"; };
@@ -224,8 +224,8 @@
 		757E196764677A82655E3F6B /* TimelineNarratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineNarratorTests.swift; sourceTree = "<group>"; };
 		75AE02F70F6655486F7ED88B /* CheckpointPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicyTests.swift; sourceTree = "<group>"; };
 		75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemDetailView.swift; sourceTree = "<group>"; };
-		77BBE151CF9E4115BC8306B6 /* reorganized.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = reorganized.caf; sourceTree = "<group>"; };
-		7AC90F7CA4B97C0FAFBD1F7E /* completed.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = completed.caf; sourceTree = "<group>"; };
+		77BBE151CF9E4115BC8306B6 /* reorganized.caf */ = {isa = PBXFileReference; path = reorganized.caf; sourceTree = "<group>"; };
+		7AC90F7CA4B97C0FAFBD1F7E /* completed.caf */ = {isa = PBXFileReference; path = completed.caf; sourceTree = "<group>"; };
 		7BD412970ED5D739AC844251 /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
 		7DC4C9E0E625EAD5E505D2EC /* SemanticBias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticBias.swift; sourceTree = "<group>"; };
 		7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -248,24 +248,24 @@
 		A72A0DF89B8216CCB218A633 /* CompletionLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLogger.swift; sourceTree = "<group>"; };
 		A76D29D54DF4775B05381C4E /* WorkSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkSession.swift; sourceTree = "<group>"; };
 		AA42563F0B8AB8CCEB653723 /* TemporalResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalResolution.swift; sourceTree = "<group>"; };
-		AC1520A86C04E2BEA6525BF5 /* understood.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = understood.caf; sourceTree = "<group>"; };
+		AC1520A86C04E2BEA6525BF5 /* understood.caf */ = {isa = PBXFileReference; path = understood.caf; sourceTree = "<group>"; };
 		ACB84D5595DB1489E3F84936 /* ScheduleConfidenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleConfidenceScorer.swift; sourceTree = "<group>"; };
 		AD0D9FC621E620EB77D0AF98 /* TemporalResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalResolverTests.swift; sourceTree = "<group>"; };
 		AE5BD783181FD781ECCF8D64 /* Strand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strand.swift; sourceTree = "<group>"; };
 		B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemCompletion.swift; sourceTree = "<group>"; };
 		B201853540CECA5DA7E7E117 /* StrandPeekSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPeekSheet.swift; sourceTree = "<group>"; };
-		B2ECCB44A3F1A4600E84B001 /* error.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = error.caf; sourceTree = "<group>"; };
+		B2ECCB44A3F1A4600E84B001 /* error.caf */ = {isa = PBXFileReference; path = error.caf; sourceTree = "<group>"; };
 		B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningIntentTests.swift; sourceTree = "<group>"; };
 		BB2CD187C2EB8DD312C24215 /* WorkItemScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemScope.swift; sourceTree = "<group>"; };
-		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC16CD4C608B56D0F7CB695D /* TaskCheckInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCheckInCoordinator.swift; sourceTree = "<group>"; };
 		BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		BF41184673063DB0A325C69D /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickCaptureView.swift; sourceTree = "<group>"; };
 		C0209A5FAA692F0C783A106C /* SoundManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundManager.swift; sourceTree = "<group>"; };
 		C1613D1FDECC4F6C9A4A0F52 /* SmartCaptureKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCaptureKeyStore.swift; sourceTree = "<group>"; };
 		C38DC60B64419D04F5E5D7F6 /* WorkItemNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemNotificationScheduler.swift; sourceTree = "<group>"; };
-		C92E544DFF3FE3838F77CAE7 /* Secrets.swift.example */ = {isa = PBXFileReference; lastKnownFileType = text; path = Secrets.swift.example; sourceTree = "<group>"; };
+		C92E544DFF3FE3838F77CAE7 /* Secrets.swift.example */ = {isa = PBXFileReference; path = Secrets.swift.example; sourceTree = "<group>"; };
 		CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiWidgetViews.swift; sourceTree = "<group>"; };
 		CC4CB83BECF9B15618F7FA70 /* TemporalInterpretation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalInterpretation.swift; sourceTree = "<group>"; };
 		CD726DF946CA683C826207C3 /* StrandPreferenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPreferenceStore.swift; sourceTree = "<group>"; };
@@ -274,7 +274,7 @@
 		DE70FBEAE485926D30A04BC7 /* SmartCapturePromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCapturePromptBuilder.swift; sourceTree = "<group>"; };
 		DE7FD27B9CB6E62193659197 /* SmartCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCaptureTests.swift; sourceTree = "<group>"; };
 		DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedWorkItem.swift; sourceTree = "<group>"; };
-		E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ambiguous.caf; sourceTree = "<group>"; };
+		E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */ = {isa = PBXFileReference; path = ambiguous.caf; sourceTree = "<group>"; };
 		E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineTypeOverrideStore.swift; sourceTree = "<group>"; };
 		EA71EBBF736BD816610EE36A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryColumnView.swift; sourceTree = "<group>"; };
@@ -691,6 +691,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = 64DA73B4E47CD0EF5DB41985 /* Build configuration list for PBXProject "Moti" */;
 			developmentRegion = en;
@@ -900,7 +902,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MotiWidget/MotiWidget.entitlements;
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				INFOPLIST_FILE = MotiWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MotiWidget;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -909,7 +910,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.malik.Moti.MotiWidget;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1007,7 +1007,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Moti/Moti.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Moti;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Moti needs calendar access to sync scheduled work items to your calendar.";
@@ -1020,7 +1019,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.malik.Moti;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -1031,7 +1029,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = MotiWidget/MotiWidget.entitlements;
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				INFOPLIST_FILE = MotiWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = MotiWidget;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -1040,7 +1037,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.malik.Moti.MotiWidget;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -1054,7 +1050,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Moti/Moti.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = MVAUZXPK9M;
 				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Moti;
@@ -1068,7 +1063,6 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.malik.Moti;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;

@@ -224,6 +224,9 @@ enum TimelineNarrator {
     /// rise can be honestly computed (P2). Never fabricates a cause.
     static func whyQuietOrFallback(for strand: Strand) -> String? {
         if let why = whyQuiet(for: strand) { return why }
+        if hasNoHistory(strand) {
+            return "This strand is just getting started. Once it has a few real traces, Moti can show whether it is building rhythm or fading."
+        }
         switch strand.presence.state {
         case .drifted: return "It's been quiet a while."
         case .quiet:   return "It's been slowing lately."
@@ -247,6 +250,13 @@ enum TimelineNarrator {
         case .fading:
             return "Slipping off the pace — it's starting to fade."
         }
+    }
+
+    private static func hasNoHistory(_ strand: Strand) -> Bool {
+        strand.eventCount == 0
+            && strand.lastTraces.isEmpty
+            && strand.presence.daysSinceLastActivity == nil
+            && strand.presence.baselineSource == .none
     }
 }
 

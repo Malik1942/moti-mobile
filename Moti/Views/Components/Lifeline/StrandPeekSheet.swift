@@ -20,11 +20,9 @@ struct StrandPeekSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
-                if strand.effectiveType == .achievement {
-                    achievementBody
-                } else {
-                    maintenanceBody
-                }
+                insightBlock
+                visualBlock
+                actionBlock
             }
             .padding(20)
         }
@@ -68,39 +66,38 @@ struct StrandPeekSheet: View {
 
     // MARK: - Achievement
 
-    private var achievementBody: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text(TimelineNarrator.achievementStatus(for: strand))
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-
-            milestoneHealth
-
-            if strand.forwardNodes.isEmpty {
-                Text("No steps mapped yet. Open in Projects to lay out the path.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-            } else {
-                ForwardNodesView(nodes: strand.forwardNodes, color: color)
-            }
-
-            HStack(spacing: 10) {
-                primaryButton("Open in Projects") {
-                    onOpenInProjects(strand.id)
-                    dismiss()
-                }
-                secondaryButton(strand.isPaused ? "Resume" : "Mark as paused") {
-                    prefs.setPaused(!strand.isPaused, for: strand.id)
-                    dismiss()
-                }
-            }
+    @ViewBuilder
+    private var insightBlock: some View {
+        if strand.effectiveType == .achievement {
+            insightBlock(
+                title: achievementPaceState,
+                detail: achievementTimeExplanation
+            )
+        } else {
+            insightBlock(
+                title: maintenanceProjectionState,
+                detail: maintenanceTimeExplanation
+            )
         }
+    }
+
+    private func insightBlock(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 15, weight: .medium))
+            Text(detail)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     /// Milestone health (PRD §6.2): a continuous **felt texture** of whether the
     /// line is tracking its expected pace, plus one natural-language line. The
     /// detail lives here in the Peek, never on the main axis (§8 detail-vs-load).
-    private var milestoneHealth: some View {
+    private var milestoneProgress: some View {
         let progress = strand.trajectory.progressFraction ?? 0
         // Where you'd "expect" to be = progress / pace (time elapsed). The gap
         // between fill and this tick is the felt read; no numbers shown.
@@ -121,33 +118,59 @@ struct StrandPeekSheet: View {
                 }
             }
             .frame(height: 12)
-            Text(TimelineNarrator.milestoneHealth(for: strand))
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Milestone health: \(TimelineNarrator.milestoneHealth(for: strand))")
     }
 
-    // MARK: - Maintenance
+    // MARK: - Visual block
 
-    private var maintenanceBody: some View {
+    @ViewBuilder
+    private var visualBlock: some View {
+        if strand.effectiveType == .achievement {
+            achievementVisual
+        } else {
+            maintenanceVisual
+        }
+    }
+
+    private var achievementVisual: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(TimelineNarrator.maintenanceRhythm(for: strand))
-                .font(.system(size: 15, weight: .medium))
+            evidenceSummary(achievementEvidenceSummary)
 
-            lastTraces
+            Text("Progress")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            milestoneProgress
 
-            if let why = TimelineNarrator.whyQuietOrFallback(for: strand) {
-                Text(why)
+            if strand.forwardNodes.isEmpty {
+                Text("No steps mapped yet. Open in Projects to lay out the path.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            } else {
+                ForwardNodesView(nodes: strand.forwardNodes, color: color)
             }
+        }
+    }
 
-            reEntry
+    private var maintenanceVisual: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            evidenceSummary(maintenanceEvidenceSummary)
+            lastTraces
+        }
+    }
+
+    private func evidenceSummary(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Evidence")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+            Text(text)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -160,11 +183,11 @@ struct StrandPeekSheet: View {
 
             if strand.lastTraces.isEmpty {
                 // Never an empty "No tasks" state — show the shape of a beginning.
-                Text("No traces yet — this one's just beginning.")
+                Text("No traces yet. This strand is just getting started.")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(strand.lastTraces) { trace in
+                ForEach(Array(strand.lastTraces.prefix(3))) { trace in
                     HStack(spacing: 10) {
                         Circle()
                             .fill(trace.kind == .deferred ? Color.secondary.opacity(0.5) : color.opacity(0.8))
@@ -183,28 +206,45 @@ struct StrandPeekSheet: View {
         }
     }
 
-    private var reEntry: some View {
+    // MARK: - Actions
+
+    private var actionBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Gentle re-entry")
+            Text("Actions")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
-            HStack(spacing: 10) {
-                primaryButton("Make space this week") {
-                    prefs.makeSpaceThisWeek(strand.id); dismiss()
+            if strand.effectiveType == .achievement {
+                HStack(spacing: 10) {
+                    primaryButton("Open in Projects") {
+                        onOpenInProjects(strand.id)
+                        dismiss()
+                    }
+                    secondaryButton("Not this week") {
+                        prefs.parkForThisWeek(strand.id)
+                        dismiss()
+                    }
                 }
-                secondaryButton("Not this week") {
-                    prefs.parkForThisWeek(strand.id); dismiss()
+                textAction("Mark as paused") {
+                    prefs.setPaused(true, for: strand.id)
+                    dismiss()
+                }
+            } else {
+                HStack(spacing: 10) {
+                    primaryButton("Make space this week") {
+                        prefs.makeSpaceThisWeek(strand.id)
+                        dismiss()
+                    }
+                    secondaryButton("Not this week") {
+                        prefs.parkForThisWeek(strand.id)
+                        dismiss()
+                    }
+                }
+                textAction("Lower priority") {
+                    prefs.setLowered(true, for: strand.id)
+                    dismiss()
                 }
             }
-            Button {
-                prefs.setLowered(!prefs.isLowered(strand.id), for: strand.id); dismiss()
-            } label: {
-                Text(prefs.isLowered(strand.id) ? "Restore priority" : "Lower priority")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
         }
     }
 
@@ -234,7 +274,128 @@ struct StrandPeekSheet: View {
         .buttonStyle(.plain)
     }
 
+    private func textAction(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Time and evidence copy
+
+    private var achievementPaceState: String {
+        switch strand.trajectory.outcome {
+        case .onTime: return "On pace"
+        case .behind: return "Slipping"
+        case .sustained: return "Holding pace"
+        case .fading: return "Stalled"
+        }
+    }
+
+    private var achievementTimeExplanation: String {
+        let target = strand.deadline.map { "Target: \(Self.mediumDate.string(from: $0))." } ?? "No target date yet."
+        return "\(target) \(achievementProjectionSentence)"
+    }
+
+    private var achievementProjectionSentence: String {
+        switch strand.trajectory.outcome {
+        case .onTime:
+            return "At the current pace, the projection reaches the target."
+        case .behind:
+            return "Projected after target at the current pace."
+        case .sustained:
+            return "The current rhythm is holding."
+        case .fading:
+            return "The current pace is thinning before the target."
+        }
+    }
+
+    private var achievementEvidenceSummary: String {
+        var parts = ["\(strand.completedActionCount)/\(max(strand.totalActionCount, 1)) actions complete"]
+        if strand.deferredCount > 0 { parts.append("\(strand.deferredCount) deferred") }
+        parts.append(lastActivityPhrase)
+        return parts.joined(separator: " · ")
+    }
+
+    private var maintenanceProjectionState: String {
+        if hasNoHistory { return "Just getting started" }
+        switch strand.trajectory.outcome {
+        case .sustained: return "Sustained"
+        case .fading: return strand.presence.state == .quiet ? "Weakening" : "Fading"
+        case .onTime: return "Sustained"
+        case .behind: return "Weakening"
+        }
+    }
+
+    private var maintenanceTimeExplanation: String {
+        if hasNoHistory {
+            return "Once this has a few real traces, Moti can show whether it is building rhythm or fading."
+        }
+
+        var parts: [String] = []
+        if let cadence = strand.presence.baselineCadenceDays,
+           strand.presence.baselineSource == .recurrence || strand.presence.baselineSource == .history {
+            parts.append("Usual rhythm: \(TimelineNarrator.cadenceWord(cadence)).")
+        }
+        if let days = strand.presence.daysSinceLastActivity {
+            parts.append(days == 0 ? "Last trace: today." : "Quiet for \(days) \(days == 1 ? "day" : "days").")
+        }
+        parts.append(maintenanceProjectionSentence)
+        return parts.joined(separator: " ")
+    }
+
+    private var maintenanceProjectionSentence: String {
+        switch strand.trajectory.outcome {
+        case .sustained:
+            return "Projection: sustained."
+        case .fading:
+            return "Projection: fading."
+        case .onTime:
+            return "Projection: sustained."
+        case .behind:
+            return "Projection: weakening."
+        }
+    }
+
+    private var maintenanceEvidenceSummary: String {
+        if hasNoHistory { return "No traces yet. This strand is just getting started." }
+        var parts: [String] = []
+        parts.append(lastTracePhrase)
+        if let days = strand.presence.daysSinceLastActivity {
+            parts.append(days == 0 ? "quiet duration: none" : "quiet duration: \(days) \(days == 1 ? "day" : "days")")
+        }
+        parts.append("\(strand.eventCount) \(strand.eventCount == 1 ? "trace" : "traces") recorded")
+        return parts.joined(separator: " · ")
+    }
+
+    private var lastActivityPhrase: String {
+        guard let date = strand.presence.lastActivity ?? strand.lastTraces.first?.date else {
+            return "no activity yet"
+        }
+        return "last activity \(Self.mediumDate.string(from: date))"
+    }
+
+    private var lastTracePhrase: String {
+        guard let date = strand.lastTraces.first?.date ?? strand.presence.lastActivity else {
+            return "last trace: none"
+        }
+        return "last trace: \(Self.mediumDate.string(from: date))"
+    }
+
+    private var hasNoHistory: Bool {
+        strand.eventCount == 0
+            && strand.lastTraces.isEmpty
+            && strand.presence.daysSinceLastActivity == nil
+            && strand.presence.baselineSource == .none
+    }
+
     private static let traceDate: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMM d"; return f
+    }()
+
+    private static let mediumDate: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "MMM d"; return f
     }()
 }
@@ -251,7 +412,6 @@ private struct ForwardNodesView: View {
             GeometryReader { proxy in
                 let w = proxy.size.width
                 let n = max(nodes.count, 1)
-                let step = n > 1 ? w / CGFloat(n - 1) : 0
                 ZStack(alignment: .leading) {
                     Rectangle()
                         .fill(color.opacity(0.25))
@@ -259,17 +419,17 @@ private struct ForwardNodesView: View {
                         .padding(.horizontal, 4)
                     ForEach(Array(nodes.enumerated()), id: \.element.id) { idx, node in
                         nodeMark(node)
-                            .position(x: n > 1 ? CGFloat(idx) * step + 4 - (idx == n - 1 ? 8 : 0) : 4,
+                            .position(x: xPosition(for: node, index: idx, count: n, width: w),
                                       y: proxy.size.height / 2)
                     }
                 }
             }
             .frame(height: 18)
 
-            // Step labels beneath, in order — names only, no checkboxes.
+            // Time-positioned step labels beneath, in order — no checkboxes.
             HStack(alignment: .top, spacing: 6) {
                 ForEach(nodes) { node in
-                    Text(node.title)
+                    Text(label(for: node))
                         .font(.system(size: 11))
                         .foregroundStyle(node.isReached ? .secondary : .primary)
                         .lineLimit(2)
@@ -280,6 +440,24 @@ private struct ForwardNodesView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Path: " + nodes.map { "\($0.title)\($0.isReached ? " done" : "")" }.joined(separator: ", "))
+    }
+
+    private func xPosition(for node: StrandForwardNode, index: Int, count: Int, width: CGFloat) -> CGFloat {
+        guard let date = node.date,
+              let first = nodes.compactMap(\.date).min(),
+              let last = nodes.compactMap(\.date).max(),
+              last > first
+        else {
+            let step = count > 1 ? width / CGFloat(count - 1) : 0
+            return count > 1 ? CGFloat(index) * step + 4 - (index == count - 1 ? 8 : 0) : 4
+        }
+        let fraction = min(1, max(0, date.timeIntervalSince(first) / last.timeIntervalSince(first)))
+        return 4 + (width - 12) * CGFloat(fraction)
+    }
+
+    private func label(for node: StrandForwardNode) -> String {
+        guard let date = node.date else { return node.title }
+        return "\(Self.nodeDate.string(from: date))\n\(node.title)"
     }
 
     @ViewBuilder
@@ -294,4 +472,8 @@ private struct ForwardNodesView: View {
             Circle().stroke(color.opacity(0.7), lineWidth: 1.6).frame(width: 10, height: 10)
         }
     }
+
+    private static let nodeDate: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMM d"; return f
+    }()
 }

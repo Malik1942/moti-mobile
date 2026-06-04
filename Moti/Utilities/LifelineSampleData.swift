@@ -15,6 +15,12 @@ enum LifelineSampleData {
     static func seedIfRequested(into context: ModelContext) {
         guard UserDefaults.standard.bool(forKey: "MotiSeedLifelines") else { return }
 
+        // Keep visual QA deterministic even after interacting with the sample
+        // build in prior simulator runs.
+        UserDefaults.standard.removeObject(forKey: "lifelines.parkedStrandWeek")
+        UserDefaults.standard.removeObject(forKey: "lifelines.spacedStrandWeek")
+        UserDefaults.standard.removeObject(forKey: "lifelines.loweredStrandIDs")
+
         // Only seed an empty store, so relaunches stay stable.
         let existing = (try? context.fetch(FetchDescriptor<Project>())) ?? []
         guard existing.isEmpty else { return }

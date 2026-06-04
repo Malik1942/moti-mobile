@@ -532,6 +532,46 @@ Maintenance:
 
 The language model only translates structure into language.
 
+## AI Role
+
+AI is not the trajectory engine.
+
+The computation layer determines project state, trajectory outcome, and visual structure.
+
+AI may only be used for:
+
+1. Top summary phrasing
+   Translate computed states into a short forward-looking sentence.
+
+2. Peek explanation compression
+   Turn computed evidence into readable, behavioral language.
+
+3. Co-occurrence explanation
+   Describe which projects rose while another went quiet.
+   This must be framed as co-occurrence, never causation.
+
+4. Marker and pattern summarization
+   Summarize sparse key moments when there are too many raw events to show directly.
+
+5. Later personalization
+   Suggest project type or rhythm defaults from observed behavior, but user correction and rule-based learning remain the source of truth.
+
+AI must never:
+
+- Determine whether a project is slipping, fading, sustained, or on track.
+- Invent urgency.
+- Infer life consequences.
+- Say one project caused another to fail.
+- Replace deterministic computation.
+
+## Foundation Model Use
+
+When the device and OS support Apple Foundation Models, Moti may use the on-device model for the allowed AI roles above regardless of the user's capture intelligence mode.
+
+Foundation Models must receive computed trajectory facts as input, not raw authority over state. The response should be treated as phrasing or compression only, and deterministic fallback copy must remain available when Foundation Models are unavailable or return unusable output.
+
+The current intelligence mode may still control capture and planning flows. Timeline phrasing support is a separate opportunistic enhancement gated by `FoundationModelRuntime.status.isAvailable`.
+
 ---
 
 # V1 Projection Logic
