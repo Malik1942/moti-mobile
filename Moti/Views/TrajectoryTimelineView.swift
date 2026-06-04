@@ -623,7 +623,7 @@ private struct ProjectLaneLabel: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.72)
+                .truncationMode(.tail)
             Image(systemName: stateGlyph)
                 .font(.system(size: glyphSize, weight: .semibold))
                 .foregroundStyle(color.opacity(strand.isPaused ? 0.36 : 0.48))
