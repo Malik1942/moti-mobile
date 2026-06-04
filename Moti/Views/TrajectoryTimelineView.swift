@@ -712,26 +712,41 @@ private struct TrajectoryCurveRenderer: View {
             drawActualMarkers(in: &ctx, points: actual)
 
             if strand.isPaused {
-                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.4, dash: [1.5, 4.5])
+                // Muted interrupted continuation — no directional amplification.
+                drawProjectedCurve(in: &ctx, points: projection, width: 1.9, opacity: 0.38, dash: [1.5, 5.5])
                 return
             }
 
             switch outcome {
-            case .slipping:
-                drawSlippingProjection(in: &ctx, points: projection, size: size)
-            case .stalled:
-                drawStalledProjection(in: &ctx, points: projection, size: size)
-            case .fading:
-                drawFadingProjection(in: &ctx, points: projection)
-            case .completed:
-                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.55, dash: [1.5, 4.5])
-                if let last = projection.last { drawCompletionMarker(in: &ctx, at: last) }
             case .onTrack:
-                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.5, dash: [1.5, 4.5])
+                // Guaranteed 13pt rise regardless of actual.last position.
+                let pts = directionalProjectionPoints(endOffset: -13)
+                drawProjectedCurve(in: &ctx, points: pts, width: 2.1, opacity: 0.68, dash: [2.0, 5.5])
+                if let last = pts.last { drawEndpoint(in: &ctx, at: last, opacity: 0.72) }
+            case .slipping:
+                // Guaranteed 12pt fall + deadline tick at the descent midpoint.
+                drawSlippingProjection(in: &ctx, points: directionalProjectionPoints(endOffset: 12), size: size)
+            case .stalled:
+                // Momentum gone — 11pt fall then fading opacity dissolve.
+                drawStalledProjection(in: &ctx, points: directionalProjectionPoints(endOffset: 11), size: size)
+            case .fading:
+                // 8pt fall + strong opacity decay — the fade is the primary signal.
+                drawFadingProjection(in: &ctx, points: directionalProjectionPoints(endOffset: 8))
+            case .completed:
+                // Confident stable high — 10pt rise toward ceiling.
+                let pts = directionalProjectionPoints(endOffset: -10)
+                drawProjectedCurve(in: &ctx, points: pts, width: 2.1, opacity: 0.65, dash: [2.0, 5.0])
+                if let last = pts.last { drawCompletionMarker(in: &ctx, at: last) }
             case .quiet:
-                drawProjectedCurve(in: &ctx, points: projection, width: 1.9, opacity: 0.42, dash: [1.5, 5])
+                // Gentle 8pt fall — present but thinning.
+                let pts = directionalProjectionPoints(endOffset: 8)
+                drawProjectedCurve(in: &ctx, points: pts, width: 1.9, opacity: 0.58, dash: [1.5, 5.5])
+                if let last = pts.last { drawEndpoint(in: &ctx, at: last, opacity: 0.58) }
             case .sustained:
-                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.5, dash: [1.5, 4.5])
+                // Flat — fed at its own rhythm, no drift.
+                let pts = directionalProjectionPoints(endOffset: 0)
+                drawProjectedCurve(in: &ctx, points: pts, width: 2.0, opacity: 0.62, dash: [2.0, 5.5])
+                if let last = pts.last { drawEndpoint(in: &ctx, at: last, opacity: 0.60) }
             }
         }
         .drawingGroup()
@@ -743,16 +758,19 @@ private struct TrajectoryCurveRenderer: View {
             geometry.nowX + geometry.visibleFutureWidth * 0.58,
             max(geometry.nowX + 28, strand.deadline.map { geometry.x(date: $0) } ?? geometry.nowX + geometry.visibleFutureWidth * 0.5)
         )
-        let targetY = yValue(for: 0.48)
-        drawDeadlineTick(in: &ctx, x: deadlineX, y: targetY)
-
-        var slipping = projection.filter { $0.x <= deadlineX }
-        if slipping.count < 2, let first = projection.first { slipping = [first] }
-        slipping.append(CGPoint(x: deadlineX, y: targetY + 2))
-        slipping.append(CGPoint(x: min(geometry.contentEndX, deadlineX + geometry.visibleFutureWidth * 0.24), y: targetY + 12))
-
-        drawProjectedCurve(in: &ctx, points: slipping, width: 2.0, opacity: 0.5, dash: [1.5, 4.5])
-        if let last = slipping.last { drawEndpoint(in: &ctx, at: last, opacity: 0.5) }
+        // Position the deadline tick along the projection's descent at that x-fraction.
+        let projSpan = geometry.visibleFutureWidth * 0.95
+        let deadlineFrac: CGFloat = projSpan > 0 ? min(1, max(0, (deadlineX - geometry.nowX) / projSpan)) : 0.5
+        let tickY: CGFloat
+        if let first = projection.first, let last = projection.last {
+            tickY = lerp(first.y, last.y, deadlineFrac)
+        } else {
+            tickY = yValue(for: 0.46)
+        }
+        drawDeadlineTick(in: &ctx, x: deadlineX, y: tickY)
+        // Descending curve continues past the deadline tick — showing the slipping momentum.
+        drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.65, dash: [1.5, 5.0])
+        if let last = projection.last { drawEndpoint(in: &ctx, at: last, opacity: 0.68) }
     }
 
     /// Stalled: momentum gone before the deadline. The deadline tick stays
@@ -784,7 +802,7 @@ private struct TrajectoryCurveRenderer: View {
             path.addLine(to: segment.1)
             ctx.stroke(
                 path,
-                with: .color(color.opacity(0.5 * (1 - t * 0.85))),
+                with: .color(color.opacity(0.60 * (1 - t * 0.85))),
                 style: StrokeStyle(lineWidth: 2.0 - CGFloat(t) * 0.7, lineCap: .round, lineJoin: .round, dash: [1.5, 5])
             )
         }
@@ -828,9 +846,12 @@ private struct TrajectoryCurveRenderer: View {
     }
 
     private func drawEndpoint(in ctx: inout GraphicsContext, at point: CGPoint, opacity: Double) {
-        let radius: CGFloat = 2.8
-        let circle = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-        ctx.stroke(circle, with: .color(color.opacity(opacity)), lineWidth: 0.9)
+        let radius: CGFloat = 3.2
+        let circle = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius,
+                                            width: radius * 2, height: radius * 2))
+        // Filled ring: soft inner fill anchors the endpoint; ring stroke gives it weight.
+        ctx.fill(circle, with: .color(color.opacity(opacity * 0.50)))
+        ctx.stroke(circle, with: .color(color.opacity(opacity)), lineWidth: 1.1)
     }
 
     private func drawDeadlineTick(in ctx: inout GraphicsContext, x: CGFloat, y: CGFloat) {
@@ -846,7 +867,7 @@ private struct TrajectoryCurveRenderer: View {
         let xEnd: CGFloat
         if projected {
             xStart = geometry.nowX
-            xEnd = geometry.nowX + geometry.visibleFutureWidth * 0.88
+            xEnd = geometry.nowX + geometry.visibleFutureWidth * 0.95
         } else {
             // Actual history begins at the real first event (date-accurate), not a
             // shared default. A young strand starts near Now; an old one extends
@@ -864,6 +885,32 @@ private struct TrajectoryCurveRenderer: View {
             return CGPoint(
                 x: lerp(xStart, xEnd, fraction),
                 y: yValue(for: value)
+            )
+        }
+    }
+
+    /// Projection points with a guaranteed visual slope, independent of where `actual.last` sits.
+    ///
+    /// Factor-based amplification fails when the compute's clamped targets produce tiny deltas
+    /// (e.g. onTrack when actual.last is already 0.8 → target = min(0.82, 0.96) → delta 0.02).
+    /// Instead, `endOffset` is a fixed pt displacement from `actual.last`'s Y-position:
+    /// negative = visually rises (toward top of lane), positive = falls toward bottom.
+    ///
+    /// The first point always equals actual.last's exact Y — zero discontinuity at Now.
+    /// Endpoint is clamped to lane bounds so no state escapes the visible area.
+    private func directionalProjectionPoints(endOffset: CGFloat) -> [CGPoint] {
+        let n = max(displayCurve.projected.count, 2)
+        let startY = yValue(for: displayCurve.actual.last ?? 0.4)
+        let minY = geometry.laneHeight * 0.10
+        let maxY = geometry.laneHeight * 0.90
+        let endY = min(maxY, max(minY, startY + endOffset))
+        let xStart = geometry.nowX
+        let xEnd = geometry.nowX + geometry.visibleFutureWidth * 0.95
+        return (0..<n).map { index in
+            let t = index == 0 ? 0 : CGFloat(index) / CGFloat(n - 1)
+            return CGPoint(
+                x: lerp(xStart, xEnd, t),
+                y: lerp(startY, endY, t)
             )
         }
     }
