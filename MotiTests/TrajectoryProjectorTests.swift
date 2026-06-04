@@ -137,14 +137,18 @@ final class TrajectoryProjectorTests: XCTestCase {
     }
 
     func test_behaviorDerivedSeries_reflectsRealActivity() {
-        let busy = [StrandEvent(kind: .completed, date: daysAgo(2)),
-                    StrandEvent(kind: .completed, date: daysAgo(3)),
-                    StrandEvent(kind: .completed, date: daysAgo(4))]
+        // Evidence spans the first event → now. An early lone event then a recent
+        // burst should lift the tail above the start — real shape, not a template.
+        let events = [StrandEvent(kind: .created, date: daysAgo(60)),
+                      StrandEvent(kind: .completed, date: daysAgo(2)),
+                      StrandEvent(kind: .completed, date: daysAgo(3)),
+                      StrandEvent(kind: .completed, date: daysAgo(4))]
         let p = TrajectoryProjector.project(
-            events: busy, type: .maintenance, presence: presence(.active, reach: 0.9),
+            events: events, type: .maintenance, presence: presence(.active, reach: 0.9),
             deadline: nil, completedCount: 0, totalCount: 0, now: now)
         XCTAssertGreaterThanOrEqual(p.actualSeries.count, 2)
         XCTAssertGreaterThan(p.actualSeries.last!, p.actualSeries.first!)
+        XCTAssertEqual(p.actualStartDate, daysAgo(60)) // evidence begins at first event
     }
 
     // MARK: - Solid extent

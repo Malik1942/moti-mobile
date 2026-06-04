@@ -120,7 +120,7 @@ struct TrajectoryTimelineView: View {
     private var headline: some View {
         Text(TimelineNarrator.trajectoryHeadline(for: strands))
             .font(.system(size: 18, weight: .semibold))
-            .foregroundStyle(.primary.opacity(0.84))
+            .foregroundStyle(.primary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 2)
             .fixedSize(horizontal: false, vertical: true)
@@ -236,7 +236,7 @@ struct TrajectoryTimelineView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(TrajectoryColorPalette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("What matters now: \(message)")
     }
@@ -244,9 +244,9 @@ struct TrajectoryTimelineView: View {
     private func attentionCard(strandID: String, title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("WHAT MATTERS NOW").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary.opacity(0.72))
-                Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(.primary.opacity(0.88))
-                Text(detail).font(.system(size: 12.5)).foregroundStyle(.secondary.opacity(0.82))
+                Text("WHAT MATTERS NOW").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                Text(title).font(.system(size: 16, weight: .semibold))
+                Text(detail).font(.system(size: 13)).foregroundStyle(.secondary)
             }
             HStack(spacing: 10) {
                 gentleButton("Make space", filled: true) {
@@ -259,19 +259,19 @@ struct TrajectoryTimelineView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(TrajectoryColorPalette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(.secondary.opacity(0.045), lineWidth: 0.7))
+        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous).stroke(.indigo.opacity(0.16), lineWidth: 1))
     }
 
+    /// App-control styling — the original app purple, never the chart palette.
     private func gentleButton(_ label: String, filled: Bool, action: @escaping () -> Void) -> some View {
-        let accent = TrajectoryColorPalette.color(for: "indigo", name: "Moti")
-        return Button(action: action) {
+        Button(action: action) {
             Text(label)
                 .font(.system(size: 14, weight: .semibold))
                 .padding(.horizontal, 14).padding(.vertical, 9)
                 .frame(maxWidth: .infinity)
-                .foregroundStyle(filled ? Color.white.opacity(0.92) : accent.opacity(0.8))
-                .background(filled ? accent.opacity(0.86) : accent.opacity(0.09), in: Capsule())
+                .foregroundStyle(filled ? Color.white : .indigo)
+                .background(filled ? Color.indigo : Color.indigo.opacity(0.12), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -344,17 +344,8 @@ private enum TrajectoryColorPalette {
         return palette[seed % palette.count]
     }
 
-    static var surface: Color {
-        #if canImport(UIKit)
-        Color(UIColor { traits in
-            traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.105, green: 0.108, blue: 0.118, alpha: 1)
-            : UIColor(red: 0.985, green: 0.982, blue: 0.972, alpha: 1)
-        })
-        #else
-        Color(.secondarySystemGroupedBackground)
-        #endif
-    }
+    /// System-native card surface (Apple Health / Stocks chart-card feel).
+    static var surface: Color { Color(.secondarySystemGroupedBackground) }
 
     static var plotWash: Color {
         #if canImport(UIKit)
@@ -368,21 +359,23 @@ private enum TrajectoryColorPalette {
         #endif
     }
 
+    // Apple-system color energy: richer and clearly readable on the light card,
+    // but a touch deeper than pure neon system colors (not candy). Chart-only.
     private static let tokenColors: [String: Color] = [
-        "blue": color(light: (0.22, 0.47, 0.68), dark: (0.45, 0.65, 0.82)),     // soft cobalt
-        "green": color(light: (0.34, 0.57, 0.42), dark: (0.48, 0.68, 0.52)),    // moss
-        "purple": color(light: (0.55, 0.40, 0.66), dark: (0.68, 0.56, 0.78)),   // smoky lavender
-        "indigo": color(light: (0.39, 0.43, 0.64), dark: (0.55, 0.58, 0.78)),   // muted indigo
-        "orange": color(light: (0.73, 0.48, 0.27), dark: (0.82, 0.58, 0.38)),   // muted amber/coral
-        "gray": color(light: (0.48, 0.49, 0.50), dark: (0.64, 0.65, 0.66))
+        "blue": color(light: (0.04, 0.42, 0.88), dark: (0.32, 0.62, 1.00)),     // refined iOS blue
+        "green": color(light: (0.16, 0.62, 0.33), dark: (0.30, 0.80, 0.46)),    // calm but visible green
+        "purple": color(light: (0.52, 0.24, 0.80), dark: (0.69, 0.46, 0.95)),   // rich, not neon
+        "indigo": color(light: (0.29, 0.30, 0.76), dark: (0.52, 0.52, 0.94)),   // deep indigo
+        "orange": color(light: (0.92, 0.50, 0.08), dark: (1.00, 0.62, 0.24)),   // warm, clear amber
+        "gray": color(light: (0.42, 0.44, 0.47), dark: (0.62, 0.64, 0.67))      // neutral, readable
     ]
 
     private static let fallbackColors: [Color] = [
-        color(light: (0.28, 0.55, 0.58), dark: (0.48, 0.70, 0.72)), // muted teal
-        color(light: (0.65, 0.39, 0.48), dark: (0.78, 0.55, 0.62)), // faded rose
-        color(light: (0.56, 0.51, 0.40), dark: (0.72, 0.66, 0.52)), // warm stone
-        color(light: (0.39, 0.50, 0.67), dark: (0.56, 0.66, 0.80)), // faded cyan
-        color(light: (0.43, 0.44, 0.47), dark: (0.62, 0.63, 0.66))  // graphite
+        color(light: (0.10, 0.58, 0.60), dark: (0.34, 0.78, 0.80)), // teal
+        color(light: (0.80, 0.28, 0.42), dark: (0.92, 0.46, 0.58)), // rose
+        color(light: (0.62, 0.46, 0.16), dark: (0.80, 0.64, 0.32)), // amber-stone
+        color(light: (0.16, 0.50, 0.78), dark: (0.40, 0.68, 0.95)), // cyan-blue
+        color(light: (0.40, 0.42, 0.46), dark: (0.60, 0.62, 0.66))  // graphite
     ]
 
     private static func color(light: (Double, Double, Double), dark: (Double, Double, Double)) -> Color {
@@ -552,14 +545,14 @@ private struct TimelineChartViewport: View {
         ZStack(alignment: .topLeading) {
             ForEach(Array(geometry.guideXs.enumerated()), id: \.offset) { _, x in
                 Rectangle()
-                    .fill(.secondary.opacity(abs(x - geometry.nowX) < 1 ? 0.075 : 0.03))
+                    .fill(.secondary.opacity(abs(x - geometry.nowX) < 1 ? 0.11 : 0.05))
                     .frame(width: 1, height: geometry.trackBottomY - geometry.trackTopY)
                     .offset(x: x, y: geometry.trackTopY)
             }
 
             ForEach(0..<strands.count, id: \.self) { index in
                 Rectangle()
-                    .fill(.secondary.opacity(0.014))
+                    .fill(.secondary.opacity(0.035))
                     .frame(width: geometry.contentWidth, height: 0.5)
                     .offset(x: 0, y: geometry.laneTop(index) + geometry.laneHeight - 1)
             }
@@ -573,10 +566,10 @@ private struct TimelineChartViewport: View {
     private var nowMarker: some View {
         ZStack(alignment: .top) {
             Rectangle()
-                .fill(.primary.opacity(0.095))
+                .fill(.primary.opacity(0.2))
                 .frame(width: 1)
             Circle()
-                .fill(.primary.opacity(0.48))
+                .fill(.primary.opacity(0.6))
                 .frame(width: 4, height: 4)
                 .offset(y: 34)
         }
@@ -588,7 +581,7 @@ private struct TimelineChartViewport: View {
     private func chartLabel(_ title: String, x: CGFloat, alignment: HorizontalAlignment) -> some View {
         Text(title)
             .font(.system(size: 9, weight: .medium))
-            .foregroundStyle(.secondary.opacity(0.38))
+            .foregroundStyle(.secondary.opacity(0.6))
         .frame(width: 64, alignment: frameAlignment(for: alignment))
         .offset(x: x - xOffset(for: alignment), y: 18)
     }
@@ -715,11 +708,11 @@ private struct TrajectoryCurveRenderer: View {
             let projection = effortPoints(projected: true)
 
             drawArea(in: &ctx, points: actual, baseline: geometry.laneHeight - 12)
-            drawCurve(in: &ctx, points: actual, width: actualLineWidth, opacity: strand.isPaused ? 0.3 : 0.62)
+            drawCurve(in: &ctx, points: actual, width: actualLineWidth, opacity: strand.isPaused ? 0.5 : 1.0)
             drawActualMarkers(in: &ctx, points: actual)
 
             if strand.isPaused {
-                drawProjectedCurve(in: &ctx, points: projection, width: 1.15, opacity: 0.18, dash: [1, 6.5])
+                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.4, dash: [1.5, 4.5])
                 return
             }
 
@@ -731,14 +724,14 @@ private struct TrajectoryCurveRenderer: View {
             case .fading:
                 drawFadingProjection(in: &ctx, points: projection)
             case .completed:
-                drawProjectedCurve(in: &ctx, points: projection, width: 1.2, opacity: 0.3, dash: [1, 6.2])
+                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.55, dash: [1.5, 4.5])
                 if let last = projection.last { drawCompletionMarker(in: &ctx, at: last) }
             case .onTrack:
-                drawProjectedCurve(in: &ctx, points: projection, width: 1.2, opacity: 0.22, dash: [1, 6.2])
+                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.5, dash: [1.5, 4.5])
             case .quiet:
-                drawProjectedCurve(in: &ctx, points: projection, width: 1.1, opacity: 0.18, dash: [1, 6.6])
+                drawProjectedCurve(in: &ctx, points: projection, width: 1.9, opacity: 0.42, dash: [1.5, 5])
             case .sustained:
-                drawProjectedCurve(in: &ctx, points: projection, width: 1.2, opacity: 0.23, dash: [1, 6.2])
+                drawProjectedCurve(in: &ctx, points: projection, width: 2.0, opacity: 0.5, dash: [1.5, 4.5])
             }
         }
         .drawingGroup()
@@ -758,8 +751,8 @@ private struct TrajectoryCurveRenderer: View {
         slipping.append(CGPoint(x: deadlineX, y: targetY + 2))
         slipping.append(CGPoint(x: min(geometry.contentEndX, deadlineX + geometry.visibleFutureWidth * 0.24), y: targetY + 12))
 
-        drawProjectedCurve(in: &ctx, points: slipping, width: 1.25, opacity: 0.27, dash: [1, 6.2])
-        if let last = slipping.last { drawEndpoint(in: &ctx, at: last, opacity: 0.24) }
+        drawProjectedCurve(in: &ctx, points: slipping, width: 2.0, opacity: 0.5, dash: [1.5, 4.5])
+        if let last = slipping.last { drawEndpoint(in: &ctx, at: last, opacity: 0.5) }
     }
 
     /// Stalled: momentum gone before the deadline. The deadline tick stays
@@ -791,8 +784,8 @@ private struct TrajectoryCurveRenderer: View {
             path.addLine(to: segment.1)
             ctx.stroke(
                 path,
-                with: .color(color.opacity(0.17 * (1 - t))),
-                style: StrokeStyle(lineWidth: 1.1 - CGFloat(t) * 0.28, lineCap: .round, lineJoin: .round, dash: [1, 6.6])
+                with: .color(color.opacity(0.5 * (1 - t * 0.85))),
+                style: StrokeStyle(lineWidth: 2.0 - CGFloat(t) * 0.7, lineCap: .round, lineJoin: .round, dash: [1.5, 5])
             )
         }
     }
@@ -821,16 +814,16 @@ private struct TrajectoryCurveRenderer: View {
         area.addLine(to: CGPoint(x: last.x, y: baseline))
         area.addLine(to: CGPoint(x: first.x, y: baseline))
         area.closeSubpath()
-        ctx.fill(area, with: .color(color.opacity(strand.isPaused ? 0.012 : 0.024)))
+        ctx.fill(area, with: .color(color.opacity(strand.isPaused ? 0.03 : 0.06)))
     }
 
     private func drawActualMarkers(in ctx: inout GraphicsContext, points: [CGPoint]) {
         for index in markerIndexes(count: points.count) {
             let point = points[index]
-            let radius: CGFloat = index == points.count - 1 ? 2.5 : 2.0
+            let radius: CGFloat = index == points.count - 1 ? 3.0 : 2.4
             let circle = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-            ctx.fill(circle, with: .color(color.opacity(strand.isPaused ? 0.28 : 0.58)))
-            ctx.stroke(circle, with: .color(TrajectoryColorPalette.surface.opacity(0.82)), lineWidth: 0.7)
+            ctx.fill(circle, with: .color(color.opacity(strand.isPaused ? 0.5 : 1.0)))
+            ctx.stroke(circle, with: .color(TrajectoryColorPalette.surface), lineWidth: 1.0)
         }
     }
 
@@ -844,13 +837,27 @@ private struct TrajectoryCurveRenderer: View {
         var tick = Path()
         tick.move(to: CGPoint(x: x, y: y - 9))
         tick.addLine(to: CGPoint(x: x, y: y + 9))
-        ctx.stroke(tick, with: .color(color.opacity(0.26)), style: StrokeStyle(lineWidth: 0.8, lineCap: .round))
+        ctx.stroke(tick, with: .color(color.opacity(0.5)), style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
     }
 
     private func effortPoints(projected: Bool) -> [CGPoint] {
         let values = projected ? displayCurve.projected : displayCurve.actual
-        let xStart = projected ? geometry.nowX : geometry.nowX - geometry.visiblePastWidth
-        let xEnd = projected ? geometry.nowX + geometry.visibleFutureWidth * 0.88 : geometry.nowX
+        let xStart: CGFloat
+        let xEnd: CGFloat
+        if projected {
+            xStart = geometry.nowX
+            xEnd = geometry.nowX + geometry.visibleFutureWidth * 0.88
+        } else {
+            // Actual history begins at the real first event (date-accurate), not a
+            // shared default. A young strand starts near Now; an old one extends
+            // back into the pannable past. No evidence → a short stub at Now.
+            if let start = strand.trajectory.actualStartDate {
+                xStart = max(4, geometry.x(date: start))
+            } else {
+                xStart = geometry.nowX - 6
+            }
+            xEnd = geometry.nowX
+        }
         let count = max(values.count, 1)
         return values.enumerated().map { index, value in
             let fraction = count == 1 ? 0 : CGFloat(index) / CGFloat(count - 1)
@@ -869,8 +876,8 @@ private struct TrajectoryCurveRenderer: View {
     }
 
     private var actualLineWidth: CGFloat {
-        if strand.isPaused { return 1.2 }
-        return outcome.needsAttention ? 1.75 : 1.55
+        if strand.isPaused { return 1.9 }
+        return outcome.needsAttention ? 2.4 : 2.15
     }
 
     /// The strand's shape comes from the computed, **behavior-derived** series on

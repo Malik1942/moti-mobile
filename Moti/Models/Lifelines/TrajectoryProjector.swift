@@ -69,6 +69,12 @@ struct TrajectoryProjection: Equatable {
     /// The projected continuation, Now→future, normalised. Starts from the real
     /// recent level and is shaped *directionally* by the computed outcome.
     let projectedSeries: [Double]
+
+    /// The date of the **first real behavioral event** — the start of available
+    /// evidence. The actual curve is drawn from here to Now (date-accurate), so a
+    /// young strand begins near Now with empty space before it, and an old one
+    /// extends back into the pannable past. `nil` when there is no history.
+    let actualStartDate: Date?
 }
 
 extension TrajectoryProjection {
@@ -80,7 +86,8 @@ extension TrajectoryProjection {
             progressFraction: nil, paceRatio: nil, feedingRatio: nil,
             solidFraction: solidFraction,
             actualSeries: Array(repeating: 0.5, count: 7),
-            projectedSeries: Array(repeating: 0.5, count: 6)
+            projectedSeries: Array(repeating: 0.5, count: 6),
+            actualStartDate: nil
         )
     }
 }
@@ -131,7 +138,9 @@ enum TrajectoryProjector {
     ) -> TrajectoryProjection {
         let solid = solidFraction(for: presence, policy: policy)
         let hasSignal = events.contains { $0.date <= now }
-        let actual = actualSeries(events: events, now: now, policy: policy)
+        // Evidence starts at the first real event — never fabricated earlier.
+        let evidenceStart = firstActivity ?? events.filter { $0.date <= now }.map(\.date).min()
+        let actual = actualSeries(events: events, start: evidenceStart, now: now, policy: policy)
 
         let outcome: TrajectoryOutcome
         let progress: Double?
@@ -156,7 +165,8 @@ enum TrajectoryProjector {
         return TrajectoryProjection(
             outcome: outcome, hasGoal: hasGoal,
             progressFraction: progress, paceRatio: pace, feedingRatio: feeding,
-            solidFraction: solid, actualSeries: actual, projectedSeries: projected
+            solidFraction: solid, actualSeries: actual, projectedSeries: projected,
+            actualStartDate: evidenceStart
         )
     }
 
@@ -202,17 +212,24 @@ enum TrajectoryProjector {
 
     // MARK: Behavioral curves
 
-    /// Normalised feeding intensity over the lookback, oldest→Now. The shape is
-    /// the real evidence: busy buckets rise, quiet buckets dip. Empty history is
-    /// a calm low flat line (never fabricated urgency).
-    static func actualSeries(events: [StrandEvent], now: Date, policy: TrajectoryPolicy) -> [Double] {
+    /// Normalised feeding intensity from the **start of evidence** (`start`, the
+    /// first real event) to Now — never earlier, so no fabricated pre-history.
+    /// The shape is the real evidence: busy buckets rise, quiet buckets dip.
+    /// Capped to the policy lookback so a very old strand stays within the
+    /// pannable range; empty history collapses to a flat calm line.
+    static func actualSeries(events: [StrandEvent], start: Date?, now: Date, policy: TrajectoryPolicy) -> [Double] {
         let buckets = max(2, policy.curveBuckets)
-        let bucketDays = policy.curveLookbackDays / Double(buckets)
-        let start = now.addingTimeInterval(-policy.curveLookbackDays * 86_400)
+        let lookbackStart = now.addingTimeInterval(-policy.curveLookbackDays * 86_400)
+        // Span begins at the first event (clamped to the lookback window); if
+        // there is no evidence, fall back to a short flat segment at Now.
+        guard let evidence = start else { return [0.2, 0.2] }
+        let spanStart = max(evidence, lookbackStart)
+        let spanDays = max(1.0, now.timeIntervalSince(spanStart) / 86_400)
+        let bucketDays = spanDays / Double(buckets)
 
         var counts = [Int](repeating: 0, count: buckets)
-        for e in events where e.date >= start && e.date <= now {
-            let offset = e.date.timeIntervalSince(start) / 86_400
+        for e in events where e.date >= spanStart && e.date <= now {
+            let offset = e.date.timeIntervalSince(spanStart) / 86_400
             let idx = min(buckets - 1, max(0, Int(offset / bucketDays)))
             counts[idx] += 1
         }
