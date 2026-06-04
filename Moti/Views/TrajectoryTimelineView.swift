@@ -30,7 +30,7 @@ struct TrajectoryTimelineView: View {
     @State private var selectedScale: TimelineScale = .month
 
     private let axis = TrajectoryAxis(now: .now)
-    private let laneHeight: CGFloat = 74
+    private let laneHeight: CGFloat = 80
     private let fieldHeaderHeight: CGFloat = 40
     private let fieldBottomPadding: CGFloat = 12
 
@@ -462,7 +462,7 @@ private struct TimelineFieldGeometry {
 
     let labelColumnWidth: CGFloat = 116
     let headerHeight: CGFloat = 40
-    let laneHeight: CGFloat = 74
+    let laneHeight: CGFloat = 80
 
     var chartViewportWidth: CGFloat { max(190, size.width - labelColumnWidth - 26) }
     var chartHeight: CGFloat { headerHeight + CGFloat(laneCount) * laneHeight + 4 }
