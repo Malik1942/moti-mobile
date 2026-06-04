@@ -625,9 +625,9 @@ private struct ProjectLaneLabel: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
             Image(systemName: stateGlyph)
-                .font(.system(size: glyphSize, weight: .semibold))
+                .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(color.opacity(strand.isPaused ? 0.36 : 0.48))
-                .frame(width: 10)
+                .frame(width: 12, height: 13)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -645,10 +645,6 @@ private struct ProjectLaneLabel: View {
         case .quiet: return "minus"
         case .fading: return "circle.dotted"
         }
-    }
-
-    private var glyphSize: CGFloat {
-        strand.trajectory.outcome == .sustained ? 8 : 9
     }
 
     private var stateText: String {
