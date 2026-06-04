@@ -31,7 +31,7 @@ struct TrajectoryTimelineView: View {
 
     private let axis = TrajectoryAxis(now: .now)
     private let laneHeight: CGFloat = 74
-    private let fieldHeaderHeight: CGFloat = 40
+    private let fieldHeaderHeight: CGFloat = 26
     private let fieldBottomPadding: CGFloat = 12
 
     // MARK: - Derived
@@ -461,7 +461,7 @@ private struct TimelineFieldGeometry {
     let laneCount: Int
 
     let labelColumnWidth: CGFloat = 116
-    let headerHeight: CGFloat = 40
+    let headerHeight: CGFloat = 26
     let laneHeight: CGFloat = 74
 
     var chartViewportWidth: CGFloat { max(190, size.width - labelColumnWidth - 26) }
@@ -472,7 +472,7 @@ private struct TimelineFieldGeometry {
     var visiblePastWidth: CGFloat { chartViewportWidth * 0.25 }
     var visibleFutureWidth: CGFloat { chartViewportWidth * 0.75 }
     var contentEndX: CGFloat { contentWidth - 12 }
-    var trackTopY: CGFloat { 16 }
+    var trackTopY: CGFloat { 8 }
     var trackBottomY: CGFloat { headerHeight + CGFloat(laneCount) * laneHeight - 4 }
 
     var guideXs: [CGFloat] {
@@ -571,7 +571,7 @@ private struct TimelineChartViewport: View {
             Circle()
                 .fill(.primary.opacity(0.6))
                 .frame(width: 4, height: 4)
-                .offset(y: 34)
+                .offset(y: 18)
         }
         .frame(height: geometry.trackBottomY - geometry.trackTopY)
         .offset(x: geometry.nowX, y: geometry.trackTopY)
@@ -583,7 +583,7 @@ private struct TimelineChartViewport: View {
             .font(.system(size: 9, weight: .medium))
             .foregroundStyle(.secondary.opacity(0.6))
         .frame(width: 64, alignment: frameAlignment(for: alignment))
-        .offset(x: x - xOffset(for: alignment), y: 18)
+        .offset(x: x - xOffset(for: alignment), y: 8)
     }
 
     private func frameAlignment(for alignment: HorizontalAlignment) -> Alignment {
