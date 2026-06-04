@@ -19,7 +19,6 @@ struct SettingsView: View {
     @AppStorage("calendarSyncMode") private var calendarSyncModeRawValue = CalendarSyncMode.event.rawValue
     @AppStorage(WorkItemNotificationScheduler.dueRemindersKey)   private var dueRemindersEnabled = true
     @AppStorage(WorkItemNotificationScheduler.progressChecksKey) private var progressChecksEnabled = true
-    @AppStorage(SoundManager.enabledKey) private var soundEffectsEnabled = true
     @AppStorage("useLifelineTimeline") private var useLifelineTimeline = false
 
     @State private var calendarStatus = AppleCalendarSyncStatus.off
@@ -133,13 +132,6 @@ struct SettingsView: View {
                 }
 
                 notificationsSection
-
-                Section("Sound") {
-                    Toggle("Sound effects", isOn: $soundEffectsEnabled)
-                    Text("Soft, occasional cues at key moments — capturing a thought, understanding intent, finishing a task. Quiet by design; respects your silent switch.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
 
                 Section("Timeline") {
                     Toggle("Use Trajectory Timeline", isOn: $useLifelineTimeline)
