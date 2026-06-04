@@ -460,7 +460,7 @@ private struct TimelineFieldGeometry {
     let now: Date
     let laneCount: Int
 
-    let labelColumnWidth: CGFloat = 86
+    let labelColumnWidth: CGFloat = 116
     let headerHeight: CGFloat = 40
     let laneHeight: CGFloat = 62
 
@@ -617,19 +617,25 @@ private struct ProjectLaneLabel: View {
     private var color: Color { TrajectoryColorPalette.color(for: strand.colorToken, name: strand.name) }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 6) {
+        HStack(alignment: .center, spacing: 0) {
             ProjectIdentityMark(color: color, isPaused: strand.isPaused)
+                .padding(.trailing, 6)
+            // Text expands to fill all remaining space so the icon is always
+            // pinned to the same trailing-edge position across every row.
             Text(strand.name)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: stateGlyph)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(color.opacity(strand.isPaused ? 0.36 : 0.48))
                 .frame(width: 12, height: 13)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // Fill the full lane height so HStack content centers on the same
+        // vertical axis as the trajectory curves opposite it.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(strand.name), \(stateText)")
     }
