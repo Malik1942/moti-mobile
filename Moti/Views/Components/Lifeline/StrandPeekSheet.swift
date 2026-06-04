@@ -287,10 +287,11 @@ struct StrandPeekSheet: View {
 
     private var achievementPaceState: String {
         switch strand.trajectory.outcome {
-        case .onTime: return "On pace"
-        case .behind: return "Slipping"
-        case .sustained: return "Holding pace"
-        case .fading: return "Stalled"
+        case .onTrack: return "On pace"
+        case .slipping: return "Slipping"
+        case .stalled: return "Stalled"
+        case .completed: return "Complete"
+        case .sustained, .quiet, .fading: return "In progress"
         }
     }
 
@@ -301,14 +302,16 @@ struct StrandPeekSheet: View {
 
     private var achievementProjectionSentence: String {
         switch strand.trajectory.outcome {
-        case .onTime:
+        case .onTrack:
             return "At the current pace, the projection reaches the target."
-        case .behind:
+        case .slipping:
             return "Projected after target at the current pace."
-        case .sustained:
-            return "The current rhythm is holding."
-        case .fading:
-            return "The current pace is thinning before the target."
+        case .stalled:
+            return "Stalled — no recent movement toward the target."
+        case .completed:
+            return "Every step is complete."
+        case .sustained, .quiet, .fading:
+            return "Tracking the current pace."
         }
     }
 
@@ -323,9 +326,10 @@ struct StrandPeekSheet: View {
         if hasNoHistory { return "Just getting started" }
         switch strand.trajectory.outcome {
         case .sustained: return "Sustained"
-        case .fading: return strand.presence.state == .quiet ? "Weakening" : "Fading"
-        case .onTime: return "Sustained"
-        case .behind: return "Weakening"
+        case .quiet: return "Weakening"
+        case .fading: return "Fading"
+        case .onTrack, .completed: return "Sustained"
+        case .slipping, .stalled: return "Weakening"
         }
     }
 
@@ -350,11 +354,13 @@ struct StrandPeekSheet: View {
         switch strand.trajectory.outcome {
         case .sustained:
             return "Projection: sustained."
+        case .quiet:
+            return "Projection: weakening."
         case .fading:
             return "Projection: fading."
-        case .onTime:
+        case .onTrack, .completed:
             return "Projection: sustained."
-        case .behind:
+        case .slipping, .stalled:
             return "Projection: weakening."
         }
     }

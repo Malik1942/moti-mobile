@@ -119,7 +119,6 @@
 		E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */; };
 		E40263D9310970912008449F /* WorkItemNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C38DC60B64419D04F5E5D7F6 /* WorkItemNotificationScheduler.swift */; };
 		E5369605A71211D78BAC913B /* SmartCapturePromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE70FBEAE485926D30A04BC7 /* SmartCapturePromptBuilder.swift */; };
-		E6D7D046E7091F90FB524447 /* TrajectoryColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */; };
 		E784BA20607523415553AE8F /* RuleBasedTaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */; };
 		EA9EF71C9A4FCD827A5D4E55 /* MotiDebugDataLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */; };
 		ED8045DAA94D532CB6778A70 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */; };
@@ -277,7 +276,6 @@
 		E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */ = {isa = PBXFileReference; path = ambiguous.caf; sourceTree = "<group>"; };
 		E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifelineTypeOverrideStore.swift; sourceTree = "<group>"; };
 		EA71EBBF736BD816610EE36A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryColumnView.swift; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolverPath.swift; sourceTree = "<group>"; };
 		F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockTimeInferenceTests.swift; sourceTree = "<group>"; };
@@ -337,7 +335,6 @@
 				B201853540CECA5DA7E7E117 /* StrandPeekSheet.swift */,
 				3D67BEC178DF84764F0136FC /* TimelineNarrator.swift */,
 				403CF9AE8E1A03ED6D5B7CB5 /* TrajectoryAxis.swift */,
-				EBBF2B002D87C1D5018038CD /* TrajectoryColumnView.swift */,
 			);
 			path = Lifeline;
 			sourceTree = "<group>";
@@ -838,7 +835,6 @@
 				84E503771DDFC7561C238CFA /* TimelineNarrator.swift in Sources */,
 				DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */,
 				F451BFB352E2BDC374D8ABC1 /* TrajectoryAxis.swift in Sources */,
-				E6D7D046E7091F90FB524447 /* TrajectoryColumnView.swift in Sources */,
 				45120A834AF95A5695003317 /* TrajectoryProjector.swift in Sources */,
 				48822C2563300A2ED3707162 /* TrajectoryTimelineView.swift in Sources */,
 				C109B0E9870DF6AF8B982C92 /* WidgetSnapshot.swift in Sources */,

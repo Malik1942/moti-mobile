@@ -70,10 +70,11 @@ enum LifelineSampleData {
         item("Change address", project: "Move", created: daysAgo(8), due: daysAhead(18))
         item("Move day", project: "Move", created: daysAgo(10), due: daysAhead(30))
 
-        // Launch — achievement, BEHIND: little progress, most of the time gone.
+        // Launch — achievement, SLIPPING: still moving (recent completion) but
+        // behind pace, so the projection lands past the deadline.
         _ = project("Launch", "blue")
         item("Spec", project: "Launch", created: daysAgo(40), updated: daysAgo(34), status: .done)
-        item("Build core", project: "Launch", created: daysAgo(38), due: daysAhead(6))
+        item("Build core", project: "Launch", created: daysAgo(38), updated: daysAgo(3), status: .done)
         item("Beta", project: "Launch", created: daysAgo(38), due: daysAhead(8))
         item("Polish", project: "Launch", created: daysAgo(38), due: daysAhead(9))
         item("Ship", project: "Launch", created: daysAgo(40), due: daysAhead(10))

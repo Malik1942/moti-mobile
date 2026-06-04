@@ -37,16 +37,16 @@ final class TimelineNarratorTests: XCTestCase {
 
     func test_trajectoryHeadline_namesSlippingAndFading() {
         let h = TimelineNarrator.trajectoryHeadline(for: [
-            strand("Launch", .active, outcome: .behind),
+            strand("Launch", .active, outcome: .slipping),
             strand("Fitness", .drifted, outcome: .fading),
-            strand("Work", .active, outcome: .onTime)
+            strand("Work", .active, outcome: .onTrack)
         ])
         XCTAssertEqual(h, "On current pace: Launch is slipping and Fitness is fading.")
     }
 
     func test_trajectoryHeadline_calmWhenAllOnTrack() {
         let h = TimelineNarrator.trajectoryHeadline(for: [
-            strand("Work", .active, outcome: .onTime),
+            strand("Work", .active, outcome: .onTrack),
             strand("Parents", .quiet, outcome: .sustained)
         ])
         XCTAssertEqual(h, "On current pace, everything's on track.")
@@ -55,7 +55,7 @@ final class TimelineNarratorTests: XCTestCase {
     func test_trajectoryFocus_behindOutranksFading() {
         let focus = TimelineNarrator.trajectoryFocus(for: [
             strand("Fitness", .drifted, outcome: .fading),
-            strand("Launch", .active, outcome: .behind)
+            strand("Launch", .active, outcome: .slipping)
         ])
         guard case let .attention(id, title, _) = focus else { return XCTFail("expected attention") }
         XCTAssertEqual(id, "Launch")
@@ -63,13 +63,13 @@ final class TimelineNarratorTests: XCTestCase {
     }
 
     func test_trajectoryFocus_calmWhenNoneNeedAttention() {
-        let focus = TimelineNarrator.trajectoryFocus(for: [strand("Work", .active, outcome: .onTime)])
+        let focus = TimelineNarrator.trajectoryFocus(for: [strand("Work", .active, outcome: .onTrack)])
         XCTAssertEqual(focus, .calm("Everything's on track."))
     }
 
     func test_trajectoryFocus_excludesPausedAndParked() {
         let focus = TimelineNarrator.trajectoryFocus(
-            for: [strand("Launch", .active, paused: true, outcome: .behind),
+            for: [strand("Launch", .active, paused: true, outcome: .slipping),
                   strand("Fitness", .drifted, outcome: .fading)],
             parkedIDs: ["Fitness"]
         )
@@ -170,7 +170,7 @@ final class TimelineNarratorTests: XCTestCase {
             computedType: .achievement, userOverrideType: nil, eventCount: max(done, 1),
             presence: StrandPresence(state: .active, reach: 0.9, lastActivity: nil,
                                      daysSinceLastActivity: 1, baselineCadenceDays: nil, baselineSource: .none),
-            trajectory: .directional(.onTime),
+            trajectory: .directional(.onTrack),
             isPaused: false, recurrenceCadenceDays: nil, openCount: 3, deferredCount: deferred,
             completedActionCount: done, totalActionCount: max(done, 4),
             deadline: hasDeadline ? Date() : nil, forwardNodes: nodes, lastTraces: [], coOccurringStrandNames: []
@@ -222,10 +222,10 @@ final class TimelineNarratorTests: XCTestCase {
     }
 
     func test_milestoneHealth_isDirectionalAndNonShaming() {
-        XCTAssertEqual(TimelineNarrator.milestoneHealth(for: strand("Move", .active, outcome: .onTime)),
+        XCTAssertEqual(TimelineNarrator.milestoneHealth(for: strand("Move", .active, outcome: .onTrack)),
                        "On track for the pace you set.")
-        XCTAssertEqual(TimelineNarrator.milestoneHealth(for: strand("Launch", .quiet, outcome: .behind)),
-                       "Behind the pace you set — but the deadline's still in view.")
+        XCTAssertEqual(TimelineNarrator.milestoneHealth(for: strand("Launch", .quiet, outcome: .slipping)),
+                       "Behind the pace you set — projected after the deadline.")
         // No day-counts anywhere in the milestone-health copy (§9.6).
         for o in TrajectoryOutcome.allCases {
             let line = TimelineNarrator.milestoneHealth(for: strand("S", .active, outcome: o))

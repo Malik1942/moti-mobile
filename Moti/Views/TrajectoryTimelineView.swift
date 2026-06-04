@@ -644,10 +644,13 @@ private struct ProjectLaneLabel: View {
     private var stateGlyph: String {
         if strand.isPaused { return "pause.fill" }
         switch strand.trajectory.outcome {
-        case .onTime: return "arrow.up.right"
-        case .behind: return "arrow.down.right"
+        case .onTrack: return "arrow.up.right"
+        case .slipping: return "arrow.down.right"
+        case .stalled: return "exclamationmark"
+        case .completed: return "checkmark"
         case .sustained: return "waveform.path"
-        case .fading: return "circle"
+        case .quiet: return "minus"
+        case .fading: return "circle.dotted"
         }
     }
 
@@ -658,9 +661,12 @@ private struct ProjectLaneLabel: View {
     private var stateText: String {
         if strand.isPaused { return "Paused" }
         switch strand.trajectory.outcome {
-        case .onTime: return "On track"
-        case .behind: return "Slipping"
+        case .onTrack: return "On track"
+        case .slipping: return "Slipping"
+        case .stalled: return "Stalled"
+        case .completed: return "Completed"
         case .sustained: return "Sustained"
+        case .quiet: return "Quiet"
         case .fading: return "Fading"
         }
     }
@@ -718,12 +724,19 @@ private struct TrajectoryCurveRenderer: View {
             }
 
             switch outcome {
-            case .behind:
+            case .slipping:
                 drawSlippingProjection(in: &ctx, points: projection, size: size)
+            case .stalled:
+                drawStalledProjection(in: &ctx, points: projection, size: size)
             case .fading:
                 drawFadingProjection(in: &ctx, points: projection)
-            case .onTime:
+            case .completed:
+                drawProjectedCurve(in: &ctx, points: projection, width: 1.2, opacity: 0.3, dash: [1, 6.2])
+                if let last = projection.last { drawCompletionMarker(in: &ctx, at: last) }
+            case .onTrack:
                 drawProjectedCurve(in: &ctx, points: projection, width: 1.2, opacity: 0.22, dash: [1, 6.2])
+            case .quiet:
+                drawProjectedCurve(in: &ctx, points: projection, width: 1.1, opacity: 0.18, dash: [1, 6.6])
             case .sustained:
                 drawProjectedCurve(in: &ctx, points: projection, width: 1.2, opacity: 0.23, dash: [1, 6.2])
             }
@@ -747,6 +760,25 @@ private struct TrajectoryCurveRenderer: View {
 
         drawProjectedCurve(in: &ctx, points: slipping, width: 1.25, opacity: 0.27, dash: [1, 6.2])
         if let last = slipping.last { drawEndpoint(in: &ctx, at: last, opacity: 0.24) }
+    }
+
+    /// Stalled: momentum gone before the deadline. The deadline tick stays
+    /// visible (it still matters), but the projection flattens low and dissolves
+    /// — distinct from slipping, which still moves toward (past) the marker.
+    private func drawStalledProjection(in ctx: inout GraphicsContext, points projection: [CGPoint], size: CGSize) {
+        if let deadline = strand.deadline {
+            let deadlineX = min(geometry.contentEndX,
+                                max(geometry.nowX + 24, geometry.x(date: deadline)))
+            drawDeadlineTick(in: &ctx, x: deadlineX, y: yValue(for: 0.46))
+        }
+        drawFadingProjection(in: &ctx, points: projection)
+    }
+
+    private func drawCompletionMarker(in ctx: inout GraphicsContext, at point: CGPoint) {
+        let r: CGFloat = 3.4
+        let circle = Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2))
+        ctx.fill(circle, with: .color(color.opacity(0.85)))
+        ctx.stroke(circle, with: .color(Color(.secondarySystemGroupedBackground)), lineWidth: 0.9)
     }
 
     private func drawFadingProjection(in ctx: inout GraphicsContext, points projection: [CGPoint]) {
@@ -841,25 +873,17 @@ private struct TrajectoryCurveRenderer: View {
         return outcome.needsAttention ? 1.75 : 1.55
     }
 
+    /// The strand's shape comes from the computed, **behavior-derived** series on
+    /// the trajectory — the actual region is the real feeding history, the
+    /// projected region is the directional continuation (PRD: visual variation
+    /// must map to real behavioral signals). No canned templates.
     private var displayCurve: (actual: [Double], projected: [Double]) {
-        if strand.isPaused {
-            return ([0.31, 0.35, 0.40, 0.38, 0.39, 0.37, 0.34],
-                    [0.33, 0.32, 0.31, 0.31, 0.30, 0.30])
-        }
-        switch outcome {
-        case .onTime:
-            return ([0.34, 0.38, 0.43, 0.42, 0.49, 0.47, 0.51],
-                    [0.51, 0.50, 0.49, 0.49, 0.50, 0.50])
-        case .behind:
-            return ([0.42, 0.49, 0.47, 0.54, 0.53, 0.52, 0.48],
-                    [0.47, 0.44, 0.41, 0.37, 0.35, 0.33])
-        case .sustained:
-            return ([0.45, 0.48, 0.46, 0.50, 0.47, 0.49, 0.48],
-                    [0.48, 0.49, 0.47, 0.48, 0.47, 0.48])
-        case .fading:
-            return ([0.34, 0.43, 0.62, 0.51, 0.43, 0.36, 0.31],
-                    [0.29, 0.25, 0.22, 0.20, 0.19, 0.18])
-        }
+        let actual = strand.trajectory.actualSeries
+        let projected = strand.trajectory.projectedSeries
+        return (
+            actual.count >= 2 ? actual : [0.4, 0.4],
+            projected.count >= 2 ? projected : [0.4, 0.4]
+        )
     }
 
     private func smoothedPath(_ points: [CGPoint]) -> Path {

@@ -41,7 +41,7 @@ final class TrajectoryProjectorTests: XCTestCase {
             deadline: daysAhead(70), completedCount: 6, totalCount: 10,
             firstActivity: daysAgo(30), now: now
         )
-        XCTAssertEqual(p.outcome, .onTime)
+        XCTAssertEqual(p.outcome, .onTrack)
         XCTAssertTrue(p.hasGoal)
         XCTAssertGreaterThanOrEqual(p.paceRatio ?? 0, 1.0)
     }
@@ -53,7 +53,7 @@ final class TrajectoryProjectorTests: XCTestCase {
             deadline: daysAhead(10), completedCount: 2, totalCount: 10,
             firstActivity: daysAgo(40), now: now
         )
-        XCTAssertEqual(p.outcome, .behind)
+        XCTAssertEqual(p.outcome, .slipping)
         XCTAssertLessThan(p.paceRatio ?? 1, 1.0)
     }
 
@@ -63,7 +63,7 @@ final class TrajectoryProjectorTests: XCTestCase {
             deadline: daysAgo(2), completedCount: 5, totalCount: 10,
             firstActivity: daysAgo(40), now: now
         )
-        XCTAssertEqual(p.outcome, .behind)
+        XCTAssertEqual(p.outcome, .slipping)
     }
 
     func test_achievement_fullyComplete_isOnTime() {
@@ -72,7 +72,7 @@ final class TrajectoryProjectorTests: XCTestCase {
             deadline: daysAhead(5), completedCount: 10, totalCount: 10,
             firstActivity: daysAgo(20), now: now
         )
-        XCTAssertEqual(p.outcome, .onTime)
+        XCTAssertEqual(p.outcome, .completed)
         XCTAssertEqual(p.progressFraction, 1)
     }
 
@@ -82,7 +82,7 @@ final class TrajectoryProjectorTests: XCTestCase {
             deadline: daysAhead(20), completedCount: 0, totalCount: 5,
             firstActivity: nil, now: now
         )
-        XCTAssertEqual(p.outcome, .onTime)
+        XCTAssertEqual(p.outcome, .onTrack)
     }
 
     func test_achievementWithoutDeadline_fallsBackToMaintenanceRead() {
@@ -118,15 +118,33 @@ final class TrajectoryProjectorTests: XCTestCase {
         XCTAssertEqual(p.outcome, .fading)
     }
 
-    func test_maintenance_quietBorderline_splitsOnReach() {
-        let sustained = TrajectoryProjector.project(
-            events: someEvents(), type: .maintenance, presence: presence(.quiet, reach: 0.5),
+    func test_maintenance_quietPresence_isQuiet() {
+        // The three presence states map directly: active→sustained, quiet→quiet,
+        // drifted→fading.
+        let p = TrajectoryProjector.project(
+            events: someEvents(), type: .maintenance, presence: presence(.quiet, reach: 0.3),
             deadline: nil, completedCount: 0, totalCount: 0, now: now)
-        let fading = TrajectoryProjector.project(
-            events: someEvents(), type: .maintenance, presence: presence(.quiet, reach: 0.2),
+        XCTAssertEqual(p.outcome, .quiet)
+    }
+
+    func test_achievement_driftedBeforeDeadline_isStalled() {
+        let p = TrajectoryProjector.project(
+            events: someEvents(), type: .achievement, presence: presence(.drifted, reach: 0),
+            deadline: daysAhead(20), completedCount: 2, totalCount: 10,
+            firstActivity: daysAgo(30), now: now
+        )
+        XCTAssertEqual(p.outcome, .stalled)
+    }
+
+    func test_behaviorDerivedSeries_reflectsRealActivity() {
+        let busy = [StrandEvent(kind: .completed, date: daysAgo(2)),
+                    StrandEvent(kind: .completed, date: daysAgo(3)),
+                    StrandEvent(kind: .completed, date: daysAgo(4))]
+        let p = TrajectoryProjector.project(
+            events: busy, type: .maintenance, presence: presence(.active, reach: 0.9),
             deadline: nil, completedCount: 0, totalCount: 0, now: now)
-        XCTAssertEqual(sustained.outcome, .sustained)
-        XCTAssertEqual(fading.outcome, .fading)
+        XCTAssertGreaterThanOrEqual(p.actualSeries.count, 2)
+        XCTAssertGreaterThan(p.actualSeries.last!, p.actualSeries.first!)
     }
 
     // MARK: - Solid extent
@@ -143,10 +161,12 @@ final class TrajectoryProjectorTests: XCTestCase {
 
     // MARK: - Attention
 
-    func test_outcomeNeedsAttention_onlyForBehindAndFading() {
-        XCTAssertTrue(TrajectoryOutcome.behind.needsAttention)
-        XCTAssertTrue(TrajectoryOutcome.fading.needsAttention)
-        XCTAssertFalse(TrajectoryOutcome.onTime.needsAttention)
-        XCTAssertFalse(TrajectoryOutcome.sustained.needsAttention)
+    func test_outcomeNeedsAttention_onlyForSlippingStalledFading() {
+        for o in [TrajectoryOutcome.slipping, .stalled, .fading] {
+            XCTAssertTrue(o.needsAttention, "\(o) should need attention")
+        }
+        for o in [TrajectoryOutcome.onTrack, .completed, .sustained, .quiet] {
+            XCTAssertFalse(o.needsAttention, "\(o) should be calm")
+        }
     }
 }

@@ -123,12 +123,16 @@ enum TimelineNarrator {
             return "Your futures will appear here as you use Moti."
         }
         let live = strands.filter { !$0.isPaused }
-        let slipping = live.filter { $0.trajectory.outcome == .behind }.map(\.name)
+        let slipping = live.filter { $0.trajectory.outcome == .slipping }.map(\.name)
+        let stalled = live.filter { $0.trajectory.outcome == .stalled }.map(\.name)
         let fading = live.filter { $0.trajectory.outcome == .fading }.map(\.name)
 
         var clauses: [String] = []
         if !slipping.isEmpty {
             clauses.append("\(joined(slipping)) \(slipping.count == 1 ? "is" : "are") slipping")
+        }
+        if !stalled.isEmpty {
+            clauses.append("\(joined(stalled)) \(stalled.count == 1 ? "has" : "have") stalled")
         }
         if !fading.isEmpty {
             clauses.append("\(joined(fading)) \(fading.count == 1 ? "is" : "are") fading")
@@ -147,8 +151,9 @@ enum TimelineNarrator {
             .filter { !$0.isPaused && !parkedIDs.contains($0.id) }
             .filter { $0.trajectory.outcome.needsAttention }
 
-        // Behind (a deadline at risk) outranks fading (a rhythm dimming).
-        let chosen = candidates.first { $0.trajectory.outcome == .behind }
+        // A deadline at risk (slipping, then stalled) outranks a fading rhythm.
+        let chosen = candidates.first { $0.trajectory.outcome == .slipping }
+            ?? candidates.first { $0.trajectory.outcome == .stalled }
             ?? candidates.first { $0.trajectory.outcome == .fading }
 
         guard let strand = chosen else {
@@ -157,12 +162,16 @@ enum TimelineNarrator {
 
         let title: String
         let detail: String
-        if strand.trajectory.outcome == .behind {
+        switch strand.trajectory.outcome {
+        case .slipping:
             title = "\(strand.name) is slipping"
-            detail = "Behind its deadline at the current pace."
-        } else {
+            detail = "Projected after its deadline at the current pace."
+        case .stalled:
+            title = "\(strand.name) has stalled"
+            detail = "No recent movement toward its deadline."
+        default:
             title = "\(strand.name) is fading"
-            detail = "At the current pace, this fades out."
+            detail = "Losing support at the current rhythm."
         }
         return .attention(strandID: strand.id, title: title, detail: detail)
     }
@@ -239,16 +248,20 @@ enum TimelineNarrator {
     /// day-counts (§9.6).
     static func milestoneHealth(for strand: Strand) -> String {
         switch strand.trajectory.outcome {
-        case .onTime:
-            return strand.completedActionCount >= max(strand.totalActionCount, 1)
-                ? "Done — every step complete."
-                : "On track for the pace you set."
-        case .behind:
-            return "Behind the pace you set — but the deadline's still in view."
+        case .completed:
+            return "Done — every step complete."
+        case .onTrack:
+            return "On track for the pace you set."
+        case .slipping:
+            return "Behind the pace you set — projected after the deadline."
+        case .stalled:
+            return "Stalled — no recent movement toward the deadline."
         case .sustained:
             return "Holding a steady rhythm."
+        case .quiet:
+            return "Slowing — still present, but thinning."
         case .fading:
-            return "Slipping off the pace — it's starting to fade."
+            return "Losing support — fading at the current rhythm."
         }
     }
 

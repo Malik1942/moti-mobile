@@ -2,60 +2,85 @@ import Foundation
 
 // MARK: - Trajectory outcome (the forward read — the hero)
 
-/// Where a future's *current pace* lands it, read from the dashed projection
-/// against its goal/deadline marker (PRD §5.2). Two outcomes per type:
-/// achievement futures resolve On-time / Behind; maintenance futures resolve
-/// Sustained / Fading. This is **directional only** in v1 — never a day-count
-/// (precise slippage is gated to v2, §9.6).
+/// Where a future's *current pace* lands it (PRD v2.1 "Computed States"). The
+/// state set is type-dependent:
+///
+/// - **Achievement** (has a finish line): On&nbsp;Track / Slipping / Stalled / Completed
+/// - **Maintenance** (no finish line): Sustained / Quiet / Fading
+///
+/// (Paused is a deliberate user choice carried on `Strand.isPaused`, not an
+/// outcome.) Directional only in v1 — never a day-count (precise slippage is
+/// gated to v2). The computation decides this; the model only phrases it.
 enum TrajectoryOutcome: String, Equatable, CaseIterable {
-    case onTime     // achievement: projection reaches completion at/before the deadline
-    case behind     // achievement: projection completes past the deadline
-    case sustained  // maintenance: projection continues at a steady rhythm
-    case fading     // maintenance: projection thins and fades to nothing
+    // Achievement
+    case onTrack      // progress keeping pace → reaches the deadline
+    case slipping     // progressing, but pace lands it past the deadline
+    case stalled      // momentum gone before the deadline (no recent feeding)
+    case completed    // finish condition met
+    // Maintenance
+    case sustained    // fed at its own rhythm → continues
+    case quiet        // slowing — present but thinning
+    case fading       // losing support → projection fades toward nothing
 
-    /// True when the outcome is the one that should raise its voice (§6.1 calm
-    /// by default — only the slipping / fading future draws the eye).
-    var needsAttention: Bool { self == .behind || self == .fading }
+    /// The one that should raise its voice (PRD: only slipping / stalled /
+    /// fading draw the eye; on-track, sustained, completed, quiet stay calm).
+    var needsAttention: Bool { self == .slipping || self == .stalled || self == .fading }
+
+    /// Whether this is an achievement-shaped outcome.
+    var isAchievement: Bool {
+        switch self {
+        case .onTrack, .slipping, .stalled, .completed: return true
+        case .sustained, .quiet, .fading:               return false
+        }
+    }
 }
 
 // MARK: - Projection result
 
 /// The computed forward trajectory. Carries the directional outcome plus the
-/// few quantities the view needs to *draw* the path — every visual property maps
-/// to a computed quantity (§14), and none of these are rendered as numbers.
+/// quantities the view needs to *draw* the path — every visual property maps to
+/// a computed quantity (PRD non-negotiable: "visual variation must always map to
+/// real behavioral signals"), and none are rendered as numbers.
 struct TrajectoryProjection: Equatable {
     let outcome: TrajectoryOutcome
 
     /// Achievement only: does this future have a deadline marker to land against?
     let hasGoal: Bool
 
-    /// Achievement: completed actions / total actions, `0...1`. Drives the solid
-    /// extent and the Peek's milestone-health texture. `nil` for maintenance.
+    /// Achievement: completed actions / total actions, `0...1`. Drives the Peek's
+    /// milestone-health texture. `nil` for maintenance.
     let progressFraction: Double?
 
     /// Achievement: progress-so-far vs. time-elapsed toward the deadline.
-    /// `≥1` ⇒ keeping pace (on-time); `<1` ⇒ behind. Directional input to the
-    /// outcome — **never displayed as a number**. `nil` for maintenance.
+    /// `≥1` ⇒ keeping pace; `<1` ⇒ behind. Directional — never shown as a number.
     let paceRatio: Double?
 
-    /// Maintenance: recent feeding rate vs. the strand's own cadence, `0...~1+`.
-    /// Higher ⇒ sustained; near-zero ⇒ fading. `nil` for achievement.
+    /// Maintenance: recent feeding rate vs. cadence (presence reach), `0...~1`.
     let feedingRatio: Double?
 
-    /// How far the path stays **solid** (certain) before becoming dashed/fading,
-    /// `0...1` of the near-future band. Driven by recent-signal strength — a
-    /// strongly-fed future is certain further out (§5 solid-vs-dashed).
+    /// How far the path stays **solid** (certain) before becoming dashed/fading.
     let solidFraction: Double
+
+    /// **Behavior-derived feeding curve**, oldest→Now, normalised `~0.15...0.85`.
+    /// This is the actual evidence region of the strand — its shape comes from the
+    /// real event stream (rising on bursts, dipping when quiet), not a template.
+    let actualSeries: [Double]
+
+    /// The projected continuation, Now→future, normalised. Starts from the real
+    /// recent level and is shaped *directionally* by the computed outcome.
+    let projectedSeries: [Double]
 }
 
 extension TrajectoryProjection {
-    /// Terse directional value for previews and tests (no progress detail).
+    /// Terse value for previews and tests (flat series, no progress detail).
     static func directional(_ outcome: TrajectoryOutcome, solidFraction: Double = 0.35) -> TrajectoryProjection {
         TrajectoryProjection(
             outcome: outcome,
-            hasGoal: outcome == .onTime || outcome == .behind,
+            hasGoal: outcome.isAchievement,
             progressFraction: nil, paceRatio: nil, feedingRatio: nil,
-            solidFraction: solidFraction
+            solidFraction: solidFraction,
+            actualSeries: Array(repeating: 0.5, count: 7),
+            projectedSeries: Array(repeating: 0.5, count: 6)
         )
     }
 }
@@ -63,18 +88,24 @@ extension TrajectoryProjection {
 // MARK: - Policy
 
 struct TrajectoryPolicy: Equatable {
-    /// Achievement: pace at/above this reads on-time.
-    var onTimePaceThreshold: Double
-    /// Maintenance: presence reach at/above this reads sustained.
-    var sustainedReachThreshold: Double
+    /// Achievement: pace at/above this reads on-track.
+    var onTrackPaceThreshold: Double
     var minSolidFraction: Double
     var maxSolidFraction: Double
+    /// Feeding-history lookback for the actual curve, in days.
+    var curveLookbackDays: Double
+    /// Number of buckets in the actual feeding curve.
+    var curveBuckets: Int
+    /// Number of points in the projected continuation.
+    var projectionPoints: Int
 
     static let `default` = TrajectoryPolicy(
-        onTimePaceThreshold: 1.0,
-        sustainedReachThreshold: 0.4,
+        onTrackPaceThreshold: 1.0,
         minSolidFraction: 0.12,
-        maxSolidFraction: 0.55
+        maxSolidFraction: 0.55,
+        curveLookbackDays: 84,
+        curveBuckets: 12,
+        projectionPoints: 6
     )
 }
 
@@ -82,12 +113,7 @@ struct TrajectoryPolicy: Equatable {
 
 /// Pure, deterministic forward projection. It **extrapolates actual behavior** —
 /// completed events and feeding rate — and never assumes scheduled work will
-/// happen (that assumption is the calendar's, the thing Moti exists to avoid;
-/// §14). Presence/drift is an *input* here, not the organizing principle.
-///
-/// Genuinely new compute, not a rename of the presence computer: the presence
-/// computer answers "is this still reaching Now?"; this answers "where does the
-/// current pace land it?".
+/// happen. Presence/drift is an *input* here, not the organizing principle.
 enum TrajectoryProjector {
 
     static func project(
@@ -104,80 +130,118 @@ enum TrajectoryProjector {
         policy: TrajectoryPolicy = .default
     ) -> TrajectoryProjection {
         let solid = solidFraction(for: presence, policy: policy)
-        let hasSignal = !events.contains { $0.date <= now } ? false : true
+        let hasSignal = events.contains { $0.date <= now }
+        let actual = actualSeries(events: events, now: now, policy: policy)
 
-        // Achievement with a real deadline → land against the marker.
+        let outcome: TrajectoryOutcome
+        let progress: Double?
+        let pace: Double?
+        let feeding: Double?
+        let hasGoal: Bool
+
         if type == .achievement, let deadline {
-            return achievementProjection(
+            let r = achievementOutcome(
                 deadline: deadline, completedCount: completedCount, totalCount: totalCount,
                 firstActivity: firstActivity ?? events.map(\.date).min(),
-                hasSignal: hasSignal, solid: solid, now: now, policy: policy
+                presence: presence, hasSignal: hasSignal, now: now, policy: policy
             )
+            outcome = r.outcome; progress = r.progress; pace = r.pace; feeding = nil; hasGoal = true
+        } else {
+            outcome = maintenanceOutcome(presence: presence)
+            progress = nil; pace = nil; feeding = presence.reach; hasGoal = false
         }
 
-        // Maintenance (or an achievement with no deadline to land against) →
-        // sustained vs. fading from the feeding rate, with drift as the input.
-        return maintenanceProjection(presence: presence, solid: solid, policy: policy)
+        let projected = projectedSeries(from: actual.last ?? 0.4, outcome: outcome, policy: policy)
+
+        return TrajectoryProjection(
+            outcome: outcome, hasGoal: hasGoal,
+            progressFraction: progress, paceRatio: pace, feedingRatio: feeding,
+            solidFraction: solid, actualSeries: actual, projectedSeries: projected
+        )
     }
 
     // MARK: Achievement
 
-    private static func achievementProjection(
+    private static func achievementOutcome(
         deadline: Date, completedCount: Int, totalCount: Int,
-        firstActivity: Date?, hasSignal: Bool, solid: Double, now: Date,
+        firstActivity: Date?, presence: StrandPresence, hasSignal: Bool, now: Date,
         policy: TrajectoryPolicy
-    ) -> TrajectoryProjection {
+    ) -> (outcome: TrajectoryOutcome, progress: Double, pace: Double?) {
         let progress = totalCount > 0 ? min(1.0, Double(completedCount) / Double(totalCount)) : 0
 
-        // Already complete → on-time regardless of clock.
-        if totalCount > 0 && progress >= 1.0 {
-            return .init(outcome: .onTime, hasGoal: true, progressFraction: 1,
-                         paceRatio: .infinity, feedingRatio: nil, solidFraction: solid)
-        }
+        // Finish condition met.
+        if totalCount > 0 && progress >= 1.0 { return (.completed, 1, .infinity) }
 
-        // No behavior yet → don't fabricate "behind"; read calm/on-time (§10).
+        // No behavior yet → don't fabricate alarm; read calm/on-track.
         guard hasSignal, let start = firstActivity, start < deadline else {
-            return .init(outcome: .onTime, hasGoal: true, progressFraction: progress,
-                         paceRatio: nil, feedingRatio: nil, solidFraction: solid)
+            return (.onTrack, progress, nil)
         }
 
-        // Deadline already passed and not complete → behind.
-        if now >= deadline {
-            return .init(outcome: .behind, hasGoal: true, progressFraction: progress,
-                         paceRatio: 0, feedingRatio: nil, solidFraction: solid)
-        }
+        // Past the deadline, unfinished → slipping (geometric overshoot).
+        if now >= deadline { return (.slipping, progress, 0) }
 
-        let timeElapsed = (now.timeIntervalSince(start)) / (deadline.timeIntervalSince(start))
-        let clampedElapsed = min(max(timeElapsed, 0.0001), 1.0)
-        let pace = progress / clampedElapsed
-        let outcome: TrajectoryOutcome = pace >= policy.onTimePaceThreshold ? .onTime : .behind
+        // Before the deadline but momentum has gone quiet → stalled.
+        if presence.state == .drifted { return (.stalled, progress, 0) }
 
-        return .init(outcome: outcome, hasGoal: true, progressFraction: progress,
-                     paceRatio: pace, feedingRatio: nil, solidFraction: solid)
+        let elapsed = min(max(now.timeIntervalSince(start) / deadline.timeIntervalSince(start), 0.0001), 1)
+        let pace = progress / elapsed
+        return (pace >= policy.onTrackPaceThreshold ? .onTrack : .slipping, progress, pace)
     }
 
     // MARK: Maintenance
 
-    private static func maintenanceProjection(
-        presence: StrandPresence, solid: Double, policy: TrajectoryPolicy
-    ) -> TrajectoryProjection {
-        // Drift is the input to the forecast: a drifted rhythm fades; a fed one
-        // is sustained. Quiet is the borderline, decided by how close to its own
-        // cadence the recent feeding is (presence.reach).
-        let outcome: TrajectoryOutcome
+    /// Drift is the input: a fed rhythm is sustained, a slowing one is quiet, a
+    /// silent one is fading. The three presence states map directly.
+    private static func maintenanceOutcome(presence: StrandPresence) -> TrajectoryOutcome {
         switch presence.state {
-        case .drifted: outcome = .fading
-        case .active:  outcome = .sustained
-        case .quiet:   outcome = presence.reach >= policy.sustainedReachThreshold ? .sustained : .fading
+        case .active:  return .sustained
+        case .quiet:   return .quiet
+        case .drifted: return .fading
         }
-        return .init(outcome: outcome, hasGoal: false, progressFraction: nil,
-                     paceRatio: nil, feedingRatio: presence.reach, solidFraction: solid)
+    }
+
+    // MARK: Behavioral curves
+
+    /// Normalised feeding intensity over the lookback, oldest→Now. The shape is
+    /// the real evidence: busy buckets rise, quiet buckets dip. Empty history is
+    /// a calm low flat line (never fabricated urgency).
+    static func actualSeries(events: [StrandEvent], now: Date, policy: TrajectoryPolicy) -> [Double] {
+        let buckets = max(2, policy.curveBuckets)
+        let bucketDays = policy.curveLookbackDays / Double(buckets)
+        let start = now.addingTimeInterval(-policy.curveLookbackDays * 86_400)
+
+        var counts = [Int](repeating: 0, count: buckets)
+        for e in events where e.date >= start && e.date <= now {
+            let offset = e.date.timeIntervalSince(start) / 86_400
+            let idx = min(buckets - 1, max(0, Int(offset / bucketDays)))
+            counts[idx] += 1
+        }
+        let maxCount = max(1, counts.max() ?? 1)
+        // Normalise to a calm band so the strand reads as a silk thread, not a graph.
+        return counts.map { 0.2 + (Double($0) / Double(maxCount)) * 0.6 }
+    }
+
+    /// Directional continuation from the real recent level, shaped by the outcome.
+    static func projectedSeries(from start: Double, outcome: TrajectoryOutcome, policy: TrajectoryPolicy) -> [Double] {
+        let n = max(2, policy.projectionPoints)
+        let target: Double
+        switch outcome {
+        case .onTrack:   target = min(0.82, start + 0.16)
+        case .slipping:  target = max(0.3, start - 0.1)
+        case .stalled:   target = max(0.16, start * 0.5)
+        case .completed: target = 0.85
+        case .sustained: target = start
+        case .quiet:     target = max(0.22, start - 0.12)
+        case .fading:    target = 0.12
+        }
+        return (0..<n).map { i in
+            let t = Double(i) / Double(n - 1)
+            return start + (target - start) * t
+        }
     }
 
     // MARK: Solid extent
 
-    /// A strongly-fed future stays certain further out; a drifting one dashes
-    /// almost immediately. Mapped from presence reach into the policy band.
     private static func solidFraction(for presence: StrandPresence, policy: TrajectoryPolicy) -> Double {
         let reach = max(0, min(1, presence.reach))
         let raw = policy.minSolidFraction + reach * (policy.maxSolidFraction - policy.minSolidFraction)
