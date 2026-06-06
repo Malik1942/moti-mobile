@@ -657,16 +657,15 @@ struct QuickCaptureView: View {
 
     /// Confirms a staged workspace. Every ready PlanningTarget becomes one or
     /// more work items, one per `PlannedTask` across its phases. A workspace
-    /// can span multiple deadlines and multiple projects — each target is
-    /// resolved independently:
+    /// can span multiple deadlines and multiple projects.
     ///
-    ///   - Per-target project: prefer the target's own `projectName`, falling
-    ///     back to the workspace-level inferred project. Auto-create the
-    ///     project if it doesn't exist yet.
-    ///   - Per-task time expression: passed through to the existing temporal
-    ///     resolver via `createWorkItems`. The target's `dueTimeExpression`
-    ///     is folded into each task's raw text when the task has no timing
-    ///     of its own, so the resolver schedules backward from the deadline.
+    /// **Project deduplication**: project resolution uses a session-scoped cache
+    /// so each unique project name hint creates at most one new `Project` row —
+    /// regardless of how many tasks share that hint. Without the cache, the
+    /// `@Query projects` array does not reflect within-task in-session inserts,
+    /// causing every repeated hint to see "no existing project" and spawn a
+    /// duplicate. The cache intercepts all repeated hints after the first
+    /// creation and returns the already-resolved canonical name.
     ///
     /// Targets whose status is not `.ready` are skipped — the user must
     /// refine to fill in their missing details before they generate tasks.
@@ -676,21 +675,83 @@ struct QuickCaptureView: View {
         isSubmitting = true
         Task { @MainActor in
             defer { isSubmitting = false }
-            let workspaceLevelProjectName = resolveProjectName(for: decision)
+
+            // ── Session-scoped project resolver ──────────────────────────────
+            //
+            // `@Query projects` is a view-rendered snapshot that does NOT update
+            // synchronously when we call `modelContext.insert()` within this task.
+            // Naively calling resolveProjectName/resolveTargetProjectName once per
+            // task means every task with the same project hint finds "no match"
+            // in `projects` and creates a fresh duplicate Project row.
+            //
+            // Fix: maintain a local name → canonical-name map for this session.
+            // First call for a given (normalised) hint fuzzy-matches against the
+            // persisted project list and either (a) returns the existing project's
+            // name, or (b) inserts exactly one new Project and caches its name.
+            // All subsequent calls for that hint hit the cache and skip insertion.
+            var sessionProjectCache: [String: String] = [:]   // normalized hint → canonical name
+            var nextSortIdx = projects.nextSortIndex
+
+            // Returns the canonical project name for `hint`, creating the Project
+            // record at most once per unique (case-insensitive) hint per session.
+            let resolveProjectName: (String?) -> String? = { [self] hint in
+                guard let hint = hint?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !hint.isEmpty,
+                      hint.localizedCaseInsensitiveCompare("Uncategorized") != .orderedSame
+                else { return nil }
+
+                let key = hint.lowercased()
+
+                // Cache hit — already resolved (or created) earlier this session.
+                if let cached = sessionProjectCache[key] { return cached }
+
+                // Try fuzzy match against persisted projects (e.g. "Job Search" →
+                // user-named "Q4 Job Hunt").
+                if let matched = ProjectMatcher.match(
+                    projectHint: hint, taskTitle: "", rawInput: "", existingProjects: projects
+                ) {
+                    sessionProjectCache[key] = matched.name
+                    return matched.name
+                }
+
+                // No existing project matched — create exactly one new Project for
+                // this hint, then cache to prevent duplicate creation for later tasks
+                // with the same hint.
+                let newProject = Project(
+                    name: hint,
+                    colorToken: ProjectCatalog.colorToken(forProjectNamed: hint),
+                    sortIndex: nextSortIdx
+                )
+                modelContext.insert(newProject)
+                nextSortIdx += 1
+                sessionProjectCache[key] = newProject.name
+                #if DEBUG
+                print("Smart Capture: created new project '\(hint)' (sortIndex \(newProject.sortIndex ?? -1)).")
+                #endif
+                return newProject.name
+            }
+
+            // Workspace-level fallback: matched project ID takes priority over
+            // the inferred name so an existing project is never recreated.
+            let workspaceFallback: String? = {
+                if let matchedId = decision.matchedProjectId,
+                   let matched = projects.first(where: { $0.id == matchedId }) {
+                    return matched.name
+                }
+                return resolveProjectName(decision.inferredProjectName)
+            }()
+
             do {
                 for target in workspace.targets where target.status.isReady {
-                    // Per-target project: target's own hint takes priority over
-                    // the workspace-level project so a workspace with two
-                    // targets in two different projects lands correctly.
-                    let targetProjectName = resolveTargetProjectName(
-                        target: target,
-                        workspaceFallback: workspaceLevelProjectName
-                    )
+                    // Per-target project: target's own hint takes priority over the
+                    // workspace-level fallback so a workspace spanning two projects
+                    // lands each target in the right place.
+                    let targetProject = resolveProjectName(target.projectName) ?? workspaceFallback
 
                     for plannedTask in target.phases.flatMap(\.tasks) {
-                        // Compose raw text: task title + its own time expression,
-                        // OR fall back to the target's deadline so the resolver
-                        // schedules backward from "due Friday".
+                        // Compose raw text: task title + its own timing hint, or fall
+                        // back to the target's deadline so the temporal resolver can
+                        // schedule backward from "due Friday".
                         let timeBit = plannedTask.timeExpression?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
                             ?? target.dueTimeExpression?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
                         let rawText = [plannedTask.title, timeBit]
@@ -699,17 +760,11 @@ struct QuickCaptureView: View {
                             .joined(separator: " ")
                         guard !rawText.isEmpty else { continue }
 
-                        // Per-task project hint trumps the target's project hint
-                        // if the LLM specifically labeled a task differently.
-                        let perTaskProjectName = resolveProjectName(
-                            for: plannedTask,
-                            planFallback: targetProjectName
-                        )
+                        // Per-task project hint overrides the target's project if the
+                        // LLM specifically labeled this task for a different project.
+                        let taskProject = resolveProjectName(plannedTask.projectName) ?? targetProject
 
-                        try await createWorkItems(
-                            from: rawText,
-                            preferredProjectName: perTaskProjectName
-                        )
+                        try await createWorkItems(from: rawText, preferredProjectName: taskProject)
                     }
                 }
                 SoundManager.shared.play(.reorganized)   // plan settled onto the timeline
@@ -910,124 +965,6 @@ struct QuickCaptureView: View {
             planRefinement: planRefinement,
             planningDepth: planningDepth
         )
-    }
-
-    /// Resolves a project name for confirmed Smart Capture output, creating a new
-    /// `Project` record when the agent inferred a name that does not yet exist.
-    /// Uses `ProjectMatcher` so user-named variants ("Q4 Job Hunt") match parser
-    /// hints ("Job Search") before any new project is created.
-    private func resolveProjectName(for decision: ContextualCaptureDecision) -> String? {
-        if let matchedId = decision.matchedProjectId,
-           let matched = projects.first(where: { $0.id == matchedId }) {
-            return matched.name
-        }
-        guard let inferred = decision.inferredProjectName?
-            .trimmingCharacters(in: .whitespacesAndNewlines), !inferred.isEmpty else {
-            return nil
-        }
-        if let matched = ProjectMatcher.match(
-            projectHint: inferred,
-            taskTitle: "",
-            rawInput: "",
-            existingProjects: projects
-        ) {
-            return matched.name
-        }
-        let newProject = Project(
-            name: inferred,
-            colorToken: ProjectCatalog.colorToken(forProjectNamed: inferred),
-            sortIndex: projects.nextSortIndex
-        )
-        modelContext.insert(newProject)
-        return newProject.name
-    }
-
-    /// Resolves a project for a single planned task. Uses (in order):
-    ///   1. Fuzzy match of the task's own `projectName` hint via `ProjectMatcher`
-    ///      (with the task title as additional context).
-    ///   2. Auto-create a new project from the task's hint if it didn't match.
-    ///   3. Fall back to the plan-level project name when the task has no hint.
-    ///
-    /// Called once per `PlannedTask` in `confirmPlan` so a plan can span
-    /// multiple projects — each task lands where it semantically belongs.
-    private func resolveProjectName(
-        for plannedTask: PlannedTask,
-        planFallback: String?
-    ) -> String? {
-        let hint = plannedTask.projectName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let usableHint: String? = {
-            guard let hint, !hint.isEmpty,
-                  hint.localizedCaseInsensitiveCompare("Uncategorized") != .orderedSame
-            else { return nil }
-            return hint
-        }()
-
-        if let usableHint {
-            if let matched = ProjectMatcher.match(
-                projectHint: usableHint,
-                taskTitle: plannedTask.title,
-                rawInput: plannedTask.title,
-                existingProjects: projects
-            ) {
-                return matched.name
-            }
-            // Hint provided but no existing project matched — create one. This
-            // is the "create a new project for it" behavior the user asked for
-            // in LLM mode for plans.
-            let newProject = Project(
-                name: usableHint,
-                colorToken: ProjectCatalog.colorToken(forProjectNamed: usableHint),
-                sortIndex: projects.nextSortIndex
-            )
-            modelContext.insert(newProject)
-            #if DEBUG
-            print("Smart Capture plan: created new project '\(usableHint)' for task '\(plannedTask.title)'.")
-            #endif
-            return newProject.name
-        }
-
-        // No per-task hint — fall back to the plan-level project.
-        return planFallback
-    }
-
-    /// Resolves a project for a single PlanningTarget. Mirrors the per-task
-    /// helper above — fuzzy match the target's own `projectName`, auto-create
-    /// from the hint when no match, fall back to the workspace-level project
-    /// when the target has no hint. Called once per target in `confirmWorkspace`
-    /// so a workspace can span multiple projects.
-    private func resolveTargetProjectName(
-        target: PlanningTarget,
-        workspaceFallback: String?
-    ) -> String? {
-        let hint = target.projectName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let usableHint: String? = {
-            guard let hint, !hint.isEmpty,
-                  hint.localizedCaseInsensitiveCompare("Uncategorized") != .orderedSame
-            else { return nil }
-            return hint
-        }()
-
-        if let usableHint {
-            if let matched = ProjectMatcher.match(
-                projectHint: usableHint,
-                taskTitle: target.title,
-                rawInput: target.title,
-                existingProjects: projects
-            ) {
-                return matched.name
-            }
-            let newProject = Project(
-                name: usableHint,
-                colorToken: ProjectCatalog.colorToken(forProjectNamed: usableHint),
-                sortIndex: projects.nextSortIndex
-            )
-            modelContext.insert(newProject)
-            #if DEBUG
-            print("Smart Capture workspace: created new project '\(usableHint)' for target '\(target.title)'.")
-            #endif
-            return newProject.name
-        }
-        return workspaceFallback
     }
 
     // MARK: - Work item creation (shared pipeline)
