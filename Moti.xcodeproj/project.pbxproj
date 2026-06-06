@@ -47,6 +47,7 @@
 		605C6E620F133E9F8C6A1B79 /* DeterministicPreClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C76A980F0DA9C241E53EEC1 /* DeterministicPreClassifier.swift */; };
 		619473673DE127605CD34B4D /* TemporalResolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA42563F0B8AB8CCEB653723 /* TemporalResolution.swift */; };
 		624D25138D022FD7AF96F265 /* DateResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B74EF4219717B138C1A0737 /* DateResolver.swift */; };
+		650C893912C6D9BB983456B6 /* WorkspaceProjectDeduplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3D4EB922122429BBC6DA2D /* WorkspaceProjectDeduplicationTests.swift */; };
 		665C34E258EF626B611FF7C9 /* SmartCaptureResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CA2D86CEDE46C753E8B37C /* SmartCaptureResultView.swift */; };
 		69D23A2CB44EB75B265AFA79 /* SmartCaptureKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1613D1FDECC4F6C9A4A0F52 /* SmartCaptureKeyStore.swift */; };
 		6ADB29F7F7DD24D51CA4A0C8 /* Secrets.swift.example in Resources */ = {isa = PBXBuildFile; fileRef = C92E544DFF3FE3838F77CAE7 /* Secrets.swift.example */; };
@@ -257,6 +258,7 @@
 		B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningIntentTests.swift; sourceTree = "<group>"; };
 		BB2CD187C2EB8DD312C24215 /* WorkItemScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemScope.swift; sourceTree = "<group>"; };
+		BB3D4EB922122429BBC6DA2D /* WorkspaceProjectDeduplicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProjectDeduplicationTests.swift; sourceTree = "<group>"; };
 		BBCECF2669A889C4D6145209 /* MotiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = MotiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC16CD4C608B56D0F7CB695D /* TaskCheckInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCheckInCoordinator.swift; sourceTree = "<group>"; };
 		BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -418,6 +420,7 @@
 				757E196764677A82655E3F6B /* TimelineNarratorTests.swift */,
 				3FC647D6B583F8D35B77DD8F /* TrajectoryProjectorTests.swift */,
 				D3AED7C517C32264EF77676D /* WorkItemScopeTests.swift */,
+				BB3D4EB922122429BBC6DA2D /* WorkspaceProjectDeduplicationTests.swift */,
 			);
 			path = MotiTests;
 			sourceTree = "<group>";
@@ -750,6 +753,7 @@
 				6EF9F12F8ECC8E4824F15F51 /* TimelineNarratorTests.swift in Sources */,
 				718F26AF85806DBFCF002E8B /* TrajectoryProjectorTests.swift in Sources */,
 				8F340BE901DCC2CC8B2DEDB4 /* WorkItemScopeTests.swift in Sources */,
+				650C893912C6D9BB983456B6 /* WorkspaceProjectDeduplicationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
