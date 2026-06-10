@@ -182,10 +182,13 @@ struct TrajectoryTimelineView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.trailing, 10)
-            .background(TrajectoryColorPalette.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .background(
+                TrajectoryColorPalette.fieldGradient,
+                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(.secondary.opacity(0.045), lineWidth: 0.7)
+                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7)
             )
             .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
@@ -346,6 +349,23 @@ private enum TrajectoryColorPalette {
 
     /// System-native card surface (Apple Health / Stocks chart-card feel).
     static var surface: Color { Color(.secondarySystemGroupedBackground) }
+
+    /// Instrument-panel field the trajectory curves are plotted on — a vertical
+    /// wash (lifted at the top, settling at the floor) so luminous strokes and
+    /// the Now handles read against it. Adapts to appearance: a soft light wash
+    /// in light mode, a near-black panel in dark.
+    static var fieldTop: Color { color(light: (0.975, 0.978, 0.986), dark: (0.157, 0.166, 0.196)) }
+    static var fieldBottom: Color { color(light: (0.928, 0.936, 0.952), dark: (0.055, 0.058, 0.070)) }
+    /// Solid wash matching the field, used to knock marker cores/rings out.
+    static var fieldKnockout: Color { color(light: (0.955, 0.962, 0.975), dark: (0.075, 0.078, 0.092)) }
+    static var fieldGradient: LinearGradient {
+        LinearGradient(colors: [fieldTop, fieldBottom], startPoint: .top, endPoint: .bottom)
+    }
+    /// Lavender horizon each curve breathes around — the reference's threshold.
+    static var horizonTint: Color { color(light: (0.46, 0.44, 0.70), dark: (0.64, 0.62, 0.84)) }
+    /// Now-handle outline — graphite in light so it reads as a soft target ring
+    /// (never a harsh black dot), bright in dark so it reads on the panel.
+    static var handleRing: Color { color(light: (0.46, 0.48, 0.52), dark: (0.92, 0.93, 0.96)) }
 
     static var plotWash: Color {
         #if canImport(UIKit)
@@ -543,16 +563,30 @@ private struct TimelineChartViewport: View {
 
     private var chartAtmosphere: some View {
         ZStack(alignment: .topLeading) {
+            // Dotted vertical gridlines (Now brighter) — the reference's time rule.
             ForEach(Array(geometry.guideXs.enumerated()), id: \.offset) { _, x in
-                Rectangle()
-                    .fill(.secondary.opacity(abs(x - geometry.nowX) < 1 ? 0.11 : 0.05))
+                let isNow = abs(x - geometry.nowX) < 1
+                DottedVLine()
+                    .stroke(
+                        Color.primary.opacity(isNow ? 0.18 : 0.08),
+                        style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [1.5, 4])
+                    )
                     .frame(width: 1, height: geometry.trackBottomY - geometry.trackTopY)
                     .offset(x: x, y: geometry.trackTopY)
             }
 
+            // Per-lane horizon: the lavender threshold each curve breathes around.
             ForEach(0..<strands.count, id: \.self) { index in
                 Rectangle()
-                    .fill(.secondary.opacity(0.035))
+                    .fill(TrajectoryColorPalette.horizonTint.opacity(0.22))
+                    .frame(width: geometry.contentWidth, height: 0.75)
+                    .offset(x: 0, y: geometry.laneCenterY(index))
+            }
+
+            // Lane separators.
+            ForEach(0..<strands.count, id: \.self) { index in
+                Rectangle()
+                    .fill(Color.primary.opacity(0.05))
                     .frame(width: geometry.contentWidth, height: 0.5)
                     .offset(x: 0, y: geometry.laneTop(index) + geometry.laneHeight - 1)
             }
@@ -564,18 +598,11 @@ private struct TimelineChartViewport: View {
     }
 
     private var nowMarker: some View {
-        ZStack(alignment: .top) {
-            Rectangle()
-                .fill(.primary.opacity(0.2))
-                .frame(width: 1)
-            Circle()
-                .fill(.primary.opacity(0.6))
-                .frame(width: 4, height: 4)
-                .offset(y: 18)
-        }
-        .frame(height: geometry.trackBottomY - geometry.trackTopY)
-        .offset(x: geometry.nowX, y: geometry.trackTopY)
-        .allowsHitTesting(false)
+        Rectangle()
+            .fill(Color.primary.opacity(0.16))
+            .frame(width: 1, height: geometry.trackBottomY - geometry.trackTopY)
+            .offset(x: geometry.nowX, y: geometry.trackTopY)
+            .allowsHitTesting(false)
     }
 
     private func chartLabel(_ title: String, x: CGFloat, alignment: HorizontalAlignment) -> some View {
@@ -684,6 +711,15 @@ private struct ProjectIdentityMark: View {
     }
 }
 
+private struct DottedVLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        p.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        return p
+    }
+}
+
 private struct ProjectTrajectoryLane: View {
     let strand: Strand
     let index: Int
@@ -701,6 +737,8 @@ private struct TrajectoryCurveRenderer: View {
     let laneIndex: Int
     let geometry: TimelineFieldGeometry
 
+    @Environment(\.colorScheme) private var colorScheme
+
     private var color: Color { TrajectoryColorPalette.color(for: strand.colorToken, name: strand.name) }
     private var outcome: TrajectoryOutcome { strand.trajectory.outcome }
 
@@ -709,16 +747,14 @@ private struct TrajectoryCurveRenderer: View {
             let actual = effortPoints(projected: false)
             let projection = effortPoints(projected: true)
 
-            drawArea(in: &ctx, points: actual, baseline: geometry.laneHeight - 12)
+            drawArea(in: &ctx, points: actual, baseline: geometry.laneHeight - 10)
             drawCurve(in: &ctx, points: actual, width: actualLineWidth, opacity: strand.isPaused ? 0.5 : 1.0)
-            drawActualMarkers(in: &ctx, points: actual)
+            drawTrailDots(in: &ctx, points: actual)
 
             if strand.isPaused {
                 // Muted interrupted continuation — no directional amplification.
                 drawProjectedCurve(in: &ctx, points: projection, width: 1.9, opacity: 0.38, dash: [1.5, 5.5])
-                return
-            }
-
+            } else {
             switch outcome {
             case .onTrack:
                 // Guaranteed 13pt rise regardless of actual.last position.
@@ -749,6 +785,13 @@ private struct TrajectoryCurveRenderer: View {
                 let pts = directionalProjectionPoints(endOffset: 0)
                 drawProjectedCurve(in: &ctx, points: pts, width: 2.0, opacity: 0.62, dash: [2.0, 5.5])
                 if let last = pts.last { drawEndpoint(in: &ctx, at: last, opacity: 0.60) }
+            }
+            }
+
+            // The glowing Now handle — each future's live point sitting on the
+            // curve at the Now axis (the reference's white-ring / dark-fill knob).
+            if let nowPoint = actual.last {
+                drawNowHandle(in: &ctx, at: nowPoint, live: !strand.isPaused)
             }
         }
         .drawingGroup()
@@ -791,7 +834,7 @@ private struct TrajectoryCurveRenderer: View {
         let r: CGFloat = 3.4
         let circle = Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2))
         ctx.fill(circle, with: .color(color.opacity(0.85)))
-        ctx.stroke(circle, with: .color(Color(.secondarySystemGroupedBackground)), lineWidth: 0.9)
+        ctx.stroke(circle, with: .color(TrajectoryColorPalette.fieldKnockout), lineWidth: 0.9)
     }
 
     private func drawFadingProjection(in ctx: inout GraphicsContext, points projection: [CGPoint]) {
@@ -811,20 +854,49 @@ private struct TrajectoryCurveRenderer: View {
     }
 
     private func drawCurve(in ctx: inout GraphicsContext, points: [CGPoint], width: CGFloat, opacity: Double) {
-        guard points.count >= 2 else { return }
-        ctx.stroke(
-            smoothedPath(points),
-            with: .color(color.opacity(opacity)),
-            style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round)
-        )
+        guard points.count >= 2, let first = points.first, let last = points.last else { return }
+        let path = smoothedPath(points)
+        // Crisp stroke: dim in the receding past, brightening to full strength at
+        // Now (the apex of attention) — the reference's gradient-luminance line.
+        let shading = horizontalShading(fromX: first.x, toX: last.x, y: first.y, stops: [
+            .init(color: color.opacity(opacity * 0.12), location: 0.0),
+            .init(color: color.opacity(opacity * 0.55), location: 0.55),
+            .init(color: color.opacity(opacity * 1.0),  location: 1.0)
+        ])
+        // Soft colored bloom rising toward Now — restrained luminance at the apex.
+        if !strand.isPaused {
+            let glow = horizontalShading(fromX: first.x, toX: last.x, y: first.y, stops: [
+                .init(color: color.opacity(0.0),            location: 0.0),
+                .init(color: color.opacity(opacity * 0.18), location: 0.72),
+                .init(color: color.opacity(opacity * 0.32), location: 1.0)
+            ])
+            ctx.drawLayer { layer in
+                layer.addFilter(.blur(radius: 4.5))
+                layer.stroke(path, with: glow, style: StrokeStyle(lineWidth: width * 1.9, lineCap: .round, lineJoin: .round))
+            }
+        }
+        ctx.stroke(path, with: shading, style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
     }
 
     private func drawProjectedCurve(in ctx: inout GraphicsContext, points: [CGPoint], width: CGFloat, opacity: Double, dash: [CGFloat]) {
-        guard points.count >= 2 else { return }
+        guard points.count >= 2, let first = points.first, let last = points.last else { return }
+        // Bright at Now, dimming into the uncertain future — the silk fade.
+        let shading = horizontalShading(fromX: first.x, toX: last.x, y: first.y, stops: [
+            .init(color: color.opacity(opacity),        location: 0.0),
+            .init(color: color.opacity(opacity * 0.32), location: 1.0)
+        ])
         ctx.stroke(
             smoothedPath(points),
-            with: .color(color.opacity(opacity)),
+            with: shading,
             style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round, dash: dash)
+        )
+    }
+
+    private func horizontalShading(fromX: CGFloat, toX: CGFloat, y: CGFloat, stops: [Gradient.Stop]) -> GraphicsContext.Shading {
+        .linearGradient(
+            Gradient(stops: stops),
+            startPoint: CGPoint(x: fromX, y: y),
+            endPoint: CGPoint(x: max(toX, fromX + 0.001), y: y)
         )
     }
 
@@ -834,16 +906,88 @@ private struct TrajectoryCurveRenderer: View {
         area.addLine(to: CGPoint(x: last.x, y: baseline))
         area.addLine(to: CGPoint(x: first.x, y: baseline))
         area.closeSubpath()
-        ctx.fill(area, with: .color(color.opacity(strand.isPaused ? 0.03 : 0.06)))
+        let top = points.map(\.y).min() ?? baseline
+        let shading = GraphicsContext.Shading.linearGradient(
+            Gradient(stops: [
+                .init(color: color.opacity(strand.isPaused ? 0.05 : 0.13), location: 0.0),
+                .init(color: color.opacity(0.0), location: 1.0)
+            ]),
+            startPoint: CGPoint(x: last.x, y: top),
+            endPoint: CGPoint(x: last.x, y: baseline)
+        )
+        ctx.fill(area, with: shading)
     }
 
-    private func drawActualMarkers(in ctx: inout GraphicsContext, points: [CGPoint]) {
-        for index in markerIndexes(count: points.count) {
-            let point = points[index]
-            let radius: CGFloat = index == points.count - 1 ? 3.0 : 2.4
-            let circle = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius, width: radius * 2, height: radius * 2))
-            ctx.fill(circle, with: .color(color.opacity(strand.isPaused ? 0.5 : 1.0)))
-            ctx.stroke(circle, with: .color(TrajectoryColorPalette.surface), lineWidth: 1.0)
+    /// Small receding sample dots along the actual history — the reference's
+    /// quiet data points trailing into the past.
+    private func drawTrailDots(in ctx: inout GraphicsContext, points: [CGPoint]) {
+        guard points.count >= 3 else { return }
+        let last = points.count - 1
+        let step = max(1, last / 3)
+        var idx = step
+        while idx < last {
+            let p = points[idx]
+            let r: CGFloat = 1.7
+            let dot = Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2))
+            ctx.fill(dot, with: .color(color.opacity(strand.isPaused ? 0.30 : 0.55)))
+            idx += step
+        }
+    }
+
+    /// The Now handle, in Apple Weather's "sun on the curve" language: a white
+    /// point of light sitting at the apex of the strand's energy, made luminous by
+    /// a **symmetric radial glow** rather than an offset drop shadow. The glow (not
+    /// occlusion) is what keeps it in the same light-based visual language as the
+    /// curves — the dot reads as a source, not a floating button.
+    private func drawNowHandle(in ctx: inout GraphicsContext, at point: CGPoint, live: Bool) {
+        let isDark = colorScheme == .dark
+        let r: CGFloat = live ? 5.0 : 3.6
+
+        if live {
+            // Symmetric radial glow, mode-aware: a dark field needs a fuller halo for
+            // the white core to feel lit; a near-white field can only carry a faint
+            // breath of color before the bloom turns muddy.
+            let outerR: CGFloat = isDark ? 12.0 : 9.0
+            let outerOpacity: Double = isDark ? 0.46 : 0.16
+            let outer = Path(ellipseIn: CGRect(x: point.x - outerR, y: point.y - outerR,
+                                               width: outerR * 2, height: outerR * 2))
+            ctx.drawLayer { layer in
+                layer.addFilter(.blur(radius: 7.5))
+                layer.fill(outer, with: .color(color.opacity(outerOpacity)))
+            }
+            // Inner hot halo — tighter and brighter, luminance climbing toward the
+            // white core for the "lit from within" falloff Apple uses.
+            let innerR: CGFloat = isDark ? 7.5 : 5.5
+            let innerOpacity: Double = isDark ? 0.64 : 0.28
+            let inner = Path(ellipseIn: CGRect(x: point.x - innerR, y: point.y - innerR,
+                                               width: innerR * 2, height: innerR * 2))
+            ctx.drawLayer { layer in
+                layer.addFilter(.blur(radius: 3.2))
+                layer.fill(inner, with: .color(color.opacity(innerOpacity)))
+            }
+        } else {
+            // Paused: one faint halo, no white-hot center — present but at rest.
+            let haloR: CGFloat = isDark ? 7.0 : 5.5
+            let halo = Path(ellipseIn: CGRect(x: point.x - haloR, y: point.y - haloR,
+                                              width: haloR * 2, height: haloR * 2))
+            ctx.drawLayer { layer in
+                layer.addFilter(.blur(radius: 4.0))
+                layer.fill(halo, with: .color(color.opacity(isDark ? 0.24 : 0.10)))
+            }
+        }
+
+        // White core — the bright point of Now, unified across every strand on the
+        // shared Now axis.
+        let core = Path(ellipseIn: CGRect(x: point.x - r, y: point.y - r, width: r * 2, height: r * 2))
+        ctx.fill(core, with: .color(.white))
+
+        // Edge definition. On a near-white field a bare white disk has almost no
+        // contrast and reads as see-through, so a crisp strand-colored ring makes it
+        // shine as an intentional, solid dot. On a dark field the white already pops,
+        // so it needs no ring.
+        if !isDark {
+            ctx.stroke(core, with: .color(color.opacity(live ? 0.85 : 0.55)),
+                       lineWidth: live ? 1.4 : 1.1)
         }
     }
 
@@ -960,11 +1104,6 @@ private struct TrajectoryCurveRenderer: View {
             )
         }
         return path
-    }
-
-    private func markerIndexes(count: Int) -> [Int] {
-        guard count > 0 else { return [] }
-        return [count - 1]
     }
 
     private func lerp(_ start: CGFloat, _ end: CGFloat, _ t: CGFloat) -> CGFloat {
