@@ -23,6 +23,17 @@ enum SessionState: String, Codable, CaseIterable {
         case .bad:    "☹️"
         }
     }
+
+    /// SF Symbol name for UI contexts that need a precise, monochrome icon
+    /// (check-in cards, checkpoint floating card). Use `.font(.system(weight: .thin))`
+    /// for a lightweight appearance consistent with Apple Health / Journal aesthetics.
+    var glyph: String {
+        switch self {
+        case .good:   "face.smiling"
+        case .normal: "minus.circle"
+        case .bad:    "face.dashed"
+        }
+    }
 }
 
 // MARK: - Session Check-In

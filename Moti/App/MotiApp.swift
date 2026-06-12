@@ -12,6 +12,18 @@ struct MotiApp: App {
     @AppStorage("taskUnderstandingMode") private var modeRawValue = TaskUnderstandingMode.foundationModel.rawValue
     @AppStorage("didPromoteFoundationModelDefault") private var didPromoteFoundationModelDefault = false
 
+    /// Explicit container so DEBUG verification seeding can reach its context.
+    private let sharedModelContainer: ModelContainer = {
+        do {
+            return try ModelContainer(for:
+                WorkItem.self, CompletionLog.self, Project.self, WorkSession.self,
+                SessionCheckIn.self, ProjectContext.self, ContextNote.self
+            )
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }()
+
     private var requestedMode: TaskUnderstandingMode {
         TaskUnderstandingMode(rawValue: modeRawValue) ?? .foundationModel
     }
@@ -28,6 +40,9 @@ struct MotiApp: App {
                 .fontDesign(.rounded)
                 .tint(.indigo)
                 .onAppear {
+                    #if DEBUG
+                    LifelineSampleData.seedIfRequested(into: sharedModelContainer.mainContext)
+                    #endif
                     // Preload the (optional) cognitive-feedback sounds so the
                     // first event has no decode hitch. No-op if assets absent.
                     SoundManager.shared.prewarm()
@@ -44,20 +59,15 @@ struct MotiApp: App {
                     #endif
                 }
         }
-        .modelContainer(for: [
-            WorkItem.self,
-            CompletionLog.self,
-            Project.self,
-            WorkSession.self,
-            SessionCheckIn.self,
-            ProjectContext.self,
-            ContextNote.self
-        ])
+        .modelContainer(sharedModelContainer)
     }
 }
 
 struct RootTabView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    /// Feature flag for the v2.0 Lifelines Timeline redesign. Off by default so
+    /// the existing Timeline ships unchanged until the redesign is proven.
+    @AppStorage("useLifelineTimeline") private var useLifelineTimeline = false
     @State private var selectedTab: MotiTab = .timeline
     @State private var showingCapture = false
     @State private var captureStartMode: CaptureStartMode = .text
@@ -285,8 +295,17 @@ struct RootTabView: View {
     private var selectedContent: some View {
         switch selectedTab {
         case .timeline:
-            TimelineView {
-                presentCapture(.text)
+            if useLifelineTimeline {
+                // v2.0 trajectory engine (revised PRD). Supersedes the
+                // presence-first LifelineTimelineView (kept in git history).
+                TrajectoryTimelineView(
+                    onAddToTimeline: { presentCapture(.text) },
+                    onOpenInProjects: { _ in selectedTab = .projects }
+                )
+            } else {
+                TimelineView {
+                    presentCapture(.text)
+                }
             }
         case .projects:
             ProjectsView()

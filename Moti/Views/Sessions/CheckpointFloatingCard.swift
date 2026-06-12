@@ -58,15 +58,19 @@ struct CheckpointFloatingCard: View {
                 Button {
                     onRespond(state)
                 } label: {
-                    HStack(spacing: 5) {
-                        Text(state.emoji)
+                    HStack(spacing: 6) {
+                        Image(systemName: state.glyph)
+                            .font(.system(size: 13, weight: .thin))
                         Text(state.label)
                             .font(.callout.weight(.medium))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 9)
+                    .padding(.vertical, 10)
                     .foregroundStyle(.primary)
-                    .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(
+                        Color(.secondarySystemFill),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
                 }
                 .buttonStyle(.plain)
             }
