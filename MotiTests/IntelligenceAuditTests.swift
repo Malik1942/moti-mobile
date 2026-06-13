@@ -77,59 +77,77 @@ final class IntelligenceAuditTests: XCTestCase {
         XCTAssertEqual(day(of: results.first?.resolvedDate), 19)
     }
 
-    func test_KNOWNBUG_commitPath_nextFriday_disagreesWithTemporalLayer() {
-        XCTExpectFailure(
-            """
-            DateResolver (which assigns the final WorkItem.dueDate) resolves \
-            "by next Friday" to THIS week's Friday — a week earlier than \
-            TemporalResolver tells the LLM. resolveBeforeAfter ignores the \
-            "next" prefix. Fix DateResolver, then delete this wrapper.
-            """
-        ) {
-            let parse = DateResolver.resolveTemporal(in: "TestFlight ready by next Friday", now: wednesday)
-            XCTAssertEqual(day(of: parse.dueDate), 19, "commit-path date must match what the user was shown")
-        }
+    func test_commitPath_nextFriday_matchesTemporalLayer() {
+        // Wed Jun 10 → "next Friday" must be Jun 19 at BOTH layers, never
+        // this week's Friday (Jun 12).
+        let parse = DateResolver.resolveTemporal(in: "TestFlight ready by next Friday", now: wednesday)
+        XCTAssertEqual(day(of: parse.dueDate), 19, "commit-path date must match what the user was shown")
     }
 
-    func test_KNOWNBUG_commitPath_cannotParseSpelledDurations() {
-        XCTExpectFailure(
-            """
-            "in two weeks" resolves at the prompt layer (TemporalResolver) but \
-            NOT at commit time (DateResolver), so the created task lands in \
-            review as "Missing time information". Port spelled-number support \
-            to DateResolver, then delete this wrapper.
-            """
-        ) {
-            let parse = DateResolver.resolveTemporal(in: "Finish the draft in two weeks", now: friday)
-            XCTAssertNotNil(parse.dueDate)
-        }
+    func test_commitPath_parsesSpelledDurations() {
+        let parse = DateResolver.resolveTemporal(in: "Finish the draft in two weeks", now: friday)
+        XCTAssertEqual(day(of: parse.dueDate), 26, "spelled durations must work like digits")
     }
 
-    func test_KNOWNBUG_commitPath_cannotParseEndOfMonth() {
-        XCTExpectFailure(
-            """
-            "by the end of the month" produces no date in either temporal \
-            layer, so the task is created undated and flagged for review even \
-            when the user clearly stated the deadline. Add an end-of-month \
-            pattern, then delete this wrapper.
-            """
-        ) {
-            let parse = DateResolver.resolveTemporal(in: "App Store submission by the end of the month", now: friday)
-            XCTAssertNotNil(parse.dueDate)
-        }
+    func test_commitPath_parsesEndOfMonth() {
+        let parse = DateResolver.resolveTemporal(in: "App Store submission by the end of the month", now: friday)
+        XCTAssertEqual(day(of: parse.dueDate), 30, "June ends on the 30th")
     }
 
-    func test_KNOWNBUG_temporalLayer_blindToThisWeekend() {
-        XCTExpectFailure(
-            """
-            DateResolver understands "this weekend" but TemporalResolver does \
-            not, so the LLM prompt never receives the time signal and may ask \
-            for a timeline the user already gave. Add a weekend pattern to \
-            DeterministicPreClassifier, then delete this wrapper.
-            """
-        ) {
-            let results = TemporalResolver.resolve(input: "Clean the garage this weekend", now: friday)
-            XCTAssertTrue(results.contains { $0.resolverPath != .noSignal })
+    func test_commitPath_parsesNextMonth() {
+        let parse = DateResolver.resolveTemporal(in: "Submit report next month", now: friday)
+        XCTAssertEqual(day(of: parse.dueDate), 31, "bare 'next month' reads as a deadline at the end of July")
+        XCTAssertEqual(parse.dueDate.map { Calendar.current.component(.month, from: $0) }, 7)
+    }
+
+    func test_temporalLayer_resolvesThisWeekend() {
+        let results = TemporalResolver.resolve(input: "Clean the garage this weekend", now: friday)
+        let signal = results.first { $0.resolverPath != .noSignal }
+        XCTAssertEqual(day(of: signal?.resolvedDate), 14, "weekend after Fri Jun 12 ends Sun Jun 14")
+    }
+
+    func test_temporalLayer_resolvesEndOfMonthAndNextMonth() {
+        let endOfMonth = TemporalResolver.resolve(input: "by the end of the month", now: friday)
+        XCTAssertEqual(day(of: endOfMonth.first?.resolvedDate), 30)
+
+        let nextMonth = TemporalResolver.resolve(input: "next month", now: friday)
+        XCTAssertEqual(day(of: nextMonth.first?.resolvedDate), 31)
+    }
+
+    func test_thisWeek_onAFriday_staysInCurrentWeek() {
+        // Today IS Friday Jun 12 — "this week" must not jump to Jun 19.
+        let promptLayer = TemporalResolver.resolve(input: "wrap this up this week", now: friday)
+        XCTAssertEqual(day(of: promptLayer.first?.resolvedDate), 12)
+
+        let commitLayer = DateResolver.resolveTemporal(in: "wrap this up this week", now: friday)
+        XCTAssertEqual(day(of: commitLayer.dueDate), 12)
+    }
+
+    /// The Step-1 contract itself: for every expression class the prompt layer
+    /// resolves confidently, the saved dueDate lands on the SAME day.
+    func test_promptLayerAndCommitPath_neverDisagree() {
+        let inputs = [
+            "Finish my portfolio by June 25",
+            "TestFlight ready by next Friday",
+            "Screenshots by Wednesday",
+            "App Store submission by the end of the month",
+            "Finish the draft in two weeks",
+            "Submit report next month",
+            "Clean the garage this weekend",
+            "Finish this in 10 days",
+            "Email Caleb tomorrow",
+            "wrap this up this week"
+        ]
+        for input in inputs {
+            let promptSignal = TemporalResolver.resolve(input: input, now: friday)
+                .first { $0.resolvedDate != nil && $0.confidence >= 0.85 }
+            let committed = DateResolver.resolveTemporal(in: input, now: friday)
+            XCTAssertNotNil(promptSignal?.resolvedDate, "prompt layer must resolve: \(input)")
+            XCTAssertNotNil(committed.dueDate, "commit path must resolve: \(input)")
+            XCTAssertEqual(
+                day(of: promptSignal?.resolvedDate), day(of: committed.dueDate),
+                "layers disagree on day for: \(input)"
+            )
         }
     }
 

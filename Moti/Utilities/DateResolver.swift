@@ -68,6 +68,17 @@ enum DateResolver {
 
     static func resolve(in input: String, calendar: Calendar = .current, now: Date = .now) -> (date: Date, label: String, rangeLike: Bool)? {
         let text = input.lowercased()
+        // Unified grammar first. DeterministicPreClassifier is the single
+        // source of truth for date DETECTION, shared with the prompt layer
+        // (TemporalResolver), so the dueDate written to the database can never
+        // disagree with the date the model/user was shown. The legacy patterns
+        // below remain as fallback for expressions the unified grammar doesn't
+        // cover (bare clock times, "in N months") and for range inputs, which
+        // resolveTemporal handles before calling this.
+        if !containsWorkingPeriodSyntax(text),
+           let unified = unifiedDateDetection(in: text, calendar: calendar, now: now) {
+            return unified
+        }
         if let match = resolveBeforeAfter(in: text, calendar: calendar, now: now) {
             return match
         }
@@ -108,11 +119,55 @@ enum DateResolver {
         return nil
     }
 
+    /// Single-source-of-truth date detection. Asks the deterministic layer of
+    /// the new temporal pipeline (the same grammar that produces the prompt
+    /// layer's time signals) for the first confident date-bearing expression.
+    ///
+    /// Deliberately calls `DeterministicPreClassifier` rather than the full
+    /// `TemporalResolver` pipeline: steps 2–3 (semantic bias / tiebreaker)
+    /// only adjust low-confidence candidates and the tiebreaker stub applies
+    /// random confidence jitter — unacceptable for the value that becomes a
+    /// persisted dueDate. At ≥0.85 only deterministic candidates qualify, so
+    /// both layers agree wherever this returns a date; below that the legacy
+    /// patterns behave exactly as before.
+    private static func unifiedDateDetection(
+        in text: String,
+        calendar: Calendar,
+        now: Date
+    ) -> (date: Date, label: String, rangeLike: Bool)? {
+        let candidates = DeterministicPreClassifier.classify(input: text, calendar: calendar, now: now)
+        guard let first = candidates.first(where: {
+            $0.resolverPath == .deterministic
+                && $0.confidence >= 0.85
+                && $0.resolvedDate != nil
+        }), let resolved = first.resolvedDate else { return nil }
+
+        // Relative durations ("in 3 hours", "in two weeks") already carry
+        // their own clock time (now + offset) — never end-of-day them.
+        if first.interpretation == .relativeDuration {
+            return (resolved, first.originalText, false)
+        }
+
+        // Calendar dates resolve to a sensible default time (end of day,
+        // 21:00 for "tonight"). Only override that when the input carries an
+        // actual time cue ("June 30 at 5pm", "tomorrow morning").
+        let hasTimeCue = explicitTime(in: text) != nil
+            || bareClockTime(in: text) != nil
+            || ["morning", "afternoon", "evening", "night"].contains(where: text.contains)
+        if hasTimeCue {
+            return (date(on: resolved, matchingTimeIn: text, calendar: calendar, now: now), first.originalText, false)
+        }
+        return (resolved, first.originalText, false)
+    }
+
     static func removingDatePhrases(from input: String) -> String {
         var title = input
         let phrases = [
             "by next week", "before next week", "after next week", "sometime next week", "next week",
             "during next week", "this week", "this weekend", "over the weekend", "no deadline yet", "no deadline",
+            "by the end of the month", "by the end of this month", "by end of month", "before the end of the month",
+            "at the end of the month", "the end of the month", "end of the month", "end of month",
+            "by next month", "before next month", "next month",
             "whenever", "tonight", "today", "tomorrow", "morning", "afternoon", "evening", "night"
         ]
         for phrase in phrases {
@@ -135,7 +190,7 @@ enum DateResolver {
             options: [.regularExpression, .caseInsensitive]
         )
         title = title.replacingOccurrences(
-            of: #"\bin\s+\d+\s+(?:days?|weeks?|months?)\b"#,
+            of: #"\bin\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(?:days?|weeks?|months?)\b"#,
             with: "",
             options: [.regularExpression, .caseInsensitive]
         )
@@ -257,7 +312,10 @@ enum DateResolver {
                 return (nextMonday(after: now, calendar: calendar), "\(prefix) next week", prefix == "after")
             }
             for (weekday, index) in weekdayIndexes where fragment.contains(weekday) {
-                let day = nextWeekday(index, from: now, calendar: calendar)
+                // "next <weekday>" means strictly next week's, never this week's.
+                let day = fragment.contains("next \(weekday)")
+                    ? nextWeekdayStrictlyNext(index, from: now, calendar: calendar)
+                    : nextWeekday(index, from: now, calendar: calendar)
                 return (date(on: day, matchingTimeIn: fragment, calendar: calendar, now: now), "\(prefix) \(weekday)", prefix == "after")
             }
             if fragment.contains("tomorrow"), let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) {
@@ -609,6 +667,14 @@ enum DateResolver {
 
     private static func nextMonday(after now: Date, calendar: Calendar) -> Date {
         nextWeekday(2, from: now, calendar: calendar)
+    }
+
+    private static func nextWeekdayStrictlyNext(_ weekday: Int, from now: Date, calendar: Calendar) -> Date {
+        let current = calendar.component(.weekday, from: now)
+        let days = (weekday - current + 7) % 7
+        let offset = days == 0 ? 7 : days + 7
+        let date = calendar.date(byAdding: .day, value: offset, to: now) ?? now
+        return endOfDay(for: date, calendar: calendar)
     }
 
     private static func upcomingFriday(from now: Date, calendar: Calendar) -> Date {

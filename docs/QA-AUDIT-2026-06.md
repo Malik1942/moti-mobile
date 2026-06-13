@@ -204,10 +204,20 @@ Locked-in current-correct behavior (plain tests):
 - WorkItemScope.timeline keeps done+overdue, hides archived
 
 Known bugs encoded as `XCTExpectFailure` (delete wrapper when fixed):
-- commit-path "next Friday" disagreement
-- commit-path spelled durations
-- commit-path end-of-month
-- temporal layer blind to "this weekend"
-- everyday verbs → unclear
-- project keyword overrides multi-deadline routing
-- comma multi-deadline collapse
+- ~~commit-path "next Friday" disagreement~~ — FIXED in Step 1 (temporal unification)
+- ~~commit-path spelled durations~~ — FIXED in Step 1
+- ~~commit-path end-of-month~~ — FIXED in Step 1
+- ~~temporal layer blind to "this weekend"~~ — FIXED in Step 1
+- everyday verbs → unclear (Step 3)
+- project keyword overrides multi-deadline routing (Step 2)
+- comma multi-deadline collapse (Step 2)
+
+### Step 1 status (completed 2026-06-12)
+`DateResolver.resolve` now delegates date detection to
+`DeterministicPreClassifier` (the prompt layer's grammar) for confident
+(≥0.85) deterministic candidates, with legacy patterns as fallback. The
+unified grammar also gained: end-of-month ("by the end of the month",
+"end of June"), bare "next month" (end of that month), "this weekend"
+(Sunday end-of-day), and a fix so "this week" on a Friday stays today.
+`test_promptLayerAndCommitPath_neverDisagree` locks the contract across
+ten expression classes.
