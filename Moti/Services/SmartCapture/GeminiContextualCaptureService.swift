@@ -77,11 +77,16 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
                     decision = convertToTargetClarification(retried, missing: stillMissing)
                 }
             }
-            return decision
+            // Produced by the remote LLM — stamp full provenance (a clarification
+            // result self-marks `.clarificationNeeded` via `stamped`).
+            return decision.stamped(provenance: .fullLLM)
         } catch {
             #if DEBUG
             print("[Gemini] fallback:", error.localizedDescription)
             #endif
+            // Pass the fallback's decision through UNCHANGED — it already carries
+            // its own honest stamp (on-device or deterministic), so the remote
+            // failure can never be mistaken for a successful LLM result.
             return try await fallback.analyze(context)
         }
     }

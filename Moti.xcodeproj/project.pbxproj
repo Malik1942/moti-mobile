@@ -43,6 +43,7 @@
 		4DC374B8BF5729E245BFB49D /* TemporalResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0D9FC621E620EB77D0AF98 /* TemporalResolverTests.swift */; };
 		4ED62F04AA13A9C82B66359D /* ProjectColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32DCB0008D7AFF0E0828E73 /* ProjectColor.swift */; };
 		4F7667A1BACC37455C690E39 /* RecurrenceParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3526038302978193BA832464 /* RecurrenceParser.swift */; };
+		50DF898232A9AE03E38E3D68 /* FallbackHonestyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */; };
 		51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F4E8BC65CE551E817F3140 /* Enums.swift */; };
 		526FE227CD83C73487E58629 /* LifelineInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE16912DC25D029FDEF39D20 /* LifelineInstrumentation.swift */; };
 		605C6E620F133E9F8C6A1B79 /* DeterministicPreClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C76A980F0DA9C241E53EEC1 /* DeterministicPreClassifier.swift */; };
@@ -208,6 +209,7 @@
 		43B8BD5A235364850327F306 /* RuleBasedTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuleBasedTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		46DF16B0DF325FE7D41D18AE /* MotiTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MotiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		47105D1BF12898C061AFC16D /* ParserValidationSamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParserValidationSamples.swift; sourceTree = "<group>"; };
+		47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FallbackHonestyTests.swift; sourceTree = "<group>"; };
 		48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceRule.swift; sourceTree = "<group>"; };
 		494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingServiceFactory.swift; sourceTree = "<group>"; };
 		4AEB904F6BE6B247DCC0943D /* MockSLMTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSLMTaskUnderstandingService.swift; sourceTree = "<group>"; };
@@ -413,6 +415,7 @@
 			children = (
 				75AE02F70F6655486F7ED88B /* CheckpointPolicyTests.swift */,
 				F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */,
+				47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */,
 				93A6C352C479B03C118265AD /* FoundationModelDedupTests.swift */,
 				5C7CA6D8734B95C03C699409 /* IntelligenceAuditTests.swift */,
 				164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */,
@@ -747,6 +750,7 @@
 			files = (
 				9AD45895DB47206E03DF10C2 /* CheckpointPolicyTests.swift in Sources */,
 				7ACBB10E098E99EFCBE5FC28 /* ClockTimeInferenceTests.swift in Sources */,
+				50DF898232A9AE03E38E3D68 /* FallbackHonestyTests.swift in Sources */,
 				310337503301B43C024E4DEC /* FoundationModelDedupTests.swift in Sources */,
 				E232DCB6CE22F4DAE38E8469 /* IntelligenceAuditTests.swift in Sources */,
 				2F80ECD2372641349AAF64EF /* PlanningClassifierTests.swift in Sources */,

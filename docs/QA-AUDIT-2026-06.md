@@ -237,6 +237,33 @@ Understanding breadth for everyday action verbs:
   planning when entered with other dated deliverables — is met and tested.
   Revisiting the project-scale keyword list is out of Step 3's scope.
 
+### Step 4 status — fallback honesty only (completed 2026-06-12)
+The refinement-loop half of Step 4 is intentionally NOT started yet.
+- New `IntelligenceSource` marker on `ContextualCaptureDecision`: `.fullLLM`,
+  `.onDevice`, `.deterministic`, `.clarificationNeeded`. Each tier stamps its
+  own result at the `analyze` boundary; fallback results pass through with the
+  lower tier's stamp, so a rule-based result can never masquerade as the LLM.
+  A clarification/asking result self-marks `.clarificationNeeded` regardless of
+  engine (honest — it isn't a finished plan). Default is `.deterministic` so an
+  unstamped decision never over-claims AI.
+- Silent-degradation points addressed: Gemini catch (#5), FM catch, and the
+  generic fallback workspace. `fallbackWorkspaceDecision` now preserves
+  structure — it segments a multi-deadline capture into one target per
+  deliverable, each keeping its own deadline, instead of collapsing to a single
+  "Define the next concrete milestone" stub. Assumption copy softened (calm,
+  never implies failure).
+- Internal-only for now: the marker drives a DEBUG console log in
+  QuickCaptureView (`[Capture source] …`) and exposes a calm `displayLabel`
+  hook for a future subtle badge. No user-facing UI, no warnings, no timeline
+  changes — per scope.
+- Tests: `MotiTests/FallbackHonestyTests.swift` (11) — Gemini/proxy failure
+  preserving the fallback marker (URLProtocol-stubbed outage), rule-based
+  stamping `.deterministic`/`.clarificationNeeded`, the deterministic fallback
+  preserving every deadline, and normal deterministic task creation unchanged.
+- Remaining for the later refinement-loop step: dead-code original-input
+  recovery in `refinePlan`, unbounded clarification rounds, and surfacing the
+  marker in a subtle user-facing way if desired.
+
 ### Step 2 status (completed 2026-06-12)
 Multi-deadline understanding and segmentation:
 - `PlanningClassifier`: the multi-deadline rule now runs BEFORE project-scale
