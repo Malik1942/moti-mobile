@@ -208,9 +208,27 @@ Known bugs encoded as `XCTExpectFailure` (delete wrapper when fixed):
 - ~~commit-path spelled durations~~ — FIXED in Step 1
 - ~~commit-path end-of-month~~ — FIXED in Step 1
 - ~~temporal layer blind to "this weekend"~~ — FIXED in Step 1
-- everyday verbs → unclear (Step 3)
-- project keyword overrides multi-deadline routing (Step 2)
-- comma multi-deadline collapse (Step 2)
+- everyday verbs → unclear (Step 3; the *dated* cases are already fixed by
+  Step 2's anchor-based counting — only undated ones still misroute)
+- ~~project keyword overrides multi-deadline routing~~ — FIXED in Step 2
+- ~~comma multi-deadline collapse~~ — FIXED in Step 2
+
+### Step 2 status (completed 2026-06-12)
+Multi-deadline understanding and segmentation:
+- `PlanningClassifier`: the multi-deadline rule now runs BEFORE project-scale
+  wording and the reminder rule (recurrence/note/status still outrank it —
+  "gym every monday and thursday" stays one habit; past-tense status reports
+  never spawn tasks). Anchor counting delegates to the unified grammar via
+  the new `TemporalAnchors` helper.
+- `CaptureSegmenter`: comma/"and" clauses split into separate captures when
+  at least two clauses carry their own date anchor; anchor-less lead-ins glue
+  forward, anchor-less tails glue backward, and ordinary comma text with one
+  deadline never splits.
+- `DateResolver.unifiedDateDetection`: prefers the candidate the user marked
+  with a deadline cue ("by Tuesday") over an incidental earlier reference
+  ("this week: …").
+Verified: the portfolio/jobs/capstone sentence → 3 tasks with Jun 25/18/20;
+the two-deadline reminder → essay→Friday + report→Monday.
 
 ### Step 1 status (completed 2026-06-12)
 `DateResolver.resolve` now delegates date detection to

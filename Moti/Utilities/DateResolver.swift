@@ -135,12 +135,20 @@ enum DateResolver {
         calendar: Calendar,
         now: Date
     ) -> (date: Date, label: String, rangeLike: Bool)? {
-        let candidates = DeterministicPreClassifier.classify(input: text, calendar: calendar, now: now)
-        guard let first = candidates.first(where: {
-            $0.resolverPath == .deterministic
-                && $0.confidence >= 0.85
-                && $0.resolvedDate != nil
-        }), let resolved = first.resolvedDate else { return nil }
+        let qualifying = DeterministicPreClassifier.classify(input: text, calendar: calendar, now: now)
+            .filter {
+                $0.resolverPath == .deterministic
+                    && $0.confidence >= 0.85
+                    && $0.resolvedDate != nil
+            }
+        // Prefer the expression the user marked as the deadline ("by Tuesday",
+        // "due June 25") over an incidental earlier time reference ("I have
+        // three things this week: …"). Falls back to first-mentioned.
+        let cues = ["by ", "before ", "due ", "on ", "until ", "till "]
+        let cued = qualifying.first { candidate in
+            cues.contains { text.contains($0 + candidate.originalText) }
+        }
+        guard let first = cued ?? qualifying.first, let resolved = first.resolvedDate else { return nil }
 
         // Relative durations ("in 3 hours", "in two weeks") already carry
         // their own clock time (now + offset) — never end-of-day them.

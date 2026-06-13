@@ -33,6 +33,7 @@
 		323A9F35903F83C94D43BB2D /* ProjectMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D464C36EA07A200DFFF065 /* ProjectMatcher.swift */; };
 		3A1F9C01B89D0031D20EF419 /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16051795458D002FFE029597 /* ReviewView.swift */; };
 		3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4CB83BECF9B15618F7FA70 /* TemporalInterpretation.swift */; };
+		421C2DB443570D777B8A7936 /* TemporalAnchors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D05119B2C63105641FCDC79 /* TemporalAnchors.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
 		45120A834AF95A5695003317 /* TrajectoryProjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DD315F4C846EE1F95FF160F /* TrajectoryProjector.swift */; };
 		48822C2563300A2ED3707162 /* TrajectoryTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9654B2FA1CD11DEA50DD87 /* TrajectoryTimelineView.swift */; };
@@ -229,6 +230,7 @@
 		77BBE151CF9E4115BC8306B6 /* reorganized.caf */ = {isa = PBXFileReference; path = reorganized.caf; sourceTree = "<group>"; };
 		7AC90F7CA4B97C0FAFBD1F7E /* completed.caf */ = {isa = PBXFileReference; path = completed.caf; sourceTree = "<group>"; };
 		7BD412970ED5D739AC844251 /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
+		7D05119B2C63105641FCDC79 /* TemporalAnchors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemporalAnchors.swift; sourceTree = "<group>"; };
 		7DC4C9E0E625EAD5E505D2EC /* SemanticBias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticBias.swift; sourceTree = "<group>"; };
 		7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8117BB4A837027777533E234 /* SemanticContextResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticContextResolver.swift; sourceTree = "<group>"; };
@@ -390,6 +392,7 @@
 				25231274051DE1A0E78ABE26 /* LLMTiebreaker.swift */,
 				7DC4C9E0E625EAD5E505D2EC /* SemanticBias.swift */,
 				8117BB4A837027777533E234 /* SemanticContextResolver.swift */,
+				7D05119B2C63105641FCDC79 /* TemporalAnchors.swift */,
 				193DA3CD4AB4AAB6E28DE7C8 /* TemporalResolver.swift */,
 			);
 			path = Temporal;
@@ -836,6 +839,7 @@
 				BBCFED02C82620F6B0B2E5CF /* TaskCheckInCoordinator.swift in Sources */,
 				91B250EF94F1178429D5B32A /* TaskUnderstandingService.swift in Sources */,
 				A87A45911AA1BC08CF6F5A56 /* TaskUnderstandingServiceFactory.swift in Sources */,
+				421C2DB443570D777B8A7936 /* TemporalAnchors.swift in Sources */,
 				3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */,
 				619473673DE127605CD34B4D /* TemporalResolution.swift in Sources */,
 				A9E8586A102D3375618F5F59 /* TemporalResolver.swift in Sources */,

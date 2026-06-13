@@ -180,44 +180,57 @@ final class IntelligenceAuditTests: XCTestCase {
         XCTAssertFalse(p.shouldCreateSubtasks, "distinct deadlines are separate tasks, not decomposed plans")
     }
 
-    func test_KNOWNBUG_everydayVerbs_misclassifiedAsUnclear() {
-        XCTExpectFailure(
-            """
-            CapturedClassifier.actionVerbs is a closed 30-word list. Everyday \
-            verbs (pay, clean, renew, book, cancel, pack, print...) are missing, \
-            so obvious tasks fall through to "unclear" and the user gets an \
-            unnecessary clarification question. Expand the verb list or use \
-            linguistic tagging, then delete this wrapper.
-            """
-        ) {
-            for input in [
-                "Pay rent by the end of the month",
-                "Clean the garage this weekend",
-                "Renew my passport before graduation"
-            ] {
-                let p = PlanningClassifier.classify(rawInput: input)
-                XCTAssertFalse(p.shouldAskForClarification, "\(input) is a clear task; no question needed")
-            }
+    func test_clearDatedTasksWithEverydayVerbs_noClarification() {
+        // "pay"/"clean" aren't in the action-verb list (Step 3), but their
+        // confident date anchors route them to a dated capture instead of an
+        // unnecessary clarification question.
+        for input in [
+            "Pay rent by the end of the month",
+            "Clean the garage this weekend"
+        ] {
+            let p = PlanningClassifier.classify(rawInput: input)
+            XCTAssertFalse(p.shouldAskForClarification, "\(input) is a clear dated task; no question needed")
+            XCTAssertFalse(p.shouldGeneratePlan)
         }
     }
 
-    func test_KNOWNBUG_projectKeywordOverridesMultiDeadlineRouting() {
+    func test_KNOWNBUG_everydayVerbWithoutDateAnchor_misclassifiedAsUnclear() {
         XCTExpectFailure(
             """
-            The project-scale keyword check (rule 3, fires on "capstone", \
-            "launch", "portfolio"...) runs BEFORE the multi-deadline check \
-            (rule 8), so a list of three dated deliverables that happens to \
-            mention "capstone" is routed to deep multi-phase planning with \
-            subtasks instead of one-task-per-deadline. Reorder the rules (or \
-            make rule 8 outrank scope keywords when >= 2 anchors exist), then \
-            delete this wrapper.
+            CapturedClassifier.actionVerbs is a closed 30-word list. Everyday \
+            verbs (renew, book, cancel, pack, print...) are missing, so an \
+            obvious undated task falls through to "unclear" and the user gets \
+            an unnecessary clarification question. Expand the verb list or use \
+            linguistic tagging (Step 3), then delete this wrapper.
             """
         ) {
-            let input = "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
-            let p = PlanningClassifier.classify(rawInput: input)
-            XCTAssertEqual(p.inputType, .multiDeadlinePlanning)
-            XCTAssertFalse(p.shouldCreateSubtasks)
+            let p = PlanningClassifier.classify(rawInput: "Renew my passport before graduation")
+            XCTAssertFalse(p.shouldAskForClarification, "a clear task; no question needed")
         }
+    }
+
+    func test_projectKeywordDoesNotOverrideMultiDeadlineRouting() {
+        // "capstone" is a project-scale keyword, but three explicit deadlines
+        // are stronger evidence: one task per deadline, no invented subtasks.
+        let input = "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
+        let p = PlanningClassifier.classify(rawInput: input)
+        XCTAssertEqual(p.inputType, .multiDeadlinePlanning)
+        XCTAssertFalse(p.shouldCreateSubtasks)
+    }
+
+    func test_multiDeadlineReminder_routesToOneItemPerDeadline() {
+        let p = PlanningClassifier.classify(rawInput: "remind me to finish my essay by Friday and submit the report by Monday")
+        XCTAssertEqual(p.inputType, .multiDeadlinePlanning, "two dated items, not one reminder with an arbitrary date")
+    }
+
+    func test_singleDeadlineReminder_staysAReminder() {
+        let p = PlanningClassifier.classify(rawInput: "Remind me to submit the visa form by Friday")
+        XCTAssertEqual(p.inputType, .reminder)
+    }
+
+    func test_recurrenceWithTwoWeekdayMentions_staysRecurring() {
+        let p = PlanningClassifier.classify(rawInput: "gym every monday and thursday")
+        XCTAssertEqual(p.inputType, .recurringTask, "a habit naming two weekdays is one recurring task, not two deadlines")
     }
 
     // MARK: - Multi-deadline creation (non-LLM commit path)
@@ -232,23 +245,44 @@ final class IntelligenceAuditTests: XCTestCase {
         XCTAssertEqual(Set(items.compactMap { day(of: $0.dueDate) }).count, 3, "deadlines must not be merged")
     }
 
-    func test_KNOWNBUG_commaSeparatedDeadlines_collapseIntoOneTask() async throws {
-        try await XCTExpectFailureAsync(
-            """
-            CaptureSegmenter only splits on newlines and semicolons. A natural \
-            comma-separated multi-deadline sentence parsed through the non-LLM \
-            path collapses into ONE task keeping only the first "by" date — \
-            June 18 and June 20 are silently dropped. Teach the segmenter \
-            comma/and-boundary splitting when multiple date anchors exist, \
-            then delete this wrapper.
-            """
-        ) {
-            let service = RuleBasedTaskUnderstandingService()
-            let items = try await service.parseMany(
-                "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
-            )
-            XCTAssertEqual(items.count, 3, "three deliverables with three deadlines must become three tasks")
-        }
+    func test_commaSeparatedDeadlines_createOneTaskPerDeadline() async throws {
+        let service = RuleBasedTaskUnderstandingService()
+        let items = try await service.parseMany(
+            "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
+        )
+        XCTAssertEqual(items.count, 3, "three deliverables with three deadlines must become three tasks")
+        XCTAssertEqual(items.compactMap { day(of: $0.dueDate) }, [25, 18, 20],
+                       "each task keeps ITS OWN deadline, in the order written")
+    }
+
+    func test_andJoinedDeadlines_splitWithCorrectDates() async throws {
+        let service = RuleBasedTaskUnderstandingService()
+        let items = try await service.parseMany(
+            "remind me to finish my essay by Friday and submit the report by Monday"
+        )
+        XCTAssertEqual(items.count, 2)
+        // Fri Jun 19 and Mon Jun 15 relative to the audit's fixed Friday — but
+        // parseMany uses the live clock, so assert weekday rather than day.
+        let weekdays = items.compactMap { $0.dueDate.map { Calendar.current.component(.weekday, from: $0) } }
+        XCTAssertEqual(weekdays, [6, 2], "essay → Friday, report → Monday; the pairing the user wrote")
+        XCTAssertTrue(items[0].title.localizedCaseInsensitiveContains("essay"))
+        XCTAssertTrue(items[1].title.localizedCaseInsensitiveContains("report"))
+    }
+
+    func test_ordinaryCommaList_singleDeadline_staysOneTask() async throws {
+        let service = RuleBasedTaskUnderstandingService()
+        let items = try await service.parseMany("buy milk, eggs, and bread tomorrow")
+        XCTAssertEqual(items.count, 1, "a shopping list with ONE deadline is one task, not three")
+    }
+
+    func test_leadInClause_keepsTitleDeadlinePairing() async throws {
+        let service = RuleBasedTaskUnderstandingService()
+        let items = try await service.parseMany(
+            "I have three things this week: finish design critique by Tuesday, revise prototype by Thursday, and submit the report on Sunday"
+        )
+        XCTAssertEqual(items.count, 3)
+        let weekdays = items.compactMap { $0.dueDate.map { Calendar.current.component(.weekday, from: $0) } }
+        XCTAssertEqual(weekdays, [3, 5, 1], "critique → Tuesday, prototype → Thursday, report → Sunday")
     }
 
     // MARK: - Refinement: dropped-target safety net (locks current-correct behavior)
@@ -400,17 +434,4 @@ final class IntelligenceAuditTests: XCTestCase {
         XCTAssertTrue(visible.contains { $0.title == "Late thing" }, "overdue work stays visible")
         XCTAssertFalse(visible.contains { $0.title == "Archived thing" })
     }
-}
-
-// MARK: - Async XCTExpectFailure helper
-
-/// XCTExpectFailure has no async-throws overload; this wraps one manually.
-private func XCTExpectFailureAsync(
-    _ failureReason: String,
-    _ body: () async throws -> Void
-) async rethrows {
-    let options = XCTExpectedFailure.Options()
-    options.isStrict = true
-    XCTExpectFailure(failureReason, options: options)
-    try await body()
 }
