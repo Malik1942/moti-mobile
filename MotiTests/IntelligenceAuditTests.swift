@@ -3,15 +3,16 @@
 //
 // Regression suite from the June 2026 intelligence/timeline QA audit.
 //
-// Two kinds of tests live here:
-//   1. Plain tests — lock in behavior that is currently correct so it can't
-//      silently regress (multi-date extraction, semicolon splitting, the
-//      dropped-target safety net, project matching, trajectory visibility).
-//   2. XCTExpectFailure tests — encode the PRODUCT-EXPECTED behavior for bugs
-//      confirmed by the audit. They pass today because the failure is
-//      expected; when the underlying bug is fixed the wrapper trips
-//      ("expected failure didn't occur") — delete the wrapper then, keeping
-//      the assertions as a permanent regression test.
+// Every audit bug it identified is now fixed (Steps 1–3): unified temporal
+// parsing, multi-deadline understanding + segmentation, and everyday-verb
+// breadth. The original `XCTExpectFailure` wrappers that encoded those bugs
+// have all been unwrapped into plain regression tests as each fix landed.
+//
+// The suite locks in: multi-date extraction, prompt/commit date agreement,
+// comma/"and"/semicolon multi-deadline splitting, atomic-vs-planning routing,
+// everyday-verb recognition + vague/emotional/project-scale guardrails, the
+// dropped-target safety net, project matching, and trajectory visibility of
+// overdue/completed work.
 //
 
 import XCTest
@@ -181,9 +182,8 @@ final class IntelligenceAuditTests: XCTestCase {
     }
 
     func test_clearDatedTasksWithEverydayVerbs_noClarification() {
-        // "pay"/"clean" aren't in the action-verb list (Step 3), but their
-        // confident date anchors route them to a dated capture instead of an
-        // unnecessary clarification question.
+        // Everyday verbs now recognized (Step 3) AND carrying a date anchor →
+        // an atomic dated task, never a clarification question.
         for input in [
             "Pay rent by the end of the month",
             "Clean the garage this weekend"
@@ -194,19 +194,79 @@ final class IntelligenceAuditTests: XCTestCase {
         }
     }
 
-    func test_KNOWNBUG_everydayVerbWithoutDateAnchor_misclassifiedAsUnclear() {
-        XCTExpectFailure(
-            """
-            CapturedClassifier.actionVerbs is a closed 30-word list. Everyday \
-            verbs (renew, book, cancel, pack, print...) are missing, so an \
-            obvious undated task falls through to "unclear" and the user gets \
-            an unnecessary clarification question. Expand the verb list or use \
-            linguistic tagging (Step 3), then delete this wrapper.
-            """
-        ) {
-            let p = PlanningClassifier.classify(rawInput: "Renew my passport before graduation")
-            XCTAssertFalse(p.shouldAskForClarification, "a clear task; no question needed")
+    func test_everydayVerbWithoutDateAnchor_becomesTaskNotClarification() {
+        // The confirmed gap: "renew" wasn't in the closed verb list, so this
+        // fell through to "unclear" → clarification. Step 3 recognizes it.
+        let p = PlanningClassifier.classify(rawInput: "Renew my passport before graduation")
+        XCTAssertFalse(p.shouldAskForClarification, "a clear action; no question needed")
+        XCTAssertFalse(p.shouldGeneratePlan, "one action, not a project")
+        XCTAssertEqual(p.inputType, .simpleTask)
+    }
+
+    func test_everydayActionVerbs_recognizedAsActions() {
+        // A spread of everyday verbs absent from the original 30-word list.
+        for verb in ["Renew", "Pay", "Clean", "Book", "Cancel", "Print", "Pack",
+                     "Register", "Deposit", "Reschedule"] {
+            XCTAssertTrue(
+                CapturedClassifier.hasActionVerb("\(verb) the thing"),
+                "\(verb) should read as an action verb"
+            )
         }
+    }
+
+    func test_structuralLeadIn_recognizesVerbsOutsideTheList() {
+        // Generalization beyond the list: the word after a personal-intent
+        // lead-in is treated as the action, even for verbs Moti has never seen.
+        XCTAssertTrue(CapturedClassifier.hasActionVerb("I need to winterize the cabin"))
+        XCTAssertTrue(CapturedClassifier.hasActionVerb("I have to defrost the freezer"))
+        XCTAssertTrue(CapturedClassifier.hasActionVerb("please refurbish the old desk"))
+    }
+
+    // MARK: - Step 3 guardrails: vague thoughts / emotions / project goals
+
+    func test_vagueThought_doesNotBecomeATask() {
+        let p = PlanningClassifier.classify(rawInput: "Think about my future")
+        XCTAssertFalse(CapturedClassifier.hasActionVerb("Think about my future"),
+                       "a reflective 'think about' is not a concrete action")
+        XCTAssertNotEqual(p.inputType, .atomicTask)
+        XCTAssertNotEqual(p.inputType, .simpleTask)
+    }
+
+    func test_cognitionVerbAfterLeadIn_stillNotAnAction() {
+        XCTAssertFalse(CapturedClassifier.hasActionVerb("I need to think about my future"))
+        XCTAssertFalse(CapturedClassifier.hasActionVerb("I want to feel less stressed"))
+    }
+
+    func test_emotionalStatement_doesNotBecomeATask() {
+        let p = PlanningClassifier.classify(rawInput: "I feel overwhelmed about graduation")
+        XCTAssertFalse(CapturedClassifier.hasActionVerb("I feel overwhelmed about graduation"),
+                       "an emotional statement is not an action")
+        XCTAssertFalse(p.shouldGeneratePlan)
+        XCTAssertNotEqual(p.inputType, .atomicTask)
+        XCTAssertNotEqual(p.inputType, .simpleTask)
+    }
+
+    func test_vagueFiller_doesNotBecomeATask() {
+        XCTAssertFalse(CapturedClassifier.hasActionVerb("I need to handle some stuff"))
+        XCTAssertTrue(CapturedClassifier.isVeryVague("visa stuff"))
+    }
+
+    func test_projectScaleGoal_staysPlanningNotAtomic() {
+        // "launch" is project-scale: even with one deadline and a clear verb,
+        // it must route to a multi-phase plan, never a single atomic task.
+        let p = PlanningClassifier.classify(rawInput: "Launch my app by the end of the month")
+        XCTAssertEqual(p.inputType, .complexPlanning)
+        XCTAssertEqual(p.planningDepth, .deep)
+        XCTAssertTrue(p.shouldGeneratePlan)
+    }
+
+    func test_capstoneAmongDeadlines_isMultiDeadline_notAtomic() {
+        // The capstone deliverable joins multi-deadline planning when it shares
+        // the capture with other dated deliverables (it is NOT a lone atomic).
+        let input = "Prepare my capstone presentation by June 20, finish the report by June 22, and submit slides by June 24."
+        let p = PlanningClassifier.classify(rawInput: input)
+        XCTAssertEqual(p.inputType, .multiDeadlinePlanning)
+        XCTAssertFalse(p.shouldCreateSubtasks)
     }
 
     func test_projectKeywordDoesNotOverrideMultiDeadlineRouting() {

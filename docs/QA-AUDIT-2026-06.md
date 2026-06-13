@@ -208,10 +208,34 @@ Known bugs encoded as `XCTExpectFailure` (delete wrapper when fixed):
 - ~~commit-path spelled durations~~ — FIXED in Step 1
 - ~~commit-path end-of-month~~ — FIXED in Step 1
 - ~~temporal layer blind to "this weekend"~~ — FIXED in Step 1
-- everyday verbs → unclear (Step 3; the *dated* cases are already fixed by
-  Step 2's anchor-based counting — only undated ones still misroute)
+- ~~everyday verbs → unclear~~ — FIXED in Step 3
 - ~~project keyword overrides multi-deadline routing~~ — FIXED in Step 2
 - ~~comma multi-deadline collapse~~ — FIXED in Step 2
+
+### Step 3 status (completed 2026-06-12)
+Understanding breadth for everyday action verbs:
+- `CapturedClassifier.actionVerbs` expanded with everyday actions (renew, pay,
+  clean, book, cancel, print, pack, register, deposit, reschedule, …) — the
+  reliable, environment-independent fast path.
+- Structural lead-in detection: the word after a personal-intent lead-in
+  ("I need to ___", "have to ___", "please ___", "remember to ___") is treated
+  as the action, so verbs Moti has never seen are still recognized
+  ("I need to winterize the cabin" → task) — deterministic, no POS model.
+- Guardrails: a `nonActionVerbs` set (think, feel, want, wonder, …) plus
+  structural stop words keep reflective ("Think about my future"), emotional
+  ("I feel overwhelmed about graduation"), and vague ("visa stuff") inputs out
+  of the task path; project-scale wording ("Launch my app…") still routes to a
+  plan, never a lone atomic task.
+- **NLTagger was evaluated and rejected**: its `.lexicalClass`/`.lemma` schemes
+  return `OtherWord`/nil for every token in the simulator and CI (POS model
+  not bundled), confirmed against a plain declarative sentence. A deterministic
+  lexicon + structural strategy is reliable across simulator, CI, and device;
+  NLTagger would have made classification environment-dependent.
+- Nuance (unchanged, pre-existing): "Prepare my capstone presentation by
+  June 20" entered ALONE still routes to planning because "capstone" is a
+  project-scale keyword. The firm requirement — it joins multi-deadline
+  planning when entered with other dated deliverables — is met and tested.
+  Revisiting the project-scale keyword list is out of Step 3's scope.
 
 ### Step 2 status (completed 2026-06-12)
 Multi-deadline understanding and segmentation:
