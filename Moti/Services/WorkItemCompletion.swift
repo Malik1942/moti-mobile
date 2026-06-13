@@ -37,13 +37,14 @@ enum WorkItemCompletion {
         let completedOccurrence = item.completeRecurringOccurrence(now: now, calendar: calendar)
         item.needsReview = false
 
-        CompletionLogger(modelContext: modelContext).log(
+        CompletionLogger.log(
             taskId: item.id,
             eventType: .statusChanged,
             previousStatus: previousStatus,
             newStatus: .done,
             context: completedOccurrence.map { "recurring occurrence completed \(ISO8601DateFormatter().string(from: $0))" }
-                ?? "recurring occurrence completed"
+                ?? "recurring occurrence completed",
+            in: modelContext
         )
 
         try? modelContext.save()

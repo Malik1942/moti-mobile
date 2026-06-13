@@ -29,6 +29,7 @@ enum SmartCapturePromptBuilder {
         sections.append(inputSection(context))
         sections.append(planningDepthSection(context))
         sections.append(dateAndLocaleSection(context))
+        if let block = timeSignalsSection(context)   { sections.append(block) }
         sections.append(projectsSection(context))
         if let block = projectContextSection(context) { sections.append(block) }
         if let block = recentTasksSection(context)    { sections.append(block) }
@@ -39,7 +40,7 @@ enum SmartCapturePromptBuilder {
         if let block = clarificationSection(context)  { sections.append(block) }
         if let block = refinementSection(context)     { sections.append(block) }
         if let correction { sections.append(correctionSection(correction)) }
-        sections.append("Return a structured decision following the schema. Never resolve dates — preserve the user's original time expressions.")
+        sections.append("Return a structured decision following the schema. Never resolve dates yourself — preserve the user's original time expressions, but treat the pre-resolved time signals above as known planning slots.")
         return sections.joined(separator: "\n\n")
     }
 
@@ -189,6 +190,43 @@ enum SmartCapturePromptBuilder {
         """
     }
 
+    private static func timeSignalsSection(_ context: SmartCaptureContext) -> String? {
+        let signals = context.timeSignals
+            .filter { $0.resolverPath != .noSignal && $0.confidence >= 0.70 }
+        guard !signals.isEmpty else { return nil }
+
+        let dateFmt = DateFormatter()
+        dateFmt.timeZone = context.timezone
+        dateFmt.locale = context.locale
+        dateFmt.dateStyle = .medium
+        dateFmt.timeStyle = .none
+
+        let lines = signals.map { signal -> String in
+            var pieces = [
+                "  - raw: \"\(signal.rawText)\"",
+                "type: \(signal.interpretation.rawValue)",
+                "confidence: \(String(format: "%.2f", signal.confidence))",
+                "path: \(signal.resolverPath.rawValue)"
+            ]
+            if let date = signal.resolvedDate {
+                pieces.append("resolvedDate: \(dateFmt.string(from: date))")
+            }
+            if let duration = signal.resolvedDuration {
+                let days = duration / 86_400
+                pieces.append("durationDays: \(String(format: "%.1f", days))")
+            }
+            return pieces.joined(separator: ", ")
+        }
+        .joined(separator: "\n")
+
+        return """
+        Known time signals:
+        \(lines)
+
+        If these signals include a deadline, duration, or relative time window, the timeline is NOT missing. Do not ask for the timeline again. If clarification is still needed, ask about missing scope, deliverable, priority, constraints, or success criteria.
+        """
+    }
+
     private static func projectsSection(_ context: SmartCaptureContext) -> String {
         if context.activeProjects.isEmpty {
             return "Active projects: none"
@@ -292,6 +330,8 @@ enum SmartCapturePromptBuilder {
           original input: \"\(c.previousInput)\"
           question: \(c.previousQuestion.question)
           user answered: \(c.userAnswer)
+
+        Continue the same capture. Use the answer semantically, then either ask the next necessary question or produce the appropriate task/plan preview. Never stop after recording the answer.
         """
     }
 
@@ -353,7 +393,7 @@ enum SmartCapturePromptBuilder {
         }
 
         lines.append("")
-        lines.append("Revise the workspace above to address the feedback. Set planChangeSummary to one sentence describing what changed. Preserve all existing PlanningTargets unless the user asked to remove or merge them — if the user says a target was missed, ADD it as a new target. If they say split, separate by deliverable/deadline. If they say merge, combine into one schedule but keep target metadata visible.")
+        lines.append("Revise the workspace above to address the feedback. Treat the feedback as a planning command or constraint, not as a new raw task. Set planChangeSummary to one sentence describing what changed. Preserve all existing PlanningTargets unless the user asked to remove or merge them — if the user says a target was missed, ADD it as a new target. If they say split, separate by deliverable/deadline. If they say merge, combine into one schedule but keep target metadata visible.")
         return lines.joined(separator: "\n")
     }
 

@@ -260,7 +260,10 @@ enum PlanningClassifier {
         let dayNames = "monday|tuesday|wednesday|thursday|friday|saturday|sunday"
         let relatives = "today|tonight|tomorrow|next week|next month"
         let numericDate = #"\b\d{1,2}[./]\d{1,2}\b"#
-        let pattern = #"\b(?:"# + dayNames + "|" + relatives + #")\b|"# + numericDate
+        let relativeDuration = #"\b(?:in|after)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(?:days?|weeks?|hours?|minutes?)\b"#
+        let monthNames = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
+        let namedMonthDate = #"\b(?:"# + monthNames + #")\.?\s+\d{1,2}(?:st|nd|rd|th)?\b"#
+        let pattern = #"\b(?:"# + dayNames + "|" + relatives + #")\b|"# + numericDate + "|" + relativeDuration + "|" + namedMonthDate
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
             return 0
         }

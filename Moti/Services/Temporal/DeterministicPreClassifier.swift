@@ -25,6 +25,7 @@ enum DeterministicPreClassifier {
         // in dot-notation discards the dot candidate — still gets a clock-time result.
         pool += isoDateCandidates(in: text, calendar: calendar, now: now)
         pool += relativeDurationCandidates(in: text, now: now)
+        pool += namedMonthDateCandidates(in: text, calendar: calendar, now: now)
         pool += clockTimeCandidates(in: text)
         pool += slashNotationCandidates(in: text, calendar: calendar, now: now)
         pool += dotNotationCandidates(in: text, calendar: calendar, now: now)
@@ -75,10 +76,10 @@ enum DeterministicPreClassifier {
 
     private static func relativeDurationCandidates(in text: String, now: Date) -> [Candidate] {
         // Requires an explicit time-unit word — prevents "in 5.15" from matching here.
-        let pattern = #"\b(in|after)\s+(\d+)\s+(days?|weeks?|hours?|minutes?)\b"#
+        let pattern = #"\b(in|after)\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(days?|weeks?|hours?|minutes?)\b"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
         return regex.matches(in: text, range: fullRange(text)).compactMap { match in
-            guard let amount = intCapture(match, at: 2, in: text),
+            guard let amount = amountCapture(match, at: 2, in: text),
                   let unitRange = Range(match.range(at: 3), in: text)
             else { return nil }
             let unit = String(text[unitRange]).lowercased()
@@ -96,6 +97,36 @@ enum DeterministicPreClassifier {
                                        interpretation: .relativeDuration, confidence: 0.95,
                                        resolvedDate: Date(timeInterval: seconds, since: now),
                                        resolvedDuration: seconds,
+                                       resolvedClockTime: nil, formatAssumption: nil,
+                                       alternativeCandidates: [], resolverPath: .deterministic)
+            return Candidate(resolution: r, nsRange: match.range)
+        }
+    }
+
+    // MARK: - Pattern: named month date ("June 25", "before Jun 25")
+
+    private static func namedMonthDateCandidates(in text: String, calendar: Calendar, now: Date) -> [Candidate] {
+        let months = monthNumberByName
+        let names = months.keys
+            .sorted { $0.count > $1.count }
+            .map(NSRegularExpression.escapedPattern(for:))
+            .joined(separator: "|")
+        let pattern = #"\b(?:"# + names + #")\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
+        return regex.matches(in: text, range: fullRange(text)).compactMap { match in
+            guard let monthRange = Range(match.range(at: 0), in: text),
+                  let day = intCapture(match, at: 1, in: text)
+            else { return nil }
+            let monthName = String(text[monthRange])
+                .split(separator: " ")
+                .first
+                .map { String($0).trimmingCharacters(in: CharacterSet(charactersIn: ".")).lowercased() }
+            guard let key = monthName, let month = months[key],
+                  let date = futureDate(month: month, day: day, calendar: calendar, now: now)
+            else { return nil }
+            let r = TemporalResolution(originalText: substring(match, in: text),
+                                       interpretation: .calendarDate, confidence: 0.93,
+                                       resolvedDate: date, resolvedDuration: nil,
                                        resolvedClockTime: nil, formatAssumption: nil,
                                        alternativeCandidates: [], resolverPath: .deterministic)
             return Candidate(resolution: r, nsRange: match.range)
@@ -383,6 +414,29 @@ enum DeterministicPreClassifier {
         return endOfDay(calendar.date(byAdding: .day, value: offset, to: now) ?? now, calendar: calendar)
     }
 
+    private static let monthNumberByName: [String: Int] = [
+        "january": 1, "jan": 1,
+        "february": 2, "feb": 2,
+        "march": 3, "mar": 3,
+        "april": 4, "apr": 4,
+        "may": 5,
+        "june": 6, "jun": 6,
+        "july": 7, "jul": 7,
+        "august": 8, "aug": 8,
+        "september": 9, "sep": 9, "sept": 9,
+        "october": 10, "oct": 10,
+        "november": 11, "nov": 11,
+        "december": 12, "dec": 12
+    ]
+
+    private static let spelledNumberValues: [String: Int] = [
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+        "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+        "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+        "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+        "nineteen": 19, "twenty": 20
+    ]
+
     // MARK: - Regex helpers
 
     private static func fullRange(_ text: String) -> NSRange {
@@ -392,6 +446,12 @@ enum DeterministicPreClassifier {
     private static func intCapture(_ match: NSTextCheckingResult, at group: Int, in text: String) -> Int? {
         guard let range = Range(match.range(at: group), in: text) else { return nil }
         return Int(text[range])
+    }
+
+    private static func amountCapture(_ match: NSTextCheckingResult, at group: Int, in text: String) -> Int? {
+        guard let range = Range(match.range(at: group), in: text) else { return nil }
+        let value = String(text[range]).lowercased()
+        return Int(value) ?? spelledNumberValues[value]
     }
 
     private static func substring(_ match: NSTextCheckingResult, in text: String) -> String {

@@ -89,6 +89,20 @@ final class SmartCaptureTests: XCTestCase {
         )
     }
 
+    private func timeSignal(
+        raw: String = "in 15 days",
+        date: Date = Date(timeIntervalSince1970: 1_802_563_200)
+    ) -> SmartCaptureTimeSignal {
+        SmartCaptureTimeSignal(
+            rawText: raw,
+            interpretation: .relativeDuration,
+            resolvedDate: date,
+            resolvedDuration: 15 * 86_400,
+            confidence: 0.95,
+            resolverPath: .deterministic
+        )
+    }
+
     // MARK: 1. Settings shows LLM as an intelligence mode
 
     func test_settingsShowsLLMAsIntelligenceMode() {
@@ -300,5 +314,69 @@ final class SmartCaptureTests: XCTestCase {
             (mode == .llm) || true /* non-LLM modes never reach clarification */
         }
         XCTAssertTrue(llmIsOnlyClarificationMode)
+    }
+
+    func test_promptIncludesResolvedTimeAndForbidsDuplicateTimelineQuestion() {
+        let context = SmartCaptureContext(
+            rawInput: "I need to finish MOTI v2.1 in 15 days, help me plan it out",
+            currentDate: Date(timeIntervalSince1970: 1_801_267_200),
+            timezone: TimeZone(identifier: "America/Los_Angeles")!,
+            currentScreen: "QuickCapture",
+            timeSignals: [timeSignal()],
+            planningDepth: .structured
+        )
+
+        let prompt = SmartCapturePromptBuilder.userPrompt(for: context)
+        XCTAssertTrue(prompt.contains("Known time signals"))
+        XCTAssertTrue(prompt.contains("raw: \"in 15 days\""))
+        XCTAssertTrue(prompt.contains("timeline is NOT missing"))
+        XCTAssertTrue(prompt.contains("Do not ask for the timeline again"))
+    }
+
+    func test_ruleBasedPlanningFallbackDoesNotAskTimelineWhenTimeKnown() async throws {
+        let service = RuleBasedContextualCaptureService()
+        let context = SmartCaptureContext(
+            rawInput: "I need to finish MOTI v2.1 before June 25, help me plan it out",
+            currentDate: Date(timeIntervalSince1970: 1_801_267_200),
+            timezone: TimeZone(identifier: "America/Los_Angeles")!,
+            currentScreen: "QuickCapture",
+            timeSignals: [timeSignal(raw: "June 25")],
+            planningDepth: .structured
+        )
+
+        let decision = try await service.analyze(context)
+        XCTAssertEqual(decision.intentType, .createProjectPlan)
+        XCTAssertTrue(decision.needsClarification)
+        let question = try XCTUnwrap(decision.clarificationQuestion?.question.lowercased())
+        XCTAssertFalse(question.contains("timeline"))
+        XCTAssertFalse(question.contains("deadline"))
+        XCTAssertTrue(question.contains("deliverable") || question.contains("scope") || question.contains("include"))
+    }
+
+    func test_ruleBasedQuickQuestionAnswerContinuesIntoWorkspace() async throws {
+        let service = RuleBasedContextualCaptureService()
+        let question = ClarificationQuestion(
+            question: "What should the finished deliverable include?",
+            choices: [],
+            allowsFreeformAnswer: true
+        )
+        let context = SmartCaptureContext(
+            rawInput: "I need to finish MOTI v2.1 in 15 days, help me plan it out",
+            currentDate: Date(timeIntervalSince1970: 1_801_267_200),
+            timezone: TimeZone(identifier: "America/Los_Angeles")!,
+            currentScreen: "QuickCapture",
+            clarificationState: ClarificationState(
+                previousInput: "I need to finish MOTI v2.1 in 15 days, help me plan it out",
+                previousQuestion: question,
+                userAnswer: "A review-ready v2.1 build"
+            ),
+            timeSignals: [timeSignal()],
+            planningDepth: .structured
+        )
+
+        let decision = try await service.analyze(context)
+        XCTAssertFalse(decision.needsClarification)
+        XCTAssertNotNil(decision.proposedWorkspace)
+        XCTAssertEqual(decision.intentType, .createProjectPlan)
     }
 }
