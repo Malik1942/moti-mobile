@@ -29,6 +29,14 @@ struct QuickCaptureView: View {
     // MARK: Smart Capture state (LLM mode only)
     @State private var smartDecision: ContextualCaptureDecision?
     @State private var clarificationState: ClarificationState?
+    /// Stable snapshot of what the user first typed this capture session. Used
+    /// by refinement/clarification so the original intent survives even if the
+    /// live `input` field is later cleared or edited.
+    @State private var originalCaptureText = ""
+    /// Clarification questions answered this session. Capped at
+    /// `SmartCaptureContext.maxClarificationRounds`; drives the "stop asking,
+    /// proceed with assumptions" behavior.
+    @State private var clarificationRound = 0
     @State private var smartCaptureError: String?
     @State private var smartCaptureStatus: String?
 
@@ -448,8 +456,11 @@ struct QuickCaptureView: View {
 
         if isLLMMode {
             // A fresh submit starts a new Smart Capture round; drop any prior
-            // clarification chain.
+            // clarification chain and snapshot the original text so refinement
+            // can never lose it to a later edit of the live field.
             clarificationState = nil
+            clarificationRound = 0
+            originalCaptureText = text
             runSmartCapture(text: text)
         } else {
             runStandardCapture(text: text)
@@ -519,6 +530,7 @@ struct QuickCaptureView: View {
                 rawInput: text,
                 clarification: clarification,
                 planRefinement: planRefinement,
+                clarificationRound: clarificationRound,
                 planningDepth: effectivePlanningDepth
             )
             do {
@@ -564,11 +576,9 @@ struct QuickCaptureView: View {
         let trimmed = feedback.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        // Recover the original raw input. If we're already on a revision, the
-        // history's first entry was created from the first refinement round;
-        // otherwise use the live `input` field.
-        let originalInput = previousWorkspace.refinementHistory.first.map { _ in input }
-            ?? input.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Use the stable original-capture snapshot, never the live `input` field
+        // (which may have been cleared or edited while the preview was shown).
+        let originalInput = RefinementOriginalText.resolve(stored: originalCaptureText, liveInput: input)
 
         let refinement = PlanRefinementRequest(
             originalInput: originalInput,
@@ -600,8 +610,10 @@ struct QuickCaptureView: View {
         let trimmed = feedback.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        let original = (clarificationState?.previousInput ?? input)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let original = RefinementOriginalText.resolve(
+            stored: originalCaptureText.isEmpty ? (clarificationState?.previousInput ?? "") : originalCaptureText,
+            liveInput: input
+        )
         let combined = original.isEmpty
             ? trimmed
             : "\(original)\n\nFollow-up instruction: \(trimmed)"
@@ -617,8 +629,10 @@ struct QuickCaptureView: View {
     @MainActor
     private func answerClarification(_ answer: String, decision: ContextualCaptureDecision) {
         guard !isSubmitting else { return }
-        let originalInput = clarificationState?.previousInput
-            ?? input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let originalInput = RefinementOriginalText.resolve(
+            stored: originalCaptureText.isEmpty ? (clarificationState?.previousInput ?? "") : originalCaptureText,
+            liveInput: input
+        )
 
         guard let question = decision.clarificationQuestion else {
             // No question to continue from — treat the answer as fresh input.
@@ -626,6 +640,10 @@ struct QuickCaptureView: View {
             runSmartCapture(text: answer)
             return
         }
+
+        // Count this answered round (capped). Once the budget is spent, the
+        // agent stops asking and proceeds with assumptions instead of looping.
+        clarificationRound = min(clarificationRound + 1, SmartCaptureContext.maxClarificationRounds)
 
         let state = ClarificationState(
             previousInput: originalInput,
@@ -854,6 +872,8 @@ struct QuickCaptureView: View {
     private func resetSmartCapture() {
         smartDecision = nil
         clarificationState = nil
+        clarificationRound = 0
+        originalCaptureText = ""
         smartCaptureError = nil
         smartCaptureStatus = nil
     }
@@ -864,6 +884,7 @@ struct QuickCaptureView: View {
         rawInput: String,
         clarification: ClarificationState? = nil,
         planRefinement: PlanRefinementRequest? = nil,
+        clarificationRound: Int = 0,
         planningDepth: PlanningDepth = .none
     ) -> SmartCaptureContext {
         // Active project lightweight summaries (used in the projects list line).
@@ -990,6 +1011,7 @@ struct QuickCaptureView: View {
                 clarification: clarification,
                 planRefinement: planRefinement
             ),
+            clarificationRound: clarificationRound,
             planningDepth: planningDepth
         )
     }
