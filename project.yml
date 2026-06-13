@@ -7,7 +7,7 @@ settings:
     SWIFT_VERSION: "5.0"
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     MARKETING_VERSION: "1.1"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
 targets:
   Moti:
     type: application
