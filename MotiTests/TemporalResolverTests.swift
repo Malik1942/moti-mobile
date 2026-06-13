@@ -48,6 +48,22 @@ final class TemporalResolverTests: XCTestCase {
         XCTAssertEqual(r.resolvedDuration!, 5 * 86_400, accuracy: 1)
     }
 
+    func testRelativeDurationSpelledWeeks() {
+        let r = resolve("Finish the project in two weeks")
+        XCTAssertEqual(r.interpretation, .relativeDuration)
+        XCTAssertEqual(r.resolverPath, .deterministic)
+        XCTAssertGreaterThanOrEqual(r.confidence, 0.90)
+        XCTAssertEqual(r.resolvedDuration!, 14 * 86_400, accuracy: 1)
+    }
+
+    func testNamedMonthDeadline() {
+        let r = resolve("Finish MOTI before June 25")
+        XCTAssertEqual(r.interpretation, .calendarDate)
+        XCTAssertEqual(r.resolverPath, .deterministic)
+        XCTAssertGreaterThanOrEqual(r.confidence, 0.90)
+        assertDate(r.resolvedDate, month: 6, day: 25, year: 2026)
+    }
+
     func testRelativeDurationHours() {
         let r = resolve("Finish report after 3 hours")
         XCTAssertEqual(r.interpretation, .relativeDuration)

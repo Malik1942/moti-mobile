@@ -1,15 +1,14 @@
 import Foundation
 import SwiftData
 
-struct CompletionLogger {
-    let modelContext: ModelContext
-
-    func log(
+enum CompletionLogger {
+    static func log(
         taskId: UUID,
         eventType: CompletionEventType,
         previousStatus: WorkItemStatus?,
         newStatus: WorkItemStatus,
-        context: String? = nil
+        context: String? = nil,
+        in modelContext: ModelContext
     ) {
         let entry = CompletionLog(
             taskId: taskId,

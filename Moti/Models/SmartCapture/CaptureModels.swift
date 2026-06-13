@@ -816,6 +816,34 @@ struct TaskSummary: Codable, Equatable {
     }
 }
 
+/// Deterministic time information extracted before the LLM runs. Smart Capture
+/// treats these as known planning slots, so clarification should not ask for a
+/// timeline when a deadline/duration was already provided by the user.
+struct SmartCaptureTimeSignal: Codable, Equatable {
+    let rawText: String
+    let interpretation: TemporalInterpretation
+    let resolvedDate: Date?
+    let resolvedDuration: TimeInterval?
+    let confidence: Double
+    let resolverPath: ResolverPath
+
+    init(
+        rawText: String,
+        interpretation: TemporalInterpretation,
+        resolvedDate: Date? = nil,
+        resolvedDuration: TimeInterval? = nil,
+        confidence: Double,
+        resolverPath: ResolverPath
+    ) {
+        self.rawText = rawText
+        self.interpretation = interpretation
+        self.resolvedDate = resolvedDate
+        self.resolvedDuration = resolvedDuration
+        self.confidence = confidence
+        self.resolverPath = resolverPath
+    }
+}
+
 struct ProjectSummary: Codable, Equatable {
     let id: UUID
     let name: String
@@ -909,6 +937,7 @@ struct SmartCaptureContext: Codable, Equatable {
     // Flow state
     let clarificationState: ClarificationState?
     let planRefinement: PlanRefinementRequest?
+    let timeSignals: [SmartCaptureTimeSignal]
 
     // How much structure Stage 1 authorized for this capture. The LLM must not
     // exceed it: `.none`/`.lightweight` mean a single task (no plan, no
@@ -933,6 +962,7 @@ struct SmartCaptureContext: Codable, Equatable {
         skippedTasks: [TaskSummary] = [],
         clarificationState: ClarificationState? = nil,
         planRefinement: PlanRefinementRequest? = nil,
+        timeSignals: [SmartCaptureTimeSignal] = [],
         planningDepth: PlanningDepth = .none
     ) {
         self.rawInput = rawInput
@@ -951,6 +981,7 @@ struct SmartCaptureContext: Codable, Equatable {
         self.skippedTasks = skippedTasks
         self.clarificationState = clarificationState
         self.planRefinement = planRefinement
+        self.timeSignals = timeSignals
         self.planningDepth = planningDepth
     }
 }

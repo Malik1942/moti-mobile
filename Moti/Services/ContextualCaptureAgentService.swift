@@ -99,6 +99,36 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
         let input = context.rawInput
         let words = input.split(separator: " ").map(String.init)
         let lowered = input.lowercased()
+        let wantsPlanning = context.planningDepth == .structured
+            || context.planningDepth == .deep
+            || PlanningIntentDetector.detect(lowered) == .explicit
+            || context.planRefinement != nil
+        let hasKnownTimeline = context.timeSignals.contains {
+            $0.resolverPath != .noSignal
+            && $0.confidence >= 0.70
+            && ($0.resolvedDate != nil || $0.resolvedDuration != nil)
+        }
+
+        if let clarification = context.clarificationState {
+            let matchedProject = findProject(in: context, for: lowered)
+            return wantsPlanning || clarification.userAnswer.lowercased().contains("plan")
+                ? fallbackWorkspaceDecision(context: context, matchedProject: matchedProject)
+                : ContextualCaptureDecision(
+                    inputCompleteness: .actionableTask,
+                    intentType: .createTask,
+                    confidence: 0.72,
+                    inferredProjectName: matchedProject?.name,
+                    matchedProjectId: matchedProject?.id,
+                    isActionable: true,
+                    needsClarification: false,
+                    proposedTask: ProposedTask(
+                        title: "\(input) — \(clarification.userAnswer)",
+                        projectId: matchedProject?.id,
+                        timeExpression: context.timeSignals.first?.rawText,
+                        rationale: "Used the quick-question answer to continue capture."
+                    )
+                )
+        }
 
         // Short / vague input
         if words.count <= 2 {
@@ -118,6 +148,54 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
                 inputCompleteness: matchedProject != nil ? .projectSeed : .vagueTask,
                 intentType: .unknown,
                 confidence: matchedProject != nil ? 0.45 : 0.35,
+                inferredProjectName: matchedProject?.name,
+                matchedProjectId: matchedProject?.id,
+                isActionable: false,
+                needsClarification: true,
+                clarificationQuestion: question
+            )
+        }
+
+        // Planning takes precedence over timing. Otherwise explicit planning
+        // requests with "before June 25" or "in 15 days" degrade into proposed
+        // single tasks in fallback mode.
+        if wantsPlanning {
+            let matchedProject = findProject(in: context, for: lowered)
+            if hasKnownTimeline {
+                let question = ClarificationQuestion(
+                    question: "What should the finished deliverable include?",
+                    choices: [
+                        ClarificationChoice(label: "A shippable version", value: "a shippable version"),
+                        ClarificationChoice(label: "A review-ready draft", value: "a review-ready draft"),
+                        ClarificationChoice(label: "A focused milestone", value: "a focused milestone")
+                    ],
+                    allowsFreeformAnswer: true
+                )
+                return ContextualCaptureDecision(
+                    inputCompleteness: .projectSeed,
+                    intentType: .createProjectPlan,
+                    confidence: 0.68,
+                    inferredProjectName: matchedProject?.name,
+                    matchedProjectId: matchedProject?.id,
+                    isActionable: false,
+                    needsClarification: true,
+                    clarificationQuestion: question
+                )
+            }
+
+            let question = ClarificationQuestion(
+                question: "What is the goal and deadline?",
+                choices: [
+                    ClarificationChoice(label: "This week", value: "this week"),
+                    ClarificationChoice(label: "Next month", value: "next month"),
+                    ClarificationChoice(label: "Next quarter", value: "next quarter")
+                ],
+                allowsFreeformAnswer: true
+            )
+            return ContextualCaptureDecision(
+                inputCompleteness: .projectSeed,
+                intentType: .createProjectPlan,
+                confidence: 0.66,
                 inferredProjectName: matchedProject?.name,
                 matchedProjectId: matchedProject?.id,
                 isActionable: false,
@@ -160,7 +238,7 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
         if hasPlanningKeyword {
             let matchedProject = findProject(in: context, for: lowered)
             let question = ClarificationQuestion(
-                question: "What's the goal and timeline?",
+                question: hasKnownTimeline ? "What should the finished deliverable include?" : "What's the goal and timeline?",
                 choices: [
                     ClarificationChoice(label: "This week", value: "this week"),
                     ClarificationChoice(label: "Next month", value: "next month"),
@@ -207,6 +285,51 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
         context.activeProjects.first {
             lowered.contains($0.name.lowercased())
         }
+    }
+
+    private func fallbackWorkspaceDecision(
+        context: SmartCaptureContext,
+        matchedProject: ProjectSummary?
+    ) -> ContextualCaptureDecision {
+        let timeExpression = context.timeSignals.first?.rawText
+        let title = context.rawInput
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let task = PlannedTask(
+            title: "Define the next concrete milestone",
+            projectName: matchedProject?.name,
+            timeExpression: timeExpression
+        )
+        let phase = TaskPhase(
+            title: "Plan the work",
+            purpose: "Turn the capture into a concrete next milestone.",
+            phaseTimeExpression: timeExpression,
+            tasks: [task]
+        )
+        let target = PlanningTarget(
+            title: title.isEmpty ? "Plan project" : title,
+            dueTimeExpression: timeExpression,
+            sourceTextSpan: context.rawInput,
+            projectId: matchedProject?.id,
+            projectName: matchedProject?.name,
+            phases: [phase]
+        )
+        let workspace = PlanningWorkspace(
+            title: title.isEmpty ? "Project plan" : title,
+            summary: "Fallback planning preview based on the capture and quick-question answer.",
+            targets: [target],
+            assumptions: ["Generated locally because the full Smart Capture model was unavailable."]
+        )
+        return ContextualCaptureDecision(
+            inputCompleteness: .projectSeed,
+            intentType: .createProjectPlan,
+            confidence: 0.66,
+            inferredProjectName: matchedProject?.name,
+            matchedProjectId: matchedProject?.id,
+            isActionable: true,
+            needsClarification: false,
+            proposedWorkspace: workspace
+        )
     }
 }
 

@@ -30,6 +30,7 @@ struct QuickCaptureView: View {
     @State private var smartDecision: ContextualCaptureDecision?
     @State private var clarificationState: ClarificationState?
     @State private var smartCaptureError: String?
+    @State private var smartCaptureStatus: String?
 
     init(startWithVoice: Bool = false, initialText: String = "", selectedDetent: Binding<PresentationDetent>) {
         self.startWithVoice = startWithVoice
@@ -350,7 +351,7 @@ struct QuickCaptureView: View {
                 if isSubmitting {
                     HStack(spacing: 8) {
                         ProgressView()
-                        Text("Working on it…")
+                        Text(smartCaptureStatus ?? "Working on it…")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -480,19 +481,23 @@ struct QuickCaptureView: View {
     private func runSmartCapture(
         text: String,
         clarification: ClarificationState? = nil,
-        planRefinement: PlanRefinementRequest? = nil
+        planRefinement: PlanRefinementRequest? = nil,
+        forcedPlanningDepth: PlanningDepth? = nil
     ) {
         // Stage 1: cheap, deterministic decision — does this input actually need
         // the deep planning agent? Clear atomic tasks skip it entirely.
         let planning = PlanningClassifier.classify(rawInput: text, isRefinement: planRefinement != nil)
+        let isContinuation = clarification != nil || planRefinement != nil || forcedPlanningDepth != nil
+        let effectivePlanningDepth = maxPlanningDepth(planning.planningDepth, forcedPlanningDepth ?? .none)
         #if DEBUG
-        print("[Planning] \(planning.inputType.rawValue) depth=\(planning.planningDepth.rawValue) useLLM=\(planning.shouldUseLLM) plan=\(planning.shouldGeneratePlan) subtasks=\(planning.shouldCreateSubtasks) conf=\(planning.confidence) — \(planning.reason)")
+        print("[Planning] \(planning.inputType.rawValue) depth=\(effectivePlanningDepth.rawValue) useLLM=\(planning.shouldUseLLM || isContinuation) plan=\(planning.shouldGeneratePlan || forcedPlanningDepth != nil) subtasks=\(planning.shouldCreateSubtasks) conf=\(planning.confidence) — \(planning.reason)")
         #endif
 
-        guard planning.shouldUseLLM else {
+        guard planning.shouldUseLLM || isContinuation else {
             // Light path: a clear/atomic task. Create it directly through the
             // existing parser — single task, due date + project extracted, no
             // plan, no invented subtasks.
+            smartCaptureStatus = nil
             runStandardCapture(text: text)
             return
         }
@@ -500,13 +505,21 @@ struct QuickCaptureView: View {
         // Stage 2: deep contextual planning (plan / clarify / extract context).
         isSubmitting = true
         smartCaptureError = nil
+        smartCaptureStatus = smartStatus(
+            planningDepth: effectivePlanningDepth,
+            clarification: clarification,
+            planRefinement: planRefinement
+        )
         Task { @MainActor in
-            defer { isSubmitting = false }
+            defer {
+                isSubmitting = false
+                smartCaptureStatus = nil
+            }
             let context = buildSmartCaptureContext(
                 rawInput: text,
                 clarification: clarification,
                 planRefinement: planRefinement,
-                planningDepth: planning.planningDepth
+                planningDepth: effectivePlanningDepth
             )
             do {
                 // ContextualCaptureAgentService only returns a structured decision.
@@ -587,7 +600,8 @@ struct QuickCaptureView: View {
             : "\(original)\n\nFollow-up instruction: \(trimmed)"
 
         clarificationState = nil
-        runSmartCapture(text: combined)
+        let forcedDepth: PlanningDepth? = refinementShouldTriggerPlanning(trimmed) ? .structured : nil
+        runSmartCapture(text: combined, forcedPlanningDepth: forcedDepth)
     }
 
     /// Continues a clarification round: re-runs the agent with the prior question
@@ -834,6 +848,7 @@ struct QuickCaptureView: View {
         smartDecision = nil
         clarificationState = nil
         smartCaptureError = nil
+        smartCaptureStatus = nil
     }
 
     // MARK: - Smart Capture context construction
@@ -963,8 +978,85 @@ struct QuickCaptureView: View {
             skippedTasks: skippedSummaries,
             clarificationState: clarification,
             planRefinement: planRefinement,
+            timeSignals: resolvedTimeSignals(
+                rawInput: rawInput,
+                clarification: clarification,
+                planRefinement: planRefinement
+            ),
             planningDepth: planningDepth
         )
+    }
+
+    private func resolvedTimeSignals(
+        rawInput: String,
+        clarification: ClarificationState?,
+        planRefinement: PlanRefinementRequest?
+    ) -> [SmartCaptureTimeSignal] {
+        let text = [
+            rawInput,
+            clarification?.userAnswer,
+            planRefinement?.feedback
+        ]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty }
+            .joined(separator: "\n")
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let signals = TemporalResolver.resolve(input: text, calendar: calendar, now: .now)
+            .filter { $0.resolverPath != .noSignal }
+            .map {
+                SmartCaptureTimeSignal(
+                    rawText: $0.originalText,
+                    interpretation: $0.interpretation,
+                    resolvedDate: $0.resolvedDate,
+                    resolvedDuration: $0.resolvedDuration,
+                    confidence: $0.confidence,
+                    resolverPath: $0.resolverPath
+                )
+            }
+
+        #if DEBUG
+        for signal in signals {
+            let resolved = signal.resolvedDate.map { String(describing: $0) } ?? "nil"
+            print("[Planning Time] raw=\"\(signal.rawText)\" type=\(signal.interpretation.rawValue) resolved=\(resolved) confidence=\(signal.confidence) path=\(signal.resolverPath.rawValue)")
+        }
+        #endif
+
+        return signals
+    }
+
+    private func maxPlanningDepth(_ lhs: PlanningDepth, _ rhs: PlanningDepth) -> PlanningDepth {
+        func rank(_ depth: PlanningDepth) -> Int {
+            switch depth {
+            case .none: return 0
+            case .lightweight: return 1
+            case .structured: return 2
+            case .deep: return 3
+            }
+        }
+        return rank(rhs) > rank(lhs) ? rhs : lhs
+    }
+
+    private func smartStatus(
+        planningDepth: PlanningDepth,
+        clarification: ClarificationState?,
+        planRefinement: PlanRefinementRequest?
+    ) -> String {
+        if clarification != nil { return "Understanding your answer…" }
+        if planRefinement != nil { return "Updating planning context…" }
+        if planningDepth == .structured || planningDepth == .deep { return "Building your plan…" }
+        return "Thinking…"
+    }
+
+    private func refinementShouldTriggerPlanning(_ feedback: String) -> Bool {
+        let lower = feedback.lowercased()
+        if PlanningIntentDetector.detect(lower) == .explicit { return true }
+        let planningCommands = [
+            "less detailed", "more detailed", "focus on shipping", "focus on ship",
+            "focus this on", "make it smaller", "make it simpler", "make it clearer",
+            "turn this into a plan", "create a plan", "plan for me"
+        ]
+        return planningCommands.contains { lower.contains($0) }
     }
 
     // MARK: - Work item creation (shared pipeline)

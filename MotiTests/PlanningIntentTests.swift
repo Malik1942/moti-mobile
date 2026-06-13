@@ -40,6 +40,10 @@ final class PlanningIntentTests: XCTestCase {
             "help me structure this",
             "make a timeline for this",
             "break this down into steps",
+            "break it down",
+            "plan for me",
+            "I need to finish MOTI v2.1 in 15 days, help me plan it out",
+            "I need to finish MOTI v2.1 before June 25, help me planning it out",
             "map out my week",
             "come up with a plan for the launch",
             "build a roadmap for this"
@@ -96,6 +100,20 @@ final class PlanningIntentTests: XCTestCase {
         XCTAssertTrue(d.shouldGeneratePlan)
         XCTAssertTrue(d.shouldCreateSubtasks)
         XCTAssertTrue(d.planningDepth == .structured || d.planningDepth == .deep)
+    }
+
+    func test_classifier_projectWithRelativeDeadlineAndPlanAsk_generatesPlan() {
+        let d = PlanningClassifier.classify(rawInput: "I need to finish MOTI v2.1 in 15 days, help me plan it out")
+        XCTAssertEqual(d.inputType, .complexPlanning)
+        XCTAssertTrue(d.shouldUseLLM)
+        XCTAssertTrue(d.shouldGeneratePlan)
+        XCTAssertTrue(d.shouldCreateSubtasks)
+    }
+
+    func test_classifier_projectWithNamedDateAndPlanAsk_generatesPlan() {
+        let d = PlanningClassifier.classify(rawInput: "I need to finish MOTI v2.1 before June 25, help me plan it out")
+        XCTAssertEqual(d.inputType, .complexPlanning)
+        XCTAssertTrue(d.shouldGeneratePlan)
     }
 
     func test_classifier_projectScalePlanRequest_isDeep() {
