@@ -1,0 +1,398 @@
+//
+// IntelligenceAuditTests.swift
+//
+// Regression suite from the June 2026 intelligence/timeline QA audit.
+//
+// Two kinds of tests live here:
+//   1. Plain tests — lock in behavior that is currently correct so it can't
+//      silently regress (multi-date extraction, semicolon splitting, the
+//      dropped-target safety net, project matching, trajectory visibility).
+//   2. XCTExpectFailure tests — encode the PRODUCT-EXPECTED behavior for bugs
+//      confirmed by the audit. They pass today because the failure is
+//      expected; when the underlying bug is fixed the wrapper trips
+//      ("expected failure didn't occur") — delete the wrapper then, keeping
+//      the assertions as a permanent regression test.
+//
+
+import XCTest
+@testable import Moti
+
+final class IntelligenceAuditTests: XCTestCase {
+
+    // Friday, June 12, 2026, 10:00 local. A fixed anchor keeps weekday math
+    // deterministic ("next Friday", "this week") regardless of run date.
+    private var friday: Date {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 6; comps.day = 12; comps.hour = 10
+        return Calendar.current.date(from: comps)!
+    }
+
+    /// Wednesday, June 10, 2026 — two days before `friday`.
+    private var wednesday: Date {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 6; comps.day = 10; comps.hour = 10
+        return Calendar.current.date(from: comps)!
+    }
+
+    private func day(of date: Date?) -> Int? {
+        date.map { Calendar.current.component(.day, from: $0) }
+    }
+
+    // MARK: - Multi-date extraction (locks current-correct behavior)
+
+    func test_threeCommaSeparatedDeadlines_allThreeDatesExtracted() {
+        let input = "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
+        let results = TemporalResolver.resolve(input: input, now: friday)
+            .filter { $0.resolverPath != .noSignal }
+
+        XCTAssertEqual(results.count, 3, "every deadline in the sentence must be extracted, not just the first")
+        XCTAssertEqual(results.compactMap { day(of: $0.resolvedDate) }.sorted(), [18, 20, 25])
+        XCTAssertTrue(results.allSatisfy { $0.interpretation == .calendarDate })
+    }
+
+    func test_twoWeekdayDeadlinesInOneSentence_bothExtracted() {
+        let results = TemporalResolver.resolve(input: "finish by Friday and submit by Monday", now: friday)
+            .filter { $0.resolverPath != .noSignal }
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(Set(results.map(\.originalText)), ["friday", "monday"])
+    }
+
+    func test_namedMonthDateAndClockTime_bothSignalsSurvive() {
+        let results = TemporalResolver.resolve(input: "by June 30 at 5pm", now: friday)
+        XCTAssertTrue(results.contains { $0.interpretation == .calendarDate && day(of: $0.resolvedDate) == 30 })
+        XCTAssertTrue(results.contains { $0.interpretation == .clockTime })
+    }
+
+    // MARK: - Relative date handling
+
+    func test_spelledDuration_resolvesAtTemporalLayer() {
+        let results = TemporalResolver.resolve(input: "in two weeks", now: friday)
+        XCTAssertEqual(results.first?.interpretation, .relativeDuration)
+        XCTAssertEqual(results.first?.resolvedDuration, 14 * 86_400)
+    }
+
+    func test_nextFriday_fromWednesday_isStrictlyNextWeek_atTemporalLayer() {
+        let results = TemporalResolver.resolve(input: "TestFlight ready by next Friday", now: wednesday)
+        // Wed Jun 10 → "next Friday" must be Jun 19, not Jun 12 (this week's).
+        XCTAssertEqual(day(of: results.first?.resolvedDate), 19)
+    }
+
+    func test_KNOWNBUG_commitPath_nextFriday_disagreesWithTemporalLayer() {
+        XCTExpectFailure(
+            """
+            DateResolver (which assigns the final WorkItem.dueDate) resolves \
+            "by next Friday" to THIS week's Friday — a week earlier than \
+            TemporalResolver tells the LLM. resolveBeforeAfter ignores the \
+            "next" prefix. Fix DateResolver, then delete this wrapper.
+            """
+        ) {
+            let parse = DateResolver.resolveTemporal(in: "TestFlight ready by next Friday", now: wednesday)
+            XCTAssertEqual(day(of: parse.dueDate), 19, "commit-path date must match what the user was shown")
+        }
+    }
+
+    func test_KNOWNBUG_commitPath_cannotParseSpelledDurations() {
+        XCTExpectFailure(
+            """
+            "in two weeks" resolves at the prompt layer (TemporalResolver) but \
+            NOT at commit time (DateResolver), so the created task lands in \
+            review as "Missing time information". Port spelled-number support \
+            to DateResolver, then delete this wrapper.
+            """
+        ) {
+            let parse = DateResolver.resolveTemporal(in: "Finish the draft in two weeks", now: friday)
+            XCTAssertNotNil(parse.dueDate)
+        }
+    }
+
+    func test_KNOWNBUG_commitPath_cannotParseEndOfMonth() {
+        XCTExpectFailure(
+            """
+            "by the end of the month" produces no date in either temporal \
+            layer, so the task is created undated and flagged for review even \
+            when the user clearly stated the deadline. Add an end-of-month \
+            pattern, then delete this wrapper.
+            """
+        ) {
+            let parse = DateResolver.resolveTemporal(in: "App Store submission by the end of the month", now: friday)
+            XCTAssertNotNil(parse.dueDate)
+        }
+    }
+
+    func test_KNOWNBUG_temporalLayer_blindToThisWeekend() {
+        XCTExpectFailure(
+            """
+            DateResolver understands "this weekend" but TemporalResolver does \
+            not, so the LLM prompt never receives the time signal and may ask \
+            for a timeline the user already gave. Add a weekend pattern to \
+            DeterministicPreClassifier, then delete this wrapper.
+            """
+        ) {
+            let results = TemporalResolver.resolve(input: "Clean the garage this weekend", now: friday)
+            XCTAssertTrue(results.contains { $0.resolverPath != .noSignal })
+        }
+    }
+
+    // MARK: - Atomic task vs planning classification
+
+    func test_clearAtomicTasks_neverTriggerPlanning() {
+        let atomicInputs = [
+            "Buy coffee beans tomorrow",
+            "Email Andre my portfolio link tonight",
+            "Submit the final PDF by Friday"
+        ]
+        for input in atomicInputs {
+            let p = PlanningClassifier.classify(rawInput: input)
+            XCTAssertFalse(p.shouldGeneratePlan, "\(input) must stay a single task")
+            XCTAssertFalse(p.shouldCreateSubtasks, "\(input) must not be decomposed")
+        }
+    }
+
+    func test_emotionalPressureInput_doesNotTriggerHeavyPlanning() {
+        let p = PlanningClassifier.classify(rawInput: "I'm overwhelmed and need to finish this in 10 days")
+        XCTAssertFalse(p.shouldGeneratePlan)
+        XCTAssertFalse(p.shouldCreateSubtasks)
+    }
+
+    func test_multiDeadlineWeekdayList_routesToOneTaskPerDeadline() {
+        let input = "I have three things this week: finish design critique by Tuesday, revise prototype by Thursday, and submit the report on Sunday."
+        let p = PlanningClassifier.classify(rawInput: input)
+        XCTAssertEqual(p.inputType, .multiDeadlinePlanning)
+        XCTAssertTrue(p.shouldGeneratePlan)
+        XCTAssertFalse(p.shouldCreateSubtasks, "distinct deadlines are separate tasks, not decomposed plans")
+    }
+
+    func test_KNOWNBUG_everydayVerbs_misclassifiedAsUnclear() {
+        XCTExpectFailure(
+            """
+            CapturedClassifier.actionVerbs is a closed 30-word list. Everyday \
+            verbs (pay, clean, renew, book, cancel, pack, print...) are missing, \
+            so obvious tasks fall through to "unclear" and the user gets an \
+            unnecessary clarification question. Expand the verb list or use \
+            linguistic tagging, then delete this wrapper.
+            """
+        ) {
+            for input in [
+                "Pay rent by the end of the month",
+                "Clean the garage this weekend",
+                "Renew my passport before graduation"
+            ] {
+                let p = PlanningClassifier.classify(rawInput: input)
+                XCTAssertFalse(p.shouldAskForClarification, "\(input) is a clear task; no question needed")
+            }
+        }
+    }
+
+    func test_KNOWNBUG_projectKeywordOverridesMultiDeadlineRouting() {
+        XCTExpectFailure(
+            """
+            The project-scale keyword check (rule 3, fires on "capstone", \
+            "launch", "portfolio"...) runs BEFORE the multi-deadline check \
+            (rule 8), so a list of three dated deliverables that happens to \
+            mention "capstone" is routed to deep multi-phase planning with \
+            subtasks instead of one-task-per-deadline. Reorder the rules (or \
+            make rule 8 outrank scope keywords when >= 2 anchors exist), then \
+            delete this wrapper.
+            """
+        ) {
+            let input = "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
+            let p = PlanningClassifier.classify(rawInput: input)
+            XCTAssertEqual(p.inputType, .multiDeadlinePlanning)
+            XCTAssertFalse(p.shouldCreateSubtasks)
+        }
+    }
+
+    // MARK: - Multi-deadline creation (non-LLM commit path)
+
+    func test_semicolonSeparatedDeadlines_createSeparateDatedTasks() async throws {
+        let service = RuleBasedTaskUnderstandingService()
+        let items = try await service.parseMany(
+            "finish design critique by Tuesday; revise prototype by Thursday; submit the report on Sunday"
+        )
+        XCTAssertEqual(items.count, 3)
+        XCTAssertEqual(items.compactMap(\.dueDate).count, 3, "each task keeps its own deadline")
+        XCTAssertEqual(Set(items.compactMap { day(of: $0.dueDate) }).count, 3, "deadlines must not be merged")
+    }
+
+    func test_KNOWNBUG_commaSeparatedDeadlines_collapseIntoOneTask() async throws {
+        try await XCTExpectFailureAsync(
+            """
+            CaptureSegmenter only splits on newlines and semicolons. A natural \
+            comma-separated multi-deadline sentence parsed through the non-LLM \
+            path collapses into ONE task keeping only the first "by" date — \
+            June 18 and June 20 are silently dropped. Teach the segmenter \
+            comma/and-boundary splitting when multiple date anchors exist, \
+            then delete this wrapper.
+            """
+        ) {
+            let service = RuleBasedTaskUnderstandingService()
+            let items = try await service.parseMany(
+                "I need to finish my portfolio by June 25, apply to 5 jobs by June 18, and prepare my capstone presentation by June 20."
+            )
+            XCTAssertEqual(items.count, 3, "three deliverables with three deadlines must become three tasks")
+        }
+    }
+
+    // MARK: - Refinement: dropped-target safety net (locks current-correct behavior)
+
+    private func makeDecision(
+        extracted: [ExtractedPlanningTarget],
+        workspaceTargets: [PlanningTarget]?
+    ) -> ContextualCaptureDecision {
+        ContextualCaptureDecision(
+            inputCompleteness: .projectSeed,
+            intentType: .createProjectPlan,
+            confidence: 0.9,
+            isActionable: true,
+            needsClarification: false,
+            proposedWorkspace: workspaceTargets.map {
+                PlanningWorkspace(title: "Plan", targets: $0)
+            },
+            extractedPlanningTargets: extracted
+        )
+    }
+
+    func test_missingExtractedTargets_detectsSilentlyDroppedTarget() {
+        let extracted = [
+            ExtractedPlanningTarget(title: "Portfolio", dueTimeExpression: "June 25", sourceTextSpan: "finish my portfolio by June 25"),
+            ExtractedPlanningTarget(title: "Job applications", dueTimeExpression: "June 18", sourceTextSpan: "apply to 5 jobs by June 18"),
+            ExtractedPlanningTarget(title: "Capstone presentation", dueTimeExpression: "June 20", sourceTextSpan: "capstone presentation by June 20")
+        ]
+        // Workspace only planned two of the three.
+        let planned = [
+            PlanningTarget(title: "Portfolio", dueTimeExpression: "June 25", sourceTextSpan: "finish my portfolio by June 25"),
+            PlanningTarget(title: "Capstone presentation", dueTimeExpression: "June 20", sourceTextSpan: "capstone presentation by June 20")
+        ]
+        let missing = makeDecision(extracted: extracted, workspaceTargets: planned).missingExtractedTargets()
+        XCTAssertEqual(missing.map(\.title), ["Job applications"])
+    }
+
+    func test_missingExtractedTargets_emptyWhenWorkspaceCoversAll() {
+        let extracted = [
+            ExtractedPlanningTarget(title: "Report", sourceTextSpan: "report due Friday"),
+            ExtractedPlanningTarget(title: "Slides", sourceTextSpan: "slides due Monday")
+        ]
+        let planned = [
+            PlanningTarget(title: "Report", sourceTextSpan: "report due Friday"),
+            PlanningTarget(title: "Slides", sourceTextSpan: "slides due Monday")
+        ]
+        XCTAssertTrue(makeDecision(extracted: extracted, workspaceTargets: planned).missingExtractedTargets().isEmpty)
+    }
+
+    func test_missingExtractedTargets_everythingMissingWhenNoWorkspace() {
+        let extracted = [ExtractedPlanningTarget(title: "Report")]
+        let missing = makeDecision(extracted: extracted, workspaceTargets: nil).missingExtractedTargets()
+        XCTAssertEqual(missing.count, 1)
+    }
+
+    func test_refinementHistory_carriesForwardAcrossRevisions() {
+        let history = [
+            PlanRefinementHistoryItem(feedback: "split the report", summaryOfChange: "Split report into two targets"),
+            PlanRefinementHistoryItem(feedback: "less intense", summaryOfChange: "Reduced to 2 tasks per target")
+        ]
+        let workspace = PlanningWorkspace(title: "Plan", targets: [], refinementHistory: history)
+        XCTAssertEqual(workspace.revisionNumber, 2)
+        XCTAssertEqual(workspace.refinementHistory.map(\.feedback), ["split the report", "less intense"])
+    }
+
+    // MARK: - Project context selection
+
+    func test_projectMatcher_prefersExactNameThenFuzzy() {
+        let projects = [Project(name: "Q4 Job Hunt", colorToken: "blue"),
+                        Project(name: "Moti", colorToken: "red")]
+
+        // Exact, case-insensitive
+        XCTAssertEqual(
+            ProjectMatcher.match(projectHint: "moti", taskTitle: "Fix widget", rawInput: "fix widget", existingProjects: projects)?.name,
+            "Moti"
+        )
+        // Token overlap: hint "Job Search" → project "Q4 Job Hunt"
+        XCTAssertEqual(
+            ProjectMatcher.match(projectHint: "Job Search", taskTitle: "Apply to 5 jobs", rawInput: "apply to 5 jobs", existingProjects: projects)?.name,
+            "Q4 Job Hunt"
+        )
+        // No match → nil (caller preserves the hint as a suggestion)
+        XCTAssertNil(
+            ProjectMatcher.match(projectHint: "Garden", taskTitle: "Water plants", rawInput: "water plants", existingProjects: projects)
+        )
+    }
+
+    // MARK: - Trajectory: overdue & completed visibility
+
+    private func auditItem(
+        _ title: String, project: String?, created: Date, updated: Date? = nil,
+        due: Date? = nil, status: WorkItemStatus = .active
+    ) -> WorkItem {
+        WorkItem(
+            rawInput: title, title: title, projectName: project,
+            createdAt: created, updatedAt: updated ?? created,
+            dueDate: due, workingStartDate: nil, workingEndDate: nil,
+            suggestedSessions: [], estimatedEffort: nil, parserConfidence: 1,
+            needsReview: false, reviewReason: nil, status: status, parserExplanation: ""
+        )
+    }
+
+    func test_completedAndOverdueItems_remainVisibleInStrandTimeline() {
+        let now = friday
+        let dayInterval: TimeInterval = 86_400
+        let project = Project(name: "Capstone", colorToken: "blue")
+        let completedLongAgo = auditItem(
+            "Outline", project: "Capstone",
+            created: now.addingTimeInterval(-30 * dayInterval),
+            updated: now.addingTimeInterval(-21 * dayInterval),
+            due: now.addingTimeInterval(-22 * dayInterval),
+            status: .done
+        )
+        let overdueOpen = auditItem(
+            "Final draft", project: "Capstone",
+            created: now.addingTimeInterval(-10 * dayInterval),
+            due: now.addingTimeInterval(-2 * dayInterval),
+            status: .active
+        )
+
+        let builder = StrandTimelineBuilder(
+            projects: [project],
+            workItems: [completedLongAgo, overdueOpen],
+            completionLogs: [],
+            now: now
+        )
+        let strands = builder.build()
+        XCTAssertEqual(strands.count, 1)
+
+        let events = builder.deriveEvents(for: [completedLongAgo, overdueOpen])
+        XCTAssertTrue(
+            events.contains { $0.kind == .completed },
+            "a finished task must stay in the strand's past as evidence"
+        )
+
+        // The overdue open item must read as needing attention, not vanish.
+        let strand = strands[0]
+        XCTAssertEqual(strand.trajectory.outcome, .slipping,
+                       "an open item past its deadline reads as slipping on the trajectory")
+    }
+
+    func test_timelineScope_keepsCompletedAndOverdueItems() {
+        let now = friday
+        let done = auditItem("Done thing", project: nil, created: now, due: now.addingTimeInterval(-86_400), status: .done)
+        let overdue = auditItem("Late thing", project: nil, created: now, due: now.addingTimeInterval(-86_400), status: .active)
+        let archived = auditItem("Archived thing", project: nil, created: now, status: .archived)
+
+        let visible = WorkItemScope.timeline([done, overdue, archived], now: now)
+        XCTAssertTrue(visible.contains { $0.title == "Done thing" }, "completed work stays visible as history")
+        XCTAssertTrue(visible.contains { $0.title == "Late thing" }, "overdue work stays visible")
+        XCTAssertFalse(visible.contains { $0.title == "Archived thing" })
+    }
+}
+
+// MARK: - Async XCTExpectFailure helper
+
+/// XCTExpectFailure has no async-throws overload; this wraps one manually.
+private func XCTExpectFailureAsync(
+    _ failureReason: String,
+    _ body: () async throws -> Void
+) async rethrows {
+    let options = XCTExpectedFailure.Options()
+    options.isStrict = true
+    XCTExpectFailure(failureReason, options: options)
+    try await body()
+}
