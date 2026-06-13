@@ -526,6 +526,13 @@ struct QuickCaptureView: View {
                 // No SwiftData write happens here — that waits for user confirmation.
                 let decision = try await captureAgent.analyze(context)
                 smartDecision = decision
+                #if DEBUG
+                // Fallback honesty: surface which understanding path actually
+                // produced this decision (full LLM vs on-device vs deterministic
+                // fallback vs clarification), so a silent degradation is visible
+                // to developers. Internal-only for now — no user-facing UI.
+                print("[Capture source] \(decision.intelligenceSource.rawValue) — conf=\(decision.confidence) needsClarification=\(decision.needsClarification)")
+                #endif
                 // Airy "understood" when intent was interpreted; suspended
                 // "ambiguous" tone when the agent needs to ask a question.
                 if decision.needsClarification || decision.clarificationQuestion != nil {

@@ -26,12 +26,15 @@ enum DeterministicPreClassifier {
         pool += isoDateCandidates(in: text, calendar: calendar, now: now)
         pool += relativeDurationCandidates(in: text, now: now)
         pool += namedMonthDateCandidates(in: text, calendar: calendar, now: now)
+        pool += monthBoundaryCandidates(in: text, calendar: calendar, now: now)
+        pool += nextMonthCandidates(in: text, calendar: calendar, now: now)
         pool += clockTimeCandidates(in: text)
         pool += slashNotationCandidates(in: text, calendar: calendar, now: now)
         pool += dotNotationCandidates(in: text, calendar: calendar, now: now)
         pool += weekdayNameCandidates(in: text, calendar: calendar, now: now)
         pool += dayKeywordCandidates(in: text, calendar: calendar, now: now)
         pool += weekReferenceCandidates(in: text, calendar: calendar, now: now)
+        pool += weekendCandidates(in: text, calendar: calendar, now: now)
 
         // Sort by start position; earlier-starting match wins on overlap.
         let sorted = pool.sorted { $0.nsRange.location < $1.nsRange.location }
@@ -126,6 +129,56 @@ enum DeterministicPreClassifier {
             else { return nil }
             let r = TemporalResolution(originalText: substring(match, in: text),
                                        interpretation: .calendarDate, confidence: 0.93,
+                                       resolvedDate: date, resolvedDuration: nil,
+                                       resolvedClockTime: nil, formatAssumption: nil,
+                                       alternativeCandidates: [], resolverPath: .deterministic)
+            return Candidate(resolution: r, nsRange: match.range)
+        }
+    }
+
+    // MARK: - Pattern: month boundary ("by the end of the month", "end of June")
+
+    private static func monthBoundaryCandidates(in text: String, calendar: Calendar, now: Date) -> [Candidate] {
+        let months = monthNumberByName.keys
+            .sorted { $0.count > $1.count }
+            .map(NSRegularExpression.escapedPattern(for:))
+            .joined(separator: "|")
+        let pattern = #"\b(?:the\s+)?end\s+of\s+(?:the\s+month|this\s+month|next\s+month|month|"# + months + #")\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
+        return regex.matches(in: text, range: fullRange(text)).compactMap { match in
+            guard let range = Range(match.range, in: text) else { return nil }
+            let phrase = String(text[range]).lowercased()
+            let date: Date?
+            if phrase.contains("next month") {
+                date = endOfMonth(byAdding: 1, calendar: calendar, now: now)
+            } else if phrase.hasSuffix("month") {
+                date = endOfMonth(byAdding: 0, calendar: calendar, now: now)
+            } else if let month = monthNumberByName.first(where: { phrase.hasSuffix($0.key) })?.value {
+                date = endOfNamedMonth(month, calendar: calendar, now: now)
+            } else {
+                date = nil
+            }
+            guard let resolved = date else { return nil }
+            let r = TemporalResolution(originalText: substring(match, in: text),
+                                       interpretation: .calendarDate, confidence: 0.92,
+                                       resolvedDate: resolved, resolvedDuration: nil,
+                                       resolvedClockTime: nil, formatAssumption: nil,
+                                       alternativeCandidates: [], resolverPath: .deterministic)
+            return Candidate(resolution: r, nsRange: match.range)
+        }
+    }
+
+    // MARK: - Pattern: bare "next month" (deadline horizon → end of that month)
+
+    private static func nextMonthCandidates(in text: String, calendar: Calendar, now: Date) -> [Candidate] {
+        let pattern = #"\bnext\s+month\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
+        return regex.matches(in: text, range: fullRange(text)).compactMap { match in
+            guard let date = endOfMonth(byAdding: 1, calendar: calendar, now: now) else { return nil }
+            // Mirrors "next week" semantics: a bare month reference reads as a
+            // deadline at the end of that month, not a specific day inside it.
+            let r = TemporalResolution(originalText: substring(match, in: text),
+                                       interpretation: .calendarDate, confidence: 0.88,
                                        resolvedDate: date, resolvedDuration: nil,
                                        resolvedClockTime: nil, formatAssumption: nil,
                                        alternativeCandidates: [], resolverPath: .deterministic)
@@ -330,11 +383,48 @@ enum DeterministicPreClassifier {
                 date = calendar.date(byAdding: .day, value: 6, to: weekStart)
                     .map { endOfDay($0, calendar: calendar) } ?? monday
             } else {
-                date = nextWeekday(6, from: now, calendar: calendar) // Friday
+                // "this week" → Friday of the CURRENT week. On Friday that is
+                // today (never a jump to next week); on the weekend the work
+                // week is effectively over, so resolve to today.
+                let current = calendar.component(.weekday, from: now)
+                if current == 7 {
+                    date = endOfDay(now, calendar: calendar)
+                } else {
+                    let offset = (6 - current + 7) % 7
+                    date = endOfDay(calendar.date(byAdding: .day, value: offset, to: now) ?? now, calendar: calendar)
+                }
             }
             let r = TemporalResolution(originalText: substring(match, in: text),
                                        interpretation: .calendarDate, confidence: 0.90,
                                        resolvedDate: date, resolvedDuration: nil,
+                                       resolvedClockTime: nil, formatAssumption: nil,
+                                       alternativeCandidates: [], resolverPath: .deterministic)
+            return Candidate(resolution: r, nsRange: match.range)
+        }
+    }
+
+    // MARK: - Pattern: weekend ("this weekend", "over the weekend")
+
+    private static func weekendCandidates(in text: String, calendar: Calendar, now: Date) -> [Candidate] {
+        let pattern = #"\b(?:this\s+weekend|over\s+the\s+weekend)\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { return [] }
+        return regex.matches(in: text, range: fullRange(text)).compactMap { match in
+            // Resolve to the END of the current-or-upcoming weekend (Sunday,
+            // end of day) — deadline semantics, matching DateResolver's
+            // working-range end. Mid-weekend, "this weekend" is the one we're in.
+            let current = calendar.component(.weekday, from: now)
+            let sunday: Date
+            if current == 1 {
+                sunday = now
+            } else {
+                let satOffset = (7 - current + 7) % 7 // 0 when today is Saturday
+                let saturday = calendar.date(byAdding: .day, value: satOffset, to: now) ?? now
+                sunday = calendar.date(byAdding: .day, value: 1, to: saturday) ?? saturday
+            }
+            let r = TemporalResolution(originalText: substring(match, in: text),
+                                       interpretation: .calendarDate, confidence: 0.90,
+                                       resolvedDate: endOfDay(sunday, calendar: calendar),
+                                       resolvedDuration: nil,
                                        resolvedClockTime: nil, formatAssumption: nil,
                                        alternativeCandidates: [], resolverPath: .deterministic)
             return Candidate(resolution: r, nsRange: match.range)
@@ -398,6 +488,33 @@ enum DeterministicPreClassifier {
 
     private static func endOfDay(_ date: Date, calendar: Calendar) -> Date {
         calendar.date(bySettingHour: 23, minute: 59, second: 0, of: date) ?? date
+    }
+
+    /// End-of-day on the last day of the month `offset` months from now.
+    private static func endOfMonth(byAdding offset: Int, calendar: Calendar, now: Date) -> Date? {
+        guard let base = calendar.date(byAdding: .month, value: offset, to: now),
+              let interval = calendar.dateInterval(of: .month, for: base),
+              let lastDay = calendar.date(byAdding: .day, value: -1, to: interval.end)
+        else { return nil }
+        return endOfDay(lastDay, calendar: calendar)
+    }
+
+    /// End-of-day on the last day of the named month — this year if that day
+    /// hasn't passed, otherwise next year (same future bias as `futureDate`).
+    private static func endOfNamedMonth(_ month: Int, calendar: Calendar, now: Date) -> Date? {
+        let year = calendar.component(.year, from: now)
+        func lastDay(ofYear y: Int) -> Date? {
+            guard let first = calendar.date(from: DateComponents(year: y, month: month, day: 1)),
+                  let interval = calendar.dateInterval(of: .month, for: first),
+                  let last = calendar.date(byAdding: .day, value: -1, to: interval.end)
+            else { return nil }
+            return last
+        }
+        guard let thisYear = lastDay(ofYear: year) else { return nil }
+        let resolved = calendar.startOfDay(for: thisYear) < calendar.startOfDay(for: now)
+            ? lastDay(ofYear: year + 1) ?? thisYear
+            : thisYear
+        return endOfDay(resolved, calendar: calendar)
     }
 
     private static func nextWeekday(_ weekday: Int, from now: Date, calendar: Calendar) -> Date {

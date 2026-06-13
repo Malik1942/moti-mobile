@@ -63,26 +63,16 @@ enum PlanningClassifier {
             )
         }
 
-        // 3. Project-scale intent — clearly too large to be one task even without
-        //    an explicit ask. Keys off scope wording, never sentence length.
-        if projectScale {
-            return PlanningDecision(
-                inputType: .complexPlanning,
-                planningDepth: .deep,
-                shouldUseLLM: true, shouldGeneratePlan: true, shouldCreateSubtasks: true,
-                reason: "Captured intent is project-scale; a multi-phase plan fits.",
-                confidence: 0.7
-            )
-        }
-
         let hasVerb = CapturedClassifier.hasActionVerb(trimmed)
         let isVague = CapturedClassifier.isVeryVague(trimmed)
-        let deadlineCount = deadlineAnchorCount(in: lower)
+        let deadlineCount = TemporalAnchors.count(in: lower)
 
         // 4. Recurring behaviour / habit ("every day", "daily", "build a habit").
         //    One lightweight recurring task with cadence + metadata — never
         //    decomposed into procedural steps. The LLM runs only to extract the
-        //    cadence/duration/project, not to plan.
+        //    cadence/duration/project, not to plan. Checked before the
+        //    multi-deadline rule: "gym every monday and thursday" mentions two
+        //    weekdays but is one recurring habit, not two deadline tracks.
         if containsRecurrenceKeyword(lower) && !isVague {
             return PlanningDecision(
                 inputType: .recurringTask,
@@ -94,6 +84,8 @@ enum PlanningClassifier {
         }
 
         // 5. Project note / framing — knowledge about a project, not a task.
+        //    Stays ahead of multi-deadline: "note that the report is due Friday
+        //    and the demo Tuesday" is context, not two new tasks.
         if containsNoteKeyword(lower) {
             return PlanningDecision(
                 inputType: .projectNote,
@@ -104,7 +96,9 @@ enum PlanningClassifier {
             )
         }
 
-        // 6. Status update on existing work.
+        // 6. Status update on existing work. Past-tense keywords, so future
+        //    multi-deadline inputs never land here; kept ahead of rule 7 so a
+        //    report about two finished items doesn't spawn two new tasks.
         if containsStatusKeyword(lower) {
             return PlanningDecision(
                 inputType: .statusUpdate,
@@ -115,20 +109,14 @@ enum PlanningClassifier {
             )
         }
 
-        // 7. Reminder.
-        if lower.contains("remind me") || lower.hasPrefix("reminder") {
-            return PlanningDecision(
-                inputType: .reminder,
-                planningDepth: .none,
-                shouldUseLLM: false, shouldGeneratePlan: false,
-                reason: "Input is a reminder.",
-                confidence: 0.8
-            )
-        }
-
-        // 8. Multiple deadlines → one top-level task per deadline. These are
+        // 7. Multiple deadlines → one top-level task per deadline. These are
         //    distinct items, not subtasks, so allow several tracks but forbid
-        //    procedural decomposition of each.
+        //    procedural decomposition of each. Deliberately checked BEFORE
+        //    project-scale wording and the reminder rule: several explicit
+        //    date anchors are stronger evidence than a scope keyword ("finish
+        //    my capstone by June 20" inside a three-deadline list is one of
+        //    three tracks, not a deep plan), and "remind me to X by Friday and
+        //    Y by Monday" is two dated items, not one reminder.
         if deadlineCount >= 2 {
             return PlanningDecision(
                 inputType: .multiDeadlinePlanning,
@@ -139,7 +127,31 @@ enum PlanningClassifier {
             )
         }
 
-        // 9. Multiple distinct deliverables (lines / bullets / semicolons) → one
+        // 8. Project-scale intent with at most one deadline — clearly too large
+        //    to be one task even without an explicit ask. (With two or more
+        //    deadlines rule 7 already produced one track per deadline.)
+        if projectScale {
+            return PlanningDecision(
+                inputType: .complexPlanning,
+                planningDepth: .deep,
+                shouldUseLLM: true, shouldGeneratePlan: true, shouldCreateSubtasks: true,
+                reason: "Captured intent is project-scale; a multi-phase plan fits.",
+                confidence: 0.7
+            )
+        }
+
+        // 9. Reminder (single-dated; multi-deadline reminders split in rule 7).
+        if lower.contains("remind me") || lower.hasPrefix("reminder") {
+            return PlanningDecision(
+                inputType: .reminder,
+                planningDepth: .none,
+                shouldUseLLM: false, shouldGeneratePlan: false,
+                reason: "Input is a reminder.",
+                confidence: 0.8
+            )
+        }
+
+        // 10. Multiple distinct deliverables (lines / bullets / semicolons) → one
         //    top-level task each, again without inventing subtasks.
         if CaptureSegmenter.segments(from: trimmed).count >= 2 {
             return PlanningDecision(
@@ -151,7 +163,7 @@ enum PlanningClassifier {
             )
         }
 
-        // 10. Too vague to act on → ask one clarifying question (LLM is good at this).
+        // 11. Too vague to act on → ask one clarifying question (LLM is good at this).
         if (wordCount <= 2 && !hasVerb && deadlineCount == 0) || (isVague && !hasVerb) {
             return PlanningDecision(
                 inputType: .unclear,
@@ -162,7 +174,7 @@ enum PlanningClassifier {
             )
         }
 
-        // 11. Atomic / simple task — the anti-overplanning core. Create directly,
+        // 12. Atomic / simple task — the anti-overplanning core. Create directly,
         //     regardless of length: a long single-clause sentence is still one
         //     task. No subtasks, no plan.
         if hasVerb && deadlineCount <= 1 {
@@ -178,7 +190,7 @@ enum PlanningClassifier {
             )
         }
 
-        // 12. A bare deadline with no real action.
+        // 13. A bare deadline with no real action.
         if !hasVerb && deadlineCount == 1 {
             return PlanningDecision(
                 inputType: .deadlineOnly,
@@ -189,7 +201,7 @@ enum PlanningClassifier {
             )
         }
 
-        // 13. Nothing matched confidently → let the LLM ask. Never auto-plan.
+        // 14. Nothing matched confidently → let the LLM ask. Never auto-plan.
         return PlanningDecision(
             inputType: .unclear,
             planningDepth: .none,
@@ -250,24 +262,4 @@ enum PlanningClassifier {
         return keywords.contains { lower.contains($0) }
     }
 
-    // MARK: - Deadline anchors
-
-    /// Counts distinct date anchors (day names, near-term relatives, numeric
-    /// dates). Deliberately conservative — markers like "by"/"due" are NOT
-    /// counted, so "submit by Friday" reads as one deadline, not two. Under-
-    /// counting is the safe direction: it favors the light path over planning.
-    private static func deadlineAnchorCount(in lower: String) -> Int {
-        let dayNames = "monday|tuesday|wednesday|thursday|friday|saturday|sunday"
-        let relatives = "today|tonight|tomorrow|next week|next month"
-        let numericDate = #"\b\d{1,2}[./]\d{1,2}\b"#
-        let relativeDuration = #"\b(?:in|after)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\s+(?:days?|weeks?|hours?|minutes?)\b"#
-        let monthNames = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
-        let namedMonthDate = #"\b(?:"# + monthNames + #")\.?\s+\d{1,2}(?:st|nd|rd|th)?\b"#
-        let pattern = #"\b(?:"# + dayNames + "|" + relatives + #")\b|"# + numericDate + "|" + relativeDuration + "|" + namedMonthDate
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
-            return 0
-        }
-        let range = NSRange(lower.startIndex..., in: lower)
-        return regex.numberOfMatches(in: lower, range: range)
-    }
 }

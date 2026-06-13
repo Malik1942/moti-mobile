@@ -95,7 +95,14 @@ struct DynamicContextualCaptureService: ContextualCaptureAgentService {
 
 struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
 
+    /// The leaf of the fallback chain. Every result is stamped `.deterministic`
+    /// (or `.clarificationNeeded` when it's asking the user) so callers can tell
+    /// a rule-based result apart from a model-backed one — it never claims AI.
     func analyze(_ context: SmartCaptureContext) async throws -> ContextualCaptureDecision {
+        evaluate(context).stamped(provenance: .deterministic)
+    }
+
+    private func evaluate(_ context: SmartCaptureContext) -> ContextualCaptureDecision {
         let input = context.rawInput
         let words = input.split(separator: " ").map(String.init)
         let lowered = input.lowercased()
@@ -291,35 +298,60 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
         context: SmartCaptureContext,
         matchedProject: ProjectSummary?
     ) -> ContextualCaptureDecision {
-        let timeExpression = context.timeSignals.first?.rawText
-        let title = context.rawInput
+        let raw = context.rawInput
             .replacingOccurrences(of: "\n", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let task = PlannedTask(
-            title: "Define the next concrete milestone",
-            projectName: matchedProject?.name,
-            timeExpression: timeExpression
-        )
-        let phase = TaskPhase(
-            title: "Plan the work",
-            purpose: "Turn the capture into a concrete next milestone.",
-            phaseTimeExpression: timeExpression,
-            tasks: [task]
-        )
-        let target = PlanningTarget(
-            title: title.isEmpty ? "Plan project" : title,
-            dueTimeExpression: timeExpression,
-            sourceTextSpan: context.rawInput,
-            projectId: matchedProject?.id,
-            projectName: matchedProject?.name,
-            phases: [phase]
-        )
-        let workspace = PlanningWorkspace(
-            title: title.isEmpty ? "Project plan" : title,
-            summary: "Fallback planning preview based on the capture and quick-question answer.",
-            targets: [target],
-            assumptions: ["Generated locally because the full Smart Capture model was unavailable."]
-        )
+
+        // Preserve as much structure as the deterministic layer can recover:
+        // when the capture lists several dated deliverables, segment it (the
+        // same comma/"and" splitter the rule-based parser uses) into one target
+        // per deliverable, each keeping ITS OWN deadline — instead of collapsing
+        // everything into one generic milestone. Honest provenance is stamped
+        // `.deterministic` by `analyze`, so this richer plan never poses as AI.
+        let clauses = CaptureSegmenter.segments(from: raw)
+        let targets: [PlanningTarget] = clauses.count > 1
+            ? clauses.compactMap { makeFallbackTarget(from: $0, matchedProject: matchedProject) }
+            : []
+
+        let workspace: PlanningWorkspace
+        if targets.count > 1 {
+            workspace = PlanningWorkspace(
+                title: raw.isEmpty ? "Project plan" : raw,
+                summary: "Drafted on-device, one item per deadline you mentioned.",
+                targets: targets,
+                assumptions: ["Drafted on-device from the dates in your note — refine anytime."]
+            )
+        } else {
+            // Single deliverable (or nothing parseable): keep the original
+            // lightweight single-target shape, still carrying the time signal.
+            let timeExpression = context.timeSignals.first?.rawText
+            let task = PlannedTask(
+                title: "Define the next concrete milestone",
+                projectName: matchedProject?.name,
+                timeExpression: timeExpression
+            )
+            let phase = TaskPhase(
+                title: "Plan the work",
+                purpose: "Turn the capture into a concrete next milestone.",
+                phaseTimeExpression: timeExpression,
+                tasks: [task]
+            )
+            let target = PlanningTarget(
+                title: raw.isEmpty ? "Plan project" : raw,
+                dueTimeExpression: timeExpression,
+                sourceTextSpan: context.rawInput,
+                projectId: matchedProject?.id,
+                projectName: matchedProject?.name,
+                phases: [phase]
+            )
+            workspace = PlanningWorkspace(
+                title: raw.isEmpty ? "Project plan" : raw,
+                summary: "Drafted on-device from your note and quick answer.",
+                targets: [target],
+                assumptions: ["Drafted on-device from your note — refine anytime."]
+            )
+        }
+
         return ContextualCaptureDecision(
             inputCompleteness: .projectSeed,
             intentType: .createProjectPlan,
@@ -329,6 +361,42 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
             isActionable: true,
             needsClarification: false,
             proposedWorkspace: workspace
+        )
+    }
+
+    /// Builds one planning target from a single deliverable clause, preserving
+    /// its own deadline expression. Returns nil for an empty clause.
+    private func makeFallbackTarget(
+        from clause: String,
+        matchedProject: ProjectSummary?
+    ) -> PlanningTarget? {
+        let trimmed = clause.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let title = RuleBasedTaskUnderstandingService.normalizedTitle(from: trimmed)
+        let cleanTitle = title.isEmpty ? trimmed : title
+        // The raw deadline phrase the user wrote, preserved for the downstream
+        // resolver (never resolved here).
+        let timeExpression = TemporalResolver.resolve(input: trimmed)
+            .first { $0.resolverPath != .noSignal && $0.resolvedDate != nil }?
+            .originalText
+        let task = PlannedTask(
+            title: cleanTitle,
+            projectName: matchedProject?.name,
+            timeExpression: timeExpression
+        )
+        let phase = TaskPhase(
+            title: cleanTitle,
+            purpose: "Captured from your note.",
+            phaseTimeExpression: timeExpression,
+            tasks: [task]
+        )
+        return PlanningTarget(
+            title: cleanTitle,
+            dueTimeExpression: timeExpression,
+            sourceTextSpan: trimmed,
+            projectId: matchedProject?.id,
+            projectName: matchedProject?.name,
+            phases: [phase]
         )
     }
 }
@@ -378,8 +446,10 @@ private struct ContextualCaptureParser {
                     decision = convertToTargetClarification(retried, missing: stillMissing)
                 }
             }
-            return decision
+            // Produced on-device — stamp provenance (clarifications self-mark).
+            return decision.stamped(provenance: .onDevice)
         } catch {
+            // Pass the rule-based fallback through unchanged with its own stamp.
             return try await fallback.analyze(context)
         }
     }

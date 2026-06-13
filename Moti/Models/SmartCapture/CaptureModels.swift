@@ -677,6 +677,40 @@ struct ExtractedPlanningTarget: Identifiable, Codable, Equatable {
     }
 }
 
+// MARK: - Intelligence source (fallback honesty)
+
+/// Which understanding path actually produced a capture decision. Lets the app
+/// (and developers) tell a confident full-AI result apart from a deterministic
+/// fallback, instead of every tier returning an indistinguishable decision.
+/// Stamped at each tier's own production point; fallback results pass through
+/// with the stamp the lower tier already set, so a rule-based result can never
+/// masquerade as the LLM.
+enum IntelligenceSource: String, Codable, Sendable, Equatable {
+    /// Remote large model (Gemini via proxy or direct key).
+    case fullLLM
+    /// On-device Apple Foundation Models.
+    case onDevice
+    /// Deterministic rule-based path — no model produced this.
+    case deterministic
+    /// Not a confident plan/task: the capture is asking the user to clarify.
+    /// Honesty state — it isn't pretending to be a finished result.
+    case clarificationNeeded
+
+    /// Short developer-facing label (for DEBUG logs / an optional subtle badge).
+    /// Intentionally calm — never implies the app failed.
+    var displayLabel: String {
+        switch self {
+        case .fullLLM: "AI"
+        case .onDevice: "On-device"
+        case .deterministic: "Quick"
+        case .clarificationNeeded: "Needs a detail"
+        }
+    }
+
+    /// True for results produced by a real language model (remote or on-device).
+    var isModelBacked: Bool { self == .fullLLM || self == .onDevice }
+}
+
 // MARK: - Decision
 
 struct ContextualCaptureDecision: Codable, Equatable {
@@ -701,6 +735,10 @@ struct ContextualCaptureDecision: Codable, Equatable {
     /// any targets.
     let extractedPlanningTargets: [ExtractedPlanningTarget]
     let safetyNote: String?
+    /// How this decision was produced. Defaults to `.deterministic` so a result
+    /// built without an explicit stamp never over-claims AI provenance; the
+    /// service layer stamps the true source at each tier's `analyze` boundary.
+    var intelligenceSource: IntelligenceSource
 
     init(
         inputCompleteness: InputCompleteness,
@@ -715,7 +753,8 @@ struct ContextualCaptureDecision: Codable, Equatable {
         proposedTask: ProposedTask? = nil,
         proposedWorkspace: PlanningWorkspace? = nil,
         extractedPlanningTargets: [ExtractedPlanningTarget] = [],
-        safetyNote: String? = nil
+        safetyNote: String? = nil,
+        intelligenceSource: IntelligenceSource = .deterministic
     ) {
         self.inputCompleteness = inputCompleteness
         self.intentType = intentType
@@ -730,10 +769,21 @@ struct ContextualCaptureDecision: Codable, Equatable {
         self.proposedWorkspace = proposedWorkspace
         self.extractedPlanningTargets = extractedPlanningTargets
         self.safetyNote = safetyNote
+        self.intelligenceSource = intelligenceSource
     }
 
     var requiresClarification: Bool {
         needsClarification || confidence < 0.65
+    }
+
+    /// Returns a copy stamped with how it was produced. A result that is asking
+    /// the user to clarify is marked `.clarificationNeeded` regardless of which
+    /// engine ran (it isn't pretending to be a confident plan); otherwise it
+    /// carries the provenance of the engine that produced it.
+    func stamped(provenance: IntelligenceSource) -> ContextualCaptureDecision {
+        var copy = self
+        copy.intelligenceSource = needsClarification ? .clarificationNeeded : provenance
+        return copy
     }
 }
 
