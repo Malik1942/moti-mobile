@@ -320,6 +320,21 @@ extension ProposedPlan {
 
 // MARK: - Refinement
 
+/// Resolves the stable "original capture text" for a refinement round.
+///
+/// The view holds a snapshot of what the user first typed when the capture
+/// session began (`stored`). Refinement must use that snapshot, NOT the live
+/// text field (`liveInput`) — the live field can be cleared or edited while a
+/// plan preview is on screen, which previously silently lost the original
+/// intent. Falls back to the live field only when no snapshot exists.
+enum RefinementOriginalText {
+    static func resolve(stored: String, liveInput: String) -> String {
+        let snapshot = stored.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !snapshot.isEmpty { return snapshot }
+        return liveInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 struct PlanRefinementHistoryItem: Codable, Equatable, Identifiable {
     var id: UUID
     let feedback: String
@@ -988,12 +1003,28 @@ struct SmartCaptureContext: Codable, Equatable {
     let clarificationState: ClarificationState?
     let planRefinement: PlanRefinementRequest?
     let timeSignals: [SmartCaptureTimeSignal]
+    /// How many clarification questions the user has already answered this
+    /// capture session. Capped at `maxClarificationRounds`: once reached, the
+    /// agent must stop asking and proceed with explicit assumptions instead of
+    /// looping forever.
+    let clarificationRound: Int
 
     // How much structure Stage 1 authorized for this capture. The LLM must not
     // exceed it: `.none`/`.lightweight` mean a single task (no plan, no
     // subtasks), `.structured`/`.deep` permit decomposition. Defaults to
     // `.none` so any context built without an explicit decision stays atomic.
     let planningDepth: PlanningDepth
+
+    /// Maximum clarification questions before the agent must proceed with
+    /// assumptions. Two gives the user a chance to refine intent without an
+    /// endless interrogation.
+    static let maxClarificationRounds = 2
+
+    /// True once the clarification budget is spent — the agent must not ask
+    /// another question and should produce its best result with assumptions.
+    var clarificationBudgetExhausted: Bool {
+        clarificationRound >= Self.maxClarificationRounds
+    }
 
     init(
         rawInput: String,
@@ -1013,6 +1044,7 @@ struct SmartCaptureContext: Codable, Equatable {
         clarificationState: ClarificationState? = nil,
         planRefinement: PlanRefinementRequest? = nil,
         timeSignals: [SmartCaptureTimeSignal] = [],
+        clarificationRound: Int = 0,
         planningDepth: PlanningDepth = .none
     ) {
         self.rawInput = rawInput
@@ -1032,6 +1064,7 @@ struct SmartCaptureContext: Codable, Equatable {
         self.clarificationState = clarificationState
         self.planRefinement = planRefinement
         self.timeSignals = timeSignals
+        self.clarificationRound = clarificationRound
         self.planningDepth = planningDepth
     }
 }

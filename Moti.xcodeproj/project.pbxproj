@@ -56,6 +56,7 @@
 		6EF9F12F8ECC8E4824F15F51 /* TimelineNarratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757E196764677A82655E3F6B /* TimelineNarratorTests.swift */; };
 		718F26AF85806DBFCF002E8B /* TrajectoryProjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FC647D6B583F8D35B77DD8F /* TrajectoryProjectorTests.swift */; };
 		719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */; };
+		729B500B1729071D5ABE479F /* RefinementLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55E4952BB64D94680893EE33 /* RefinementLoopTests.swift */; };
 		74E97CCA98CEAEEF0F8868BA /* CheckpointPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */; };
 		759ED39309C4722EBC42FBC8 /* LifelineTypeOverrideStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3E2E4E56D63360500BD681F /* LifelineTypeOverrideStore.swift */; };
 		7632AF1DCE6788CCF465B83C /* PlanningDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA0D0333A0D6C49C5895497 /* PlanningDecision.swift */; };
@@ -217,6 +218,7 @@
 		50F4E8BC65CE551E817F3140 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
 		54B91EB266B219549576CB12 /* StrandPresenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPresenceTests.swift; sourceTree = "<group>"; };
+		55E4952BB64D94680893EE33 /* RefinementLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefinementLoopTests.swift; sourceTree = "<group>"; };
 		5831017862C61EA3E73AAB1F /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 		58F2D03D24B2A09BF30D52DE /* CheckInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInSheet.swift; sourceTree = "<group>"; };
 		5AE2A9C322628F35353C0B5D /* ProjectPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPill.swift; sourceTree = "<group>"; };
@@ -422,6 +424,7 @@
 				B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */,
 				F71B2181A41236F91C6D7F52 /* RecurrenceParserTests.swift */,
 				31AE34A01BD28B70A1750DF8 /* RecurringCompletionTests.swift */,
+				55E4952BB64D94680893EE33 /* RefinementLoopTests.swift */,
 				DE7FD27B9CB6E62193659197 /* SmartCaptureTests.swift */,
 				54B91EB266B219549576CB12 /* StrandPresenceTests.swift */,
 				9DCFF5E6B664378EF5AC80FF /* StrandTimelineBuilderTests.swift */,
@@ -757,6 +760,7 @@
 				87157B0DF211467C57084F15 /* PlanningIntentTests.swift in Sources */,
 				100343D6807B0B13E58C5D74 /* RecurrenceParserTests.swift in Sources */,
 				13B5CC7257D78B3AFFDB911C /* RecurringCompletionTests.swift in Sources */,
+				729B500B1729071D5ABE479F /* RefinementLoopTests.swift in Sources */,
 				D66604F307E1B11FE52B4F68 /* SmartCaptureTests.swift in Sources */,
 				C7FDDD7D358E7B969564FA3F /* StrandPresenceTests.swift in Sources */,
 				285A968B52BB019CEA004E86 /* StrandTimelineBuilderTests.swift in Sources */,

@@ -237,6 +237,32 @@ Understanding breadth for everyday action verbs:
   planning when entered with other dated deliverables — is met and tested.
   Revisiting the project-scale keyword list is out of Step 3's scope.
 
+### Step 5 status — refinement-loop hardening (completed 2026-06-12)
+- **Stable original capture text.** Fixed the dead-code recovery in
+  `refinePlan` (it read the live `input` field; `refinementHistory.first.map { _ in input } ?? input`
+  resolved to `input` either way). QuickCaptureView now snapshots
+  `originalCaptureText` once at submit, and refinement/clarification resolve it
+  via the testable `RefinementOriginalText.resolve(stored:liveInput:)` — the
+  snapshot wins over a since-edited live field.
+- **Clarification cap (2).** `SmartCaptureContext.clarificationRound` +
+  `maxClarificationRounds = 2` + `clarificationBudgetExhausted`. The view counts
+  answered rounds; at the cap the rule-based service proceeds
+  (`proceedWithoutClarification`) instead of asking, recording the assumption in
+  the existing `PlanningWorkspace.assumptions`; the prompt builder tells the LLM
+  to stop asking and record guesses.
+- **Refinement preserves, never restarts.** The deterministic path gained
+  `refinementEchoDecision`: when a `planRefinement` is present it preserves the
+  previous workspace verbatim (targets, deadlines, assumptions) and records the
+  change request in `refinementHistory`, rather than asking a generic "what's the
+  goal?" question. The LLM refinement prompt already preserved original input,
+  targets, deadlines, assumptions, and history and instructed "Preserve all
+  existing PlanningTargets … not as a new raw task" — locked by tests now.
+- Intelligence source (Step 4) is preserved/honest through refinement.
+- Tests: `MotiTests/RefinementLoopTests.swift` (11) — stable original text,
+  prompt preservation, the cap (below/at), post-cap assumptions, and
+  deterministic refinement preserving the plan. No timeline/trajectory/capture
+  UI changes; the marker is still not surfaced in UI.
+
 ### Step 4 status — fallback honesty only (completed 2026-06-12)
 The refinement-loop half of Step 4 is intentionally NOT started yet.
 - New `IntelligenceSource` marker on `ContextualCaptureDecision`: `.fullLLM`,

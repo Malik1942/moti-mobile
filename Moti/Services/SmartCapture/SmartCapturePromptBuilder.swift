@@ -325,13 +325,16 @@ enum SmartCapturePromptBuilder {
 
     private static func clarificationSection(_ context: SmartCaptureContext) -> String? {
         guard let c = context.clarificationState else { return nil }
+        let next = context.clarificationBudgetExhausted
+            ? "You have reached the clarification limit (\(SmartCaptureContext.maxClarificationRounds) questions). Do NOT ask another question. Use the answer and everything known so far to produce the best task or plan now, recording any guesses in assumptions."
+            : "Continue the same capture. Use the answer semantically, then either ask the next necessary question or produce the appropriate task/plan preview. Never stop after recording the answer."
         return """
         Previous clarification:
           original input: \"\(c.previousInput)\"
           question: \(c.previousQuestion.question)
           user answered: \(c.userAnswer)
 
-        Continue the same capture. Use the answer semantically, then either ask the next necessary question or produce the appropriate task/plan preview. Never stop after recording the answer.
+        \(next)
         """
     }
 

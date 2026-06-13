@@ -110,6 +110,21 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
             || context.planningDepth == .deep
             || PlanningIntentDetector.detect(lowered) == .explicit
             || context.planRefinement != nil
+
+        // Refinement with no model to revise: never restart from the short
+        // feedback message. Preserve the existing workspace (targets, deadlines,
+        // assumptions) and record the change request, so the user's plan and
+        // intent survive even on the deterministic path.
+        if let refinement = context.planRefinement {
+            return refinementEchoDecision(refinement)
+        }
+
+        // Clarification cap: once the user has answered the maximum number of
+        // questions, never ask another — produce the best result we can and
+        // record that we proceeded on assumptions. Prevents an endless loop.
+        if context.clarificationBudgetExhausted {
+            return proceedWithoutClarification(context: context, wantsPlanning: wantsPlanning, lowered: lowered)
+        }
         let hasKnownTimeline = context.timeSignals.contains {
             $0.resolverPath != .noSignal
             && $0.confidence >= 0.70
@@ -294,9 +309,80 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
         }
     }
 
+    /// Deterministic refinement: the rule-based path has no model to actually
+    /// rewrite the plan, so it preserves the previous workspace verbatim — every
+    /// target, deadline, and assumption — and records the change request in the
+    /// refinement history. Honest (it says it kept the plan) and never restarts
+    /// understanding from the short feedback message.
+    private func refinementEchoDecision(_ refinement: PlanRefinementRequest) -> ContextualCaptureDecision {
+        let ws = refinement.previousWorkspace
+        let note = "Kept your existing plan and noted this request: \"\(refinement.feedback)\". Refine again or edit directly."
+        let preserved = PlanningWorkspace(
+            title: ws.title,
+            summary: ws.summary,
+            detectedTargetCount: ws.detectedTargetCount,
+            targets: ws.targets,
+            assumptions: ws.assumptions + [note],
+            conflicts: ws.conflicts,
+            estimatedScope: ws.estimatedScope,
+            planChangeSummary: "Recorded \"\(refinement.feedback)\" on-device; plan preserved.",
+            refinementHistory: ws.refinementHistory + [
+                PlanRefinementHistoryItem(feedback: refinement.feedback, summaryOfChange: "Recorded on-device; plan preserved.")
+            ]
+        )
+        return ContextualCaptureDecision(
+            inputCompleteness: .projectSeed,
+            intentType: .createProjectPlan,
+            confidence: 0.66,
+            isActionable: true,
+            needsClarification: false,
+            proposedWorkspace: preserved
+        )
+    }
+
+    /// Clarification budget spent: produce a usable result without asking again.
+    /// Planning intents get a deterministic workspace (one target per deadline);
+    /// everything else becomes a single proposed task. Either way the result is
+    /// honest about having proceeded on assumptions.
+    private func proceedWithoutClarification(
+        context: SmartCaptureContext,
+        wantsPlanning: Bool,
+        lowered: String
+    ) -> ContextualCaptureDecision {
+        let matchedProject = findProject(in: context, for: lowered)
+        let assumption = "Proceeded after \(SmartCaptureContext.maxClarificationRounds) questions — adjust these if the guesses are off."
+        if wantsPlanning {
+            return fallbackWorkspaceDecision(
+                context: context,
+                matchedProject: matchedProject,
+                extraAssumptions: [assumption]
+            )
+        }
+        let title = context.rawInput
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return ContextualCaptureDecision(
+            inputCompleteness: .actionableTask,
+            intentType: .createTask,
+            confidence: 0.6,
+            inferredProjectName: matchedProject?.name,
+            matchedProjectId: matchedProject?.id,
+            isActionable: true,
+            needsClarification: false,
+            proposedTask: ProposedTask(
+                title: title.isEmpty ? context.rawInput : title,
+                projectId: matchedProject?.id,
+                timeExpression: context.timeSignals.first?.rawText,
+                rationale: "Captured directly after the clarification limit was reached."
+            ),
+            safetyNote: assumption
+        )
+    }
+
     private func fallbackWorkspaceDecision(
         context: SmartCaptureContext,
-        matchedProject: ProjectSummary?
+        matchedProject: ProjectSummary?,
+        extraAssumptions: [String] = []
     ) -> ContextualCaptureDecision {
         let raw = context.rawInput
             .replacingOccurrences(of: "\n", with: " ")
@@ -319,7 +405,7 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
                 title: raw.isEmpty ? "Project plan" : raw,
                 summary: "Drafted on-device, one item per deadline you mentioned.",
                 targets: targets,
-                assumptions: ["Drafted on-device from the dates in your note — refine anytime."]
+                assumptions: ["Drafted on-device from the dates in your note — refine anytime."] + extraAssumptions
             )
         } else {
             // Single deliverable (or nothing parseable): keep the original
@@ -348,7 +434,7 @@ struct RuleBasedContextualCaptureService: ContextualCaptureAgentService {
                 title: raw.isEmpty ? "Project plan" : raw,
                 summary: "Drafted on-device from your note and quick answer.",
                 targets: [target],
-                assumptions: ["Drafted on-device from your note — refine anytime."]
+                assumptions: ["Drafted on-device from your note — refine anytime."] + extraAssumptions
             )
         }
 
