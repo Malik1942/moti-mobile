@@ -207,7 +207,7 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
     - Make scheduling realistic relative to the provided date. Do not invent a date that is in the past or wildly out of horizon.
 
     Anti-overplanning (read first):
-    - Do NOT break down a clear, atomic task. If the input is one action with one deliverable and at most one deadline, return a single proposedTask — never a proposedWorkspace.
+    - Do NOT break down a clear, atomic task. If the input is one action with one deliverable and at most one deadline, return a single proposedTask — never a plan (leave planTargets and planTasks empty).
     - Do not invent preparation, research, or review steps the user did not ask for.
     - Preserve the user's explicit intent and wording.
     - Prefer the smallest useful structure; only add subtasks when they genuinely reduce ambiguity or scheduling risk.
@@ -218,13 +218,15 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
     - A user input may contain ONE OR MORE deliverables, each with its own deadline.
     - Your first job is to identify EVERY planning target. Do not focus only on the first deadline. Do not discard later targets.
     - If the input mentions multiple deliverables, multiple deadlines, multiple classes/projects, or uses words like "also", "and", "plus", "both", "two things", "first", "second" — extract EACH as its own PlanningTarget unless the user explicitly says they belong to the same deliverable.
-    - You MUST populate two arrays in your response:
+    - You MUST populate these arrays in your response:
       1. extractedPlanningTargets: one entry per deliverable + deadline the user mentioned (title, dueTimeExpression, sourceTextSpan).
-      2. proposedWorkspace.targets: one PlanningTarget per extracted target, with title, dueTimeExpression preserved exactly from the user's text, and 2–4 tasks under one or more phases.
-    - extractedPlanningTargets.length MUST EQUAL proposedWorkspace.targets.length unless the user explicitly asked to merge targets.
-    - Every extracted dueTimeExpression must appear unchanged in one of the workspace targets.
+      2. planTargets: one entry per extracted target, with title and dueTimeExpression preserved exactly from the user's text.
+      3. planTasks: the 2–4 tasks for each target (occasionally 5–6). Every task sets targetTitle to EXACTLY one planTargets.title, plus a phaseTitle to group it (and an optional phasePurpose). Group a target's tasks under one phase when small, 2–3 phases when larger.
+    - extractedPlanningTargets.length MUST EQUAL planTargets.length unless the user explicitly asked to merge targets.
+    - Every extracted dueTimeExpression must appear unchanged on one of the planTargets.
+    - Every planTasks.targetTitle MUST match a planTargets.title exactly. Do not leave a planTarget with no tasks.
     - Do not merge targets that have different deadlines. Do not silently drop later targets.
-    - If a target lacks enough information to plan, KEEP it in proposedWorkspace.targets with status="needsClarification" and a needsClarificationReason. Do not drop it.
+    - If a target lacks enough information to plan, KEEP it in planTargets with status="needsClarification" and a needsClarificationReason. Do not drop it.
 
     Plan granularity (per PlanningTarget):
     - Prefer 2 to 4 tasks per target (occasionally 5–6 for complex targets).
@@ -264,16 +266,16 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
         {title: "Research proposal", dueTimeExpression: "Friday", sourceTextSpan: "research proposal due Friday"},
         {title: "Presentation", dueTimeExpression: "next Tuesday", sourceTextSpan: "presentation due next Tuesday"}
       ]
-    → proposedWorkspace.targets: 2 targets, each with 2–4 tasks.
+    → planTargets: 2 entries; planTasks: 2–4 per target, each task's targetTitle matching its planTargets.title.
 
     Input: "I have a portfolio case study due Sunday and a Moti demo due Wednesday."
-    → 2 extracted targets, 2 workspace targets — one for the case study (due Sunday), one for the Moti demo (due Wednesday).
+    → 2 extracted targets, 2 planTargets — one for the case study (due Sunday), one for the Moti demo (due Wednesday).
 
     Input: "Help me plan my final project: report due Friday, slides due Monday, demo next Wednesday."
-    → 3 extracted targets, 3 workspace targets.
+    → 3 extracted targets, 3 planTargets (with planTasks linked by targetTitle).
 
     Input: "Plan my research proposal due Friday."
-    → 1 extracted target, 1 workspace target.
+    → 1 extracted target, 1 planTarget.
 
     Input: "plan Moti launch next week"
     → 1 target. intentType=createProjectPlan.
@@ -299,6 +301,25 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
     // Mirrors the @Generable ContextualCaptureDraft used by Foundation Models so
     // the two services produce decisions with identical shape.
 
+    // FLATTENED response schema (see `mapDecision` for local reconstruction).
+    //
+    // Gemini compiles `responseSchema` into a constrained-decoding automaton.
+    // The previous schema nested arrays three deep (targets → phases → tasks)
+    // with per-object enums and `maxItems`, which Gemini rejected with HTTP 400
+    // "schema produces a constraint that has too many states for serving" — so
+    // every live call silently fell back to deterministic.
+    //
+    // This shape stays accepted by keeping it flat:
+    //   • no array nested inside another array (max depth = one array of flat
+    //     objects)
+    //   • the workspace is emitted as two sibling flat arrays — `planTargets`
+    //     (metadata) and `planTasks` (each links to its target via
+    //     `targetTitle` and groups under `phaseTitle`) — instead of
+    //     targets→phases→tasks nesting
+    //   • no `enum`/`maxItems` constraints inside arrays (mapped & clamped
+    //     locally; `mapDecision` already tolerates unknown strings)
+    // The internal PlanningWorkspace/Target/Phase/Task models are unchanged —
+    // `mapDecision` rebuilds the nested structure from the flat arrays.
     static let responseSchema: [String: Any] = [
         "type": "OBJECT",
         "properties": [
@@ -342,14 +363,13 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
             "extractedNotes": [
                 "type": "ARRAY", "items": ["type": "STRING"], "nullable": true
             ],
-            // Multi-target planning: the LLM commits to an extraction array AND
-            // a workspace in the same response. Post-validation compares the
-            // two and triggers a single auto-retry with a correction prompt if
-            // any extracted target is missing from the workspace.
+            // Multi-target planning: the model commits to an extraction array
+            // AND a flat workspace in the same response. Post-validation
+            // compares extractedPlanningTargets vs the reconstructed workspace
+            // targets and triggers a single auto-retry if any target is missing.
             "extractedPlanningTargets": [
                 "type": "ARRAY",
                 "nullable": true,
-                "maxItems": 8,
                 "items": [
                     "type": "OBJECT",
                     "properties": [
@@ -361,109 +381,55 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
                     "required": ["title"]
                 ]
             ],
-            "proposedWorkspace": [
-                "type": "OBJECT",
+            // Workspace metadata (flat scalars).
+            "workspaceTitle": ["type": "STRING", "nullable": true],
+            "workspaceSummary": ["type": "STRING", "nullable": true],
+            "workspaceEstimatedScope": ["type": "STRING", "nullable": true],
+            "workspaceAssumptions": [
+                "type": "ARRAY", "items": ["type": "STRING"], "nullable": true
+            ],
+            "detectedTargetCount": ["type": "INTEGER", "nullable": true],
+            "planChangeSummary": ["type": "STRING", "nullable": true],
+            // One entry per planning target (metadata only — tasks live in the
+            // sibling planTasks array, linked by targetTitle).
+            "planTargets": [
+                "type": "ARRAY",
                 "nullable": true,
-                "properties": [
-                    "title": ["type": "STRING"],
-                    "summary": ["type": "STRING", "nullable": true],
-                    "detectedTargetCount": ["type": "INTEGER", "nullable": true],
-                    "estimatedScope": ["type": "STRING", "nullable": true],
-                    "assumptions": [
-                        "type": "ARRAY",
-                        "nullable": true,
-                        "items": ["type": "STRING"]
+                "items": [
+                    "type": "OBJECT",
+                    "properties": [
+                        "title": ["type": "STRING"],
+                        "deliverableType": ["type": "STRING", "nullable": true],
+                        "dueTimeExpression": ["type": "STRING", "nullable": true],
+                        "priority": ["type": "STRING", "nullable": true],
+                        "sourceTextSpan": ["type": "STRING", "nullable": true],
+                        "projectName": ["type": "STRING", "nullable": true],
+                        "status": ["type": "STRING", "nullable": true],
+                        "needsClarificationReason": ["type": "STRING", "nullable": true]
                     ],
-                    "planChangeSummary": ["type": "STRING", "nullable": true],
-                    "conflicts": [
-                        "type": "ARRAY",
-                        "nullable": true,
-                        "items": [
-                            "type": "OBJECT",
-                            "properties": [
-                                "description": ["type": "STRING"],
-                                "affectedTargetTitles": [
-                                    "type": "ARRAY",
-                                    "nullable": true,
-                                    "items": ["type": "STRING"]
-                                ],
-                                "severity": [
-                                    "type": "STRING",
-                                    "enum": ["low", "medium", "high"],
-                                    "nullable": true
-                                ],
-                                "suggestedResolution": ["type": "STRING", "nullable": true]
-                            ],
-                            "required": ["description"]
-                        ]
+                    "required": ["title"]
+                ]
+            ],
+            // Flat task list. Each task names its target (targetTitle) and the
+            // phase it belongs to (phaseTitle); mapDecision groups them back
+            // into targets → phases → tasks locally.
+            "planTasks": [
+                "type": "ARRAY",
+                "nullable": true,
+                "items": [
+                    "type": "OBJECT",
+                    "properties": [
+                        "targetTitle": ["type": "STRING"],
+                        "phaseTitle": ["type": "STRING", "nullable": true],
+                        "phasePurpose": ["type": "STRING", "nullable": true],
+                        "title": ["type": "STRING"],
+                        "projectName": ["type": "STRING", "nullable": true],
+                        "timeExpression": ["type": "STRING", "nullable": true],
+                        "dependencyNote": ["type": "STRING", "nullable": true],
+                        "estimatedEffort": ["type": "STRING", "nullable": true]
                     ],
-                    "targets": [
-                        "type": "ARRAY",
-                        "maxItems": 6,
-                        "items": [
-                            "type": "OBJECT",
-                            "properties": [
-                                "title": ["type": "STRING"],
-                                "deliverableType": [
-                                    "type": "STRING",
-                                    "enum": [
-                                        "assignment", "presentation", "application",
-                                        "meetingPrep", "projectMilestone", "personalTask", "unknown"
-                                    ],
-                                    "nullable": true
-                                ],
-                                "dueTimeExpression": ["type": "STRING", "nullable": true],
-                                "priority": [
-                                    "type": "STRING",
-                                    "enum": ["low", "medium", "high"],
-                                    "nullable": true
-                                ],
-                                "sourceTextSpan": ["type": "STRING", "nullable": true],
-                                "projectName": ["type": "STRING", "nullable": true],
-                                "status": [
-                                    "type": "STRING",
-                                    "enum": ["ready", "needsClarification", "missingDeadline", "missingScope"],
-                                    "nullable": true
-                                ],
-                                "needsClarificationReason": ["type": "STRING", "nullable": true],
-                                "phases": [
-                                    "type": "ARRAY",
-                                    "maxItems": 5,
-                                    "items": [
-                                        "type": "OBJECT",
-                                        "properties": [
-                                            "title": ["type": "STRING"],
-                                            "purpose": ["type": "STRING"],
-                                            "phaseTimeExpression": ["type": "STRING", "nullable": true],
-                                            "tasks": [
-                                                "type": "ARRAY",
-                                                "maxItems": 4,
-                                                "items": [
-                                                    "type": "OBJECT",
-                                                    "properties": [
-                                                        "title": ["type": "STRING"],
-                                                        "projectName": ["type": "STRING", "nullable": true],
-                                                        "timeExpression": ["type": "STRING", "nullable": true],
-                                                        "dependencyNote": ["type": "STRING", "nullable": true],
-                                                        "estimatedEffort": [
-                                                            "type": "STRING",
-                                                            "enum": ["low", "medium", "high"],
-                                                            "nullable": true
-                                                        ]
-                                                    ],
-                                                    "required": ["title", "projectName"]
-                                                ]
-                                            ]
-                                        ],
-                                        "required": ["title", "purpose", "tasks"]
-                                    ]
-                                ]
-                            ],
-                            "required": ["title", "phases"]
-                        ]
-                    ]
-                ],
-                "required": ["title", "targets"]
+                    "required": ["targetTitle", "title"]
+                ]
             ],
             "safetyNote": ["type": "STRING", "nullable": true]
         ],
@@ -540,70 +506,9 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
             )
         }
 
-        // Proposed PlanningWorkspace.
-        let workspace: PlanningWorkspace? = draft.proposedWorkspace.map { ws in
-            let mappedTargets: [PlanningTarget] = ws.targets.map { td in
-                let phases: [TaskPhase] = td.phases.map { phaseDraft in
-                    let tasks: [PlannedTask] = phaseDraft.tasks.map { taskDraft in
-                        PlannedTask(
-                            title: taskDraft.title,
-                            projectName: taskDraft.projectName,
-                            timeExpression: taskDraft.timeExpression,
-                            dependencyNote: taskDraft.dependencyNote,
-                            estimatedEffort: taskDraft.estimatedEffort.flatMap { EffortLevel(rawValue: $0) }
-                        )
-                    }
-                    return TaskPhase(
-                        title: phaseDraft.title,
-                        purpose: phaseDraft.purpose,
-                        phaseTimeExpression: phaseDraft.phaseTimeExpression,
-                        tasks: tasks
-                    )
-                }
-                return PlanningTarget(
-                    title: td.title,
-                    deliverableType: td.deliverableType.flatMap { DeliverableType(rawValue: $0) } ?? .unknown,
-                    dueTimeExpression: td.dueTimeExpression,
-                    priority: td.priority.flatMap { PriorityLevel(rawValue: $0) },
-                    sourceTextSpan: td.sourceTextSpan,
-                    projectId: nil,
-                    projectName: td.projectName,
-                    phases: phases,
-                    status: td.status.flatMap { PlanningTargetStatus(rawValue: $0) } ?? .ready,
-                    needsClarificationReason: td.needsClarificationReason
-                )
-            }
-
-            // The LLM references conflicts by target title; resolve to UUIDs
-            // post-construction so the UI can highlight affected sections.
-            let titleToID = Dictionary(uniqueKeysWithValues: mappedTargets.map { ($0.title.lowercased(), $0.id) })
-            let mappedConflicts: [PlanningConflict] = (ws.conflicts ?? []).map { c in
-                let affected = (c.affectedTargetTitles ?? []).compactMap { titleToID[$0.lowercased()] }
-                return PlanningConflict(
-                    description: c.description,
-                    affectedTargetIds: affected,
-                    severity: c.severity.flatMap { PlanningConflictSeverity(rawValue: $0) } ?? .low,
-                    suggestedResolution: c.suggestedResolution
-                )
-            }
-
-            let carriedHistory = SmartCapturePromptBuilder.refinementHistory(
-                from: context,
-                appending: ws.planChangeSummary
-            )
-
-            return PlanningWorkspace(
-                title: ws.title,
-                summary: ws.summary,
-                detectedTargetCount: ws.detectedTargetCount ?? mappedTargets.count,
-                targets: mappedTargets,
-                assumptions: ws.assumptions ?? [],
-                conflicts: mappedConflicts,
-                estimatedScope: ws.estimatedScope,
-                planChangeSummary: ws.planChangeSummary,
-                refinementHistory: carriedHistory
-            ).deduplicatedTasks
-        }
+        // Reconstruct the nested PlanningWorkspace from the flat planTargets +
+        // planTasks arrays the schema now returns.
+        let workspace = Self.reconstructWorkspace(from: draft, context: context)
 
         let matchedProject: ProjectSummary? = draft.inferredProjectName.flatMap { inferredName in
             context.activeProjects.first {
@@ -627,6 +532,122 @@ struct GeminiContextualCaptureService: ContextualCaptureAgentService {
             extractedPlanningTargets: extracted,
             safetyNote: draft.safetyNote
         )
+    }
+
+    /// Rebuilds the nested `PlanningWorkspace` (targets → phases → tasks) from
+    /// the flat `planTargets` + `planTasks` arrays. Tasks are linked to their
+    /// target by `targetTitle` (case-insensitive) and grouped into phases by
+    /// `phaseTitle`, preserving the model's ordering. Targets named only by a
+    /// task (no matching `planTargets` entry) are synthesized so no work is
+    /// dropped; tasks with a blank/unmatched `targetTitle` attach to the sole
+    /// target when there's exactly one. Returns nil when there's no plan.
+    static func reconstructWorkspace(
+        from draft: GeminiCaptureDraft,
+        context: SmartCaptureContext
+    ) -> PlanningWorkspace? {
+        let targetDrafts = draft.planTargets ?? []
+        let taskDrafts = draft.planTasks ?? []
+        let hasPlan = !targetDrafts.isEmpty || !taskDrafts.isEmpty || draft.workspaceTitle != nil
+        guard hasPlan else { return nil }
+
+        // Ordered, de-duplicated target titles: planTargets first (they carry
+        // metadata + order), then any title introduced only by a task.
+        var orderedTitles: [String] = []
+        var seen = Set<String>()
+        var metaByKey: [String: GeminiPlanTargetDraft] = [:]
+        func add(_ title: String) {
+            let key = title.lowercased()
+            guard !title.isEmpty, !seen.contains(key) else { return }
+            seen.insert(key); orderedTitles.append(title)
+        }
+        for t in targetDrafts { metaByKey[t.title.lowercased()] = t; add(t.title) }
+        for task in taskDrafts { add(task.targetTitle) }
+        if orderedTitles.isEmpty { add(draft.workspaceTitle ?? "Plan") }
+
+        let singleTarget = orderedTitles.count == 1
+
+        let targets: [PlanningTarget] = orderedTitles.map { title in
+            let key = title.lowercased()
+            let meta = metaByKey[key]
+            // Tasks for this target: exact title match, or (when there is only
+            // one target) any task whose targetTitle was blank/unmatched.
+            let myTasks = taskDrafts.filter { task in
+                let tk = task.targetTitle.lowercased()
+                if tk == key { return true }
+                return singleTarget && (task.targetTitle.isEmpty || metaByKey[tk] == nil && !seen.contains(tk))
+            }
+            return PlanningTarget(
+                title: title,
+                deliverableType: meta?.deliverableType.flatMap { DeliverableType(rawValue: $0) } ?? .unknown,
+                dueTimeExpression: meta?.dueTimeExpression,
+                priority: meta?.priority.flatMap { PriorityLevel(rawValue: $0) },
+                sourceTextSpan: meta?.sourceTextSpan,
+                projectId: nil,
+                projectName: meta?.projectName,
+                phases: phases(from: myTasks, fallbackTitle: title),
+                status: meta?.status.flatMap { PlanningTargetStatus(rawValue: $0) } ?? .ready,
+                needsClarificationReason: meta?.needsClarificationReason
+            )
+        }
+
+        let carriedHistory = SmartCapturePromptBuilder.refinementHistory(
+            from: context,
+            appending: draft.planChangeSummary
+        )
+
+        return PlanningWorkspace(
+            title: draft.workspaceTitle ?? orderedTitles.first ?? "Plan",
+            summary: draft.workspaceSummary,
+            detectedTargetCount: draft.detectedTargetCount ?? targets.count,
+            targets: targets,
+            assumptions: draft.workspaceAssumptions ?? [],
+            conflicts: [],
+            estimatedScope: draft.workspaceEstimatedScope,
+            planChangeSummary: draft.planChangeSummary,
+            refinementHistory: carriedHistory
+        ).deduplicatedTasks
+    }
+
+    /// Groups flat task drafts into phases by `phaseTitle`, preserving first-
+    /// seen order. Tasks without a phase fall under one phase named after the
+    /// target. Phase purpose comes from the first task that carries one.
+    private static func phases(from tasks: [GeminiPlanTaskDraft], fallbackTitle: String) -> [TaskPhase] {
+        guard !tasks.isEmpty else { return [] }
+        var order: [String] = []
+        var grouped: [String: [GeminiPlanTaskDraft]] = [:]
+        for task in tasks {
+            let phaseName = task.phaseTitle?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty ?? fallbackTitle
+            if grouped[phaseName] == nil { order.append(phaseName) }
+            grouped[phaseName, default: []].append(task)
+        }
+        return order.map { phaseName in
+            let phaseTasks = grouped[phaseName] ?? []
+            let purpose = phaseTasks.compactMap { $0.phasePurpose?.nilIfEmpty }.first ?? ""
+            let timeExpr = phaseTasks.compactMap { $0.timeExpression?.nilIfEmpty }.first
+            return TaskPhase(
+                title: phaseName,
+                purpose: purpose,
+                phaseTimeExpression: nil,
+                tasks: phaseTasks.map { td in
+                    PlannedTask(
+                        title: td.title,
+                        projectName: td.projectName,
+                        timeExpression: td.timeExpression,
+                        dependencyNote: td.dependencyNote,
+                        estimatedEffort: td.estimatedEffort.flatMap { EffortLevel(rawValue: $0) }
+                    )
+                }
+            ).withPhaseTimeFallback(timeExpr)
+        }
+    }
+}
+
+private extension TaskPhase {
+    /// Sets `phaseTimeExpression` only when it's currently absent — keeps the
+    /// flat-mapping path from inventing timing the model didn't provide.
+    func withPhaseTimeFallback(_ expr: String?) -> TaskPhase {
+        guard phaseTimeExpression == nil, let expr else { return self }
+        return TaskPhase(title: title, purpose: purpose, phaseTimeExpression: expr, tasks: tasks)
     }
 }
 
@@ -654,9 +675,19 @@ struct GeminiCaptureDraft: Codable {
     var extractedOpenQuestions: [String]?
     var extractedNotes: [String]?
     // Multi-target planning — the model commits to an extraction array AND a
-    // workspace in the same response, so post-validation can compare the two.
+    // flat workspace (planTargets + planTasks) in the same response, so
+    // post-validation can compare the two. `mapDecision` reconstructs the
+    // nested PlanningWorkspace from these flat arrays.
     var extractedPlanningTargets: [GeminiExtractedTargetDraft]?
-    var proposedWorkspace: GeminiWorkspaceDraft?
+    var workspaceTitle: String?
+    var workspaceSummary: String?
+    var workspaceEstimatedScope: String?
+    var workspaceAssumptions: [String]?
+    var detectedTargetCount: Int?
+    /// Set only on revised workspaces — one sentence describing what changed.
+    var planChangeSummary: String?
+    var planTargets: [GeminiPlanTargetDraft]?
+    var planTasks: [GeminiPlanTaskDraft]?
     var safetyNote: String?
 }
 
@@ -667,19 +698,9 @@ struct GeminiExtractedTargetDraft: Codable {
     var confidence: Double?
 }
 
-struct GeminiWorkspaceDraft: Codable {
-    var title: String
-    var summary: String?
-    var detectedTargetCount: Int?
-    var targets: [GeminiTargetDraft]
-    var assumptions: [String]?
-    var conflicts: [GeminiConflictDraft]?
-    var estimatedScope: String?
-    /// Set only on revised workspaces — one sentence describing what changed.
-    var planChangeSummary: String?
-}
-
-struct GeminiTargetDraft: Codable {
+/// Flat per-target metadata. Tasks live in the sibling `planTasks` array,
+/// linked by `targetTitle`.
+struct GeminiPlanTargetDraft: Codable {
     var title: String
     /// "assignment" | "presentation" | "application" | "meetingPrep" | "projectMilestone" | "personalTask" | "unknown"
     var deliverableType: String?
@@ -692,28 +713,14 @@ struct GeminiTargetDraft: Codable {
     /// "ready" | "needsClarification" | "missingDeadline" | "missingScope"
     var status: String?
     var needsClarificationReason: String?
-    var phases: [GeminiPhaseDraft]
 }
 
-struct GeminiConflictDraft: Codable {
-    var description: String
-    /// LLM references conflicting targets by title rather than UUID. Mapped to
-    /// real `PlanningTarget.id`s after the workspace is materialized.
-    var affectedTargetTitles: [String]?
-    /// "low" | "medium" | "high"
-    var severity: String?
-    var suggestedResolution: String?
-}
-
-struct GeminiPhaseDraft: Codable {
-    var title: String
-    var purpose: String
-    /// Phase-level time hint (e.g. "this week"). Used when task-level timing would be noisy.
-    var phaseTimeExpression: String?
-    var tasks: [GeminiTaskDraft]
-}
-
-struct GeminiTaskDraft: Codable {
+/// Flat task. `targetTitle` names the owning target; `phaseTitle` groups tasks
+/// into phases. `mapDecision` rebuilds the nesting from these.
+struct GeminiPlanTaskDraft: Codable {
+    var targetTitle: String
+    var phaseTitle: String?
+    var phasePurpose: String?
     var title: String
     /// Project this task belongs to. Always set in plans — either an existing
     /// project name from the input context, or a short new project name.

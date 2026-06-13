@@ -237,6 +237,30 @@ Understanding breadth for everyday action verbs:
   planning when entered with other dated deliverables — is met and tested.
   Revisiting the project-scale keyword list is out of Step 3's scope.
 
+### Gemini schema 400 fix (completed 2026-06-12)
+Live QA found a release-blocker: `GeminiContextualCaptureService.responseSchema`
+nested arrays three deep (targets → phases → tasks) with in-array enums and
+`maxItems`, which `gemini-2.5-flash` rejected with HTTP 400 "schema produces a
+constraint that has too many states for serving" — so **every** Smart Capture
+call silently fell back to deterministic.
+- **Flattened the schema**: the workspace is now two sibling flat arrays —
+  `planTargets` (metadata) and `planTasks` (each links to its target via
+  `targetTitle`, grouped by `phaseTitle`). No array nested in an array; no
+  in-array enums; no `maxItems`. Top-level enums kept (not multiplied).
+- **Local reconstruction**: `GeminiContextualCaptureService.reconstructWorkspace`
+  rebuilds the nested PlanningWorkspace/Target/Phase/Task models from the flat
+  arrays, so internal models, validation/retry, and fallback honesty are
+  unchanged. Orphan tasks synthesize a target (nothing dropped); conflicts are
+  no longer model-emitted (rarely used; minor, noted limitation).
+- **Live verified** (real Gemini): "Plan my app launch before next Friday",
+  the 3-deadline prototype input, and "make this less intense" all return
+  `source=fullLLM`, **0 HTTP 400s**, real multi-phase plans; refinement reduced
+  8→4 tasks while preserving the goal + deadline.
+- **Regression guard**: `MotiTests/GeminiSchemaTests.swift` asserts the schema
+  stays flat (object-array depth ≤ 1, no `maxItems`) and that flat→nested
+  reconstruction is correct — CI-safe (no network), so this can't silently
+  regress. Full suite: 269 tests, 0 failures.
+
 ### Step 5 status — refinement-loop hardening (completed 2026-06-12)
 - **Stable original capture text.** Fixed the dead-code recovery in
   `refinePlan` (it read the live `input` field; `refinementHistory.first.map { _ in input } ?? input`
