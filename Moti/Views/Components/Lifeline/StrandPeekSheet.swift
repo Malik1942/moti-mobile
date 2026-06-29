@@ -257,7 +257,7 @@ struct StrandPeekSheet: View {
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
                 .foregroundStyle(.white)
-                .background(Color.indigo, in: Capsule())
+                .background(Color.motiAccent, in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -268,8 +268,8 @@ struct StrandPeekSheet: View {
                 .font(.system(size: 14, weight: .semibold))
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .frame(maxWidth: .infinity)
-                .foregroundStyle(.indigo)
-                .background(Color.indigo.opacity(0.12), in: Capsule())
+                .foregroundStyle(.motiAccent)
+                .background(Color.motiAccent.opacity(0.12), in: Capsule())
         }
         .buttonStyle(.plain)
     }

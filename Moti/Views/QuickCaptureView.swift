@@ -159,7 +159,7 @@ struct QuickCaptureView: View {
                     .lineLimit(5)
                     .padding(16)
                     .frame(maxWidth: .infinity)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
             }
 
             // Centered — voice mode is the primary interaction here, so the
@@ -167,11 +167,11 @@ struct QuickCaptureView: View {
             Button { toggleVoiceCapture() } label: {
                 ZStack {
                     Circle()
-                        .fill(speechService.isRecording ? .red.opacity(0.10) : .indigo.opacity(0.10))
+                        .fill(speechService.isRecording ? .red.opacity(0.10) : .motiAccent.opacity(0.10))
                         .frame(width: 96, height: 96)
                     Image(systemName: speechService.isRecording ? "stop.fill" : "mic")
                         .font(.system(size: 34, weight: .medium))
-                        .foregroundStyle(speechService.isRecording ? .red : .indigo)
+                        .foregroundStyle(speechService.isRecording ? .red : .motiAccent)
                 }
             }
             .buttonStyle(.plain)
@@ -237,7 +237,7 @@ struct QuickCaptureView: View {
             }
             Button("Type instead") { switchToTextMode() }
                 .font(.subheadline)
-                .foregroundStyle(.indigo)
+                .foregroundStyle(.motiAccent)
         }
         .frame(maxWidth: .infinity)
     }
@@ -250,7 +250,7 @@ struct QuickCaptureView: View {
                 .font(.body)
                 .lineLimit(4...10)
                 .padding(14)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
                 .focused($isInputFocused)
                 // Return key inserts a newline. Submit is in the nav bar.
 
@@ -311,11 +311,11 @@ struct QuickCaptureView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill((speechService.isRecording ? Color.red : Color.indigo).opacity(0.10))
+                        .fill((speechService.isRecording ? Color.red : Color.motiAccent).opacity(0.10))
                         .frame(width: 64, height: 64)
                     Image(systemName: speechService.isRecording ? "stop.fill" : "mic")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(speechService.isRecording ? .red : .indigo)
+                        .foregroundStyle(speechService.isRecording ? .red : .motiAccent)
                 }
             }
             .buttonStyle(.plain)
@@ -388,7 +388,7 @@ struct QuickCaptureView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
         .padding(.horizontal, 20)
     }
 

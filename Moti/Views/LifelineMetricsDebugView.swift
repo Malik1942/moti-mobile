@@ -110,7 +110,7 @@ struct LifelineMetricsDebugView: View {
                 Button("Force maintenance") { overrides.setOverride(.maintenance, for: strand.id) }
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .foregroundStyle(strand.userOverrideType == nil ? Color.secondary : Color.indigo)
+                    .foregroundStyle(strand.userOverrideType == nil ? Color.secondary : Color.motiAccent)
             }
         }
     }

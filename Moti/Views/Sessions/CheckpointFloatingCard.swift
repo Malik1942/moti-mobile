@@ -36,7 +36,7 @@ struct CheckpointFloatingCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(Int(event.progress * 100))% checkpoint")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Text("How's the session progressing?")
                     .font(.subheadline.weight(.medium))
             }

@@ -72,10 +72,10 @@ struct CheckInSheet: View {
                     if let chip = chipLabel {
                         Text(chip)
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(.motiAccent)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(Color.indigo.opacity(0.10), in: Capsule())
+                            .background(Color.motiAccent.opacity(0.10), in: Capsule())
                     }
                 }
             }
@@ -115,7 +115,7 @@ struct CheckInSheet: View {
         let tint: Color = {
             switch state {
             case .good:   return .green
-            case .normal: return .indigo
+            case .normal: return .motiAccent
             case .bad:    return .orange
             }
         }()

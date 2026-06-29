@@ -96,7 +96,7 @@ struct TrajectoryTimelineView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Timeline")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { recordOpen() }
@@ -263,7 +263,7 @@ struct TrajectoryTimelineView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous).stroke(.indigo.opacity(0.16), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous).stroke(.motiAccent.opacity(0.16), lineWidth: 1))
     }
 
     /// App-control styling — the original app purple, never the chart palette.
@@ -273,8 +273,8 @@ struct TrajectoryTimelineView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .padding(.horizontal, 14).padding(.vertical, 9)
                 .frame(maxWidth: .infinity)
-                .foregroundStyle(filled ? Color.white : .indigo)
-                .background(filled ? Color.indigo : Color.indigo.opacity(0.12), in: Capsule())
+                .foregroundStyle(filled ? Color.white : .motiAccent)
+                .background(filled ? Color.motiAccent : Color.motiAccent.opacity(0.12), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -285,11 +285,12 @@ struct TrajectoryTimelineView: View {
             Text("As you capture and tend work, each future becomes a trajectory — and Moti projects, from your actual pace, where each one is heading.")
                 .font(.motiEmptySubtitle).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             Button { onAddToTimeline() } label: { Label("Add to Timeline", systemImage: "plus") }
-                .font(.motiButtonLabel).buttonStyle(.borderedProminent).tint(.indigo).padding(.top, 4)
+                .buttonStyle(MotiPrimaryButtonStyle())
+                .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(MotiLayout.cardPadding)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
     }
 
     // MARK: - Instrumentation (local-only; PRD §9.4)
@@ -348,7 +349,7 @@ private enum TrajectoryColorPalette {
     }
 
     /// System-native card surface (Apple Health / Stocks chart-card feel).
-    static var surface: Color { Color(.secondarySystemGroupedBackground) }
+    static var surface: Color { Color.motiSurface }
 
     /// Instrument-panel field the trajectory curves are plotted on — a vertical
     /// wash (lifted at the top, settling at the floor) so luminous strokes and

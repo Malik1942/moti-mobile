@@ -48,7 +48,7 @@ struct TimelineView: View {
                 .padding()
                 .padding(.bottom, 64)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Timeline")
             .sheet(isPresented: $showingAddProject) {
                 AddProjectSheet()
@@ -97,8 +97,12 @@ struct TimelineView: View {
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .foregroundStyle(selectedProject == project ? .white : .indigo)
-                                .background(selectedProject == project ? .indigo : .indigo.opacity(0.12), in: Capsule())
+                                .foregroundStyle(selectedProject == project ? .white : .primary)
+                                .background(selectedProject == project ? Color.motiAccent : Color.motiQuietFill, in: Capsule())
+                                .overlay {
+                                    Capsule()
+                                        .strokeBorder(selectedProject == project ? .clear : Color.motiAccent.opacity(0.18), lineWidth: 0.5)
+                                }
                         } else {
                             ProjectPill(
                                 project: project,
@@ -146,56 +150,66 @@ struct TimelineView: View {
     private var summaryCards: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Timeline Signals")
+                Text("At a Glance")
                     .font(.headline)
                 Spacer()
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 10) {
-                    compactSummary("Due Soon", items: upcomingDueDates)
+                    compactSummary("Due", items: upcomingDueDates)
                     compactSummary("Active Work", items: activeWorkPeriods)
                     compactSummary("Completed", items: recentlyCompleted)
-                    compactSummary("Needs Review", items: needsReview, showRawInput: true)
+                    compactSummary("Review", items: needsReview, showRawInput: true)
                 }
             }
         }
     }
 
     private var emptyTimelineState: some View {
-        VStack(alignment: .leading, spacing: MotiLayout.emptyStateSpacing) {
-            Text("Your timeline is ready.")
-                .font(.headline)
-            Text("Create a project or capture work with timing to start planning.")
-                .font(.motiEmptySubtitle)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.motiAccent)
+                    .frame(width: 38, height: 38)
+                    .background(Color.motiAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Your timeline is ready.")
+                        .font(.headline)
+                    Text("Capture work with timing, or create a project first.")
+                        .font(.motiEmptySubtitle)
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             HStack(spacing: 10) {
-                Button {
-                    showingAddProject = true
-                } label: {
-                    Label("Add Project", systemImage: "square.grid.2x2")
-                }
-                .font(.motiButtonLabel)
-                .buttonStyle(.borderedProminent)
-                .tint(.indigo)
-
                 Button {
                     onAddToTimeline()
                 } label: {
                     Label("Add to Timeline", systemImage: "plus")
                 }
-                .font(.motiButtonLabel)
-                .buttonStyle(.bordered)
-                .tint(.indigo)
+                .buttonStyle(MotiPrimaryButtonStyle(isFullWidth: true))
+
+                Button {
+                    showingAddProject = true
+                } label: {
+                    Label("New Project", systemImage: "square.grid.2x2")
+                }
+                .buttonStyle(MotiSecondaryButtonStyle(isFullWidth: true))
             }
 
             Text("Try: \"Work on portfolio from Monday to Wednesday.\"")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .padding(MotiLayout.cardPadding)
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
     }
 
     private func compactSummary(_ title: String, items: [WorkItem], showRawInput: Bool = false) -> some View {
@@ -220,7 +234,7 @@ struct TimelineView: View {
                             if item.isRecurring {
                                 Label(item.recurrence.displayLabel, systemImage: "repeat")
                                     .font(.caption2.weight(.medium))
-                                    .foregroundStyle(.indigo)
+                                    .foregroundStyle(.motiAccent)
                             }
                             if let dueDate = item.dueDate {
                                 Text(dueDate.formatted(date: .abbreviated, time: .shortened))
@@ -236,10 +250,10 @@ struct TimelineView: View {
         .padding(10)
         .frame(width: 178, alignment: .topLeading)
         .frame(minHeight: 112, alignment: .topLeading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.quaternary)
+            RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
         }
     }
 }

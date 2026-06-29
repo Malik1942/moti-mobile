@@ -33,7 +33,7 @@ struct ReviewView: View {
                 .padding(.top, MotiLayout.pageTopPadding)
                 .padding(.bottom, 32)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Review")
             .navigationDestination(item: $selectedWorkItem) { item in
                 WorkItemDetailView(item: item)

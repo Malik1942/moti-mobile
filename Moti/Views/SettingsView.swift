@@ -20,6 +20,7 @@ struct SettingsView: View {
     @AppStorage(WorkItemNotificationScheduler.dueRemindersKey)   private var dueRemindersEnabled = true
     @AppStorage(WorkItemNotificationScheduler.progressChecksKey) private var progressChecksEnabled = true
     @AppStorage("useLifelineTimeline") private var useLifelineTimeline = false
+    @AppStorage("timelineTaskSort") private var timelineTaskSortRawValue = TimelineTaskSort.projectPriority.rawValue
 
     @State private var calendarStatus = AppleCalendarSyncStatus.off
     @State private var showingGoogleComingSoon = false
@@ -64,6 +65,14 @@ struct SettingsView: View {
 
     private var calendarSyncProvider: CalendarSyncProvider {
         CalendarSyncProvider(rawValue: calendarSyncProviderRawValue) ?? .appleCalendar
+    }
+
+    private var timelineTaskSort: Binding<TimelineTaskSort> {
+        Binding {
+            TimelineTaskSort(rawValue: timelineTaskSortRawValue) ?? .projectPriority
+        } set: {
+            timelineTaskSortRawValue = $0.rawValue
+        }
     }
 
     var body: some View {
@@ -134,6 +143,15 @@ struct SettingsView: View {
                 notificationsSection
 
                 Section("Timeline") {
+                    Picker("Task Order", selection: timelineTaskSort) {
+                        ForEach(TimelineTaskSort.allCases) { sort in
+                            Text(sort.label).tag(sort)
+                        }
+                    }
+                    Text((TimelineTaskSort(rawValue: timelineTaskSortRawValue) ?? .projectPriority).description)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
                     Toggle("Use Trajectory Timeline", isOn: $useLifelineTimeline)
                     Text("A redesigned Timeline as a trajectory engine: time runs downward from Now, and each future is projected from your actual pace — on-time, slipping, fading, or sustained.")
                         .font(.footnote)

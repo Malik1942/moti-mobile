@@ -78,7 +78,7 @@ struct LifelineTimelineView: View {
                 .padding(.top, 8)
                 .padding(.bottom, MotiLayout.pageBottomPadding + 48)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Timeline")
             .onAppear { recordOpen() }
             .onDisappear { recordClose() }
@@ -214,7 +214,7 @@ struct LifelineTimelineView: View {
         .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
-                .stroke(.indigo.opacity(0.16), lineWidth: 1)
+                .stroke(.motiAccent.opacity(0.16), lineWidth: 1)
         )
         .accessibilityElement(children: .contain)
     }
@@ -226,8 +226,8 @@ struct LifelineTimelineView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
                 .frame(maxWidth: .infinity)
-                .foregroundStyle(filled ? Color.white : .indigo)
-                .background(filled ? Color.indigo : Color.indigo.opacity(0.12), in: Capsule())
+                .foregroundStyle(filled ? Color.white : .motiAccent)
+                .background(filled ? Color.motiAccent : Color.motiAccent.opacity(0.12), in: Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -247,14 +247,12 @@ struct LifelineTimelineView: View {
             } label: {
                 Label("Add to Timeline", systemImage: "plus")
             }
-            .font(.motiButtonLabel)
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
+            .buttonStyle(MotiPrimaryButtonStyle())
             .padding(.top, 4)
         }
         .padding(MotiLayout.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
     }
 
     // MARK: - Instrumentation (local-only; PRD §9)

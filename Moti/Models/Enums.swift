@@ -53,6 +53,29 @@ enum WorkItemStatus: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum TimelineTaskSort: String, CaseIterable, Identifiable {
+    case projectPriority
+    case time
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .projectPriority: "Project Priority"
+        case .time: "Time"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .projectPriority:
+            "Groups Timeline tasks by your Projects order, then by due date inside each project."
+        case .time:
+            "Shows Timeline tasks strictly by due date across all projects."
+        }
+    }
+}
+
 enum ProjectCatalog {
     static let suggestedTemplates = ["Job Search", "School", "Portfolio", "Personal"]
     static let parserSuggestions = ["Job Search", "School", "Portfolio", "Moti", "Personal"]

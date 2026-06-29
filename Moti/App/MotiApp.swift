@@ -37,8 +37,7 @@ struct MotiApp: App {
             RootTabView()
                 .environment(\.taskUnderstandingService, TaskUnderstandingServiceFactory.make(mode: activeMode))
                 .environment(\.contextualCaptureAgent, ContextualCaptureAgentFactory.make())
-                .fontDesign(.rounded)
-                .tint(.indigo)
+                .tint(.motiAccent)
                 .onAppear {
                     #if DEBUG
                     LifelineSampleData.seedIfRequested(into: sharedModelContainer.mainContext)
@@ -325,8 +324,8 @@ struct RootTabView: View {
 }
 
 enum MotiTabBarMetrics {
-    static let rowHeight: CGFloat = 64
-    static let plusSize: CGFloat = 52
+    static let rowHeight: CGFloat = 60
+    static let plusSize: CGFloat = 48
 
     static func totalHeight(for bottomSafeArea: CGFloat) -> CGFloat {
         rowHeight + max(bottomSafeArea, 8)
@@ -390,14 +389,13 @@ private struct MotiTabBar: View {
                 .frame(height: max(bottomSafeArea, 8))
         }
         .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial)
+        .background(.bar)
         .overlay(alignment: .top) {
             Rectangle()
-                .fill(Color(.separator).opacity(0.28))
+                .fill(Color(.separator).opacity(0.20))
                 .frame(maxWidth: .infinity)
                 .frame(height: 0.5)
         }
-        .shadow(color: .black.opacity(0.07), radius: 10, y: -2)
     }
 
     private func tabButton(_ tab: MotiTab) -> some View {
@@ -412,7 +410,7 @@ private struct MotiTabBar: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            .foregroundStyle(selectedTab == tab ? .indigo : .secondary)
+            .foregroundStyle(selectedTab == tab ? .motiAccent : .secondary)
             .frame(maxWidth: .infinity, minHeight: 52)
             .contentShape(Rectangle())
         }
@@ -423,9 +421,14 @@ private struct MotiTabBar: View {
     private var centerAction: some View {
         ZStack {
             Circle()
-                .fill(Color.indigo)
+                .fill(Color.motiAccent)
                 .frame(width: MotiTabBarMetrics.plusSize, height: MotiTabBarMetrics.plusSize)
-                .shadow(color: .indigo.opacity(0.18), radius: 6, y: 2)
+                .overlay(alignment: .top) {
+                    Circle()
+                        .stroke(.white.opacity(0.20), lineWidth: 0.5)
+                        .frame(width: MotiTabBarMetrics.plusSize, height: MotiTabBarMetrics.plusSize)
+                }
+                .shadow(color: Color.motiAccent.opacity(0.18), radius: 8, y: 3)
             Image(systemName: "plus")
                 .font(.system(size: 22, weight: .medium))
                 .foregroundStyle(.white)

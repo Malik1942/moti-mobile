@@ -12,7 +12,11 @@ struct ProjectPill: View {
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .foregroundStyle(isSelected ? .white : color)
-            .background(isSelected ? color : color.opacity(0.12), in: Capsule())
+            .foregroundStyle(isSelected ? .white : .primary)
+            .background(isSelected ? color : Color.motiQuietFill, in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(isSelected ? .clear : color.opacity(0.20), lineWidth: 0.5)
+            }
     }
 }

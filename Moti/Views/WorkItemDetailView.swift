@@ -88,7 +88,7 @@ struct WorkItemDetailView: View {
                 if item.isRecurring {
                     HStack {
                         Label("Repeats", systemImage: "repeat")
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(.motiAccent)
                         Spacer()
                         Text(item.recurrence.displayLabel)
                             .foregroundStyle(.secondary)
@@ -466,7 +466,7 @@ private struct ActiveSessionRow: View {
             HStack {
                 Label("Session active", systemImage: "timer")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Spacer()
                 Text(session.remainingLabel)
                     .font(.caption)
@@ -474,18 +474,18 @@ private struct ActiveSessionRow: View {
             }
 
             ProgressView(value: session.currentProgress)
-                .tint(.indigo)
+                .tint(.motiAccent)
 
             HStack(spacing: 16) {
                 ForEach(session.checkpointProgress, id: \.self) { cp in
                     let fired = session.firedCheckpoints.contains(cp)
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(fired ? Color.indigo : Color.secondary.opacity(0.25))
+                            .fill(fired ? Color.motiAccent : Color.secondary.opacity(0.25))
                             .frame(width: 6, height: 6)
                         Text("\(Int(cp * 100))%")
                             .font(.caption2)
-                            .foregroundStyle(fired ? .indigo : .secondary)
+                            .foregroundStyle(fired ? .motiAccent : .secondary)
                     }
                 }
             }

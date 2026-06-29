@@ -122,7 +122,7 @@ private struct ClarificationCard: View {
             HStack {
                 Text("Quick question")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Spacer()
                 DismissButton(onDismiss: onDismiss)
             }
@@ -131,10 +131,10 @@ private struct ClarificationCard: View {
             if let projectName = decision.inferredProjectName {
                 Text(projectName)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color.indigo.opacity(0.1))
+                    .background(Color.motiAccent.opacity(0.1))
                     .clipShape(Capsule())
             }
 
@@ -179,7 +179,7 @@ private struct ClarificationCard: View {
                             onAnswer(trimmed)
                         }
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(.motiAccent)
                         .disabled(freeformText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 }
@@ -209,7 +209,7 @@ private struct TaskPreviewCard: View {
             HStack {
                 Text("Proposed task")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Spacer()
                 DismissButton(onDismiss: onDismiss)
             }
@@ -237,10 +237,10 @@ private struct TaskPreviewCard: View {
             if let projectName = decision.inferredProjectName {
                 Text(projectName)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color.indigo.opacity(0.1))
+                    .background(Color.motiAccent.opacity(0.1))
                     .clipShape(Capsule())
             }
 
@@ -278,7 +278,7 @@ private struct TaskPreviewCard: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.indigo)
+                        .background(Color.motiAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
@@ -320,10 +320,10 @@ private struct RefineButton: View {
         } label: {
             Label("Refine", systemImage: "wand.and.stars")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.indigo)
+                .foregroundStyle(.motiAccent)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
-                .background(Color.indigo.opacity(0.10))
+                .background(Color.motiAccent.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -365,7 +365,7 @@ private struct RefineField: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .background(Color.indigo)
+                        .background(Color.motiAccent)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -402,7 +402,7 @@ private struct ProjectContextPreviewCard: View {
             HStack {
                 Text("Project context found")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Spacer()
                 DismissButton(onDismiss: onDismiss)
             }
@@ -463,7 +463,7 @@ private struct ProjectContextPreviewCard: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.indigo)
+                        .background(Color.motiAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
@@ -562,7 +562,7 @@ private struct WorkspacePreviewCard: View {
         HStack {
             Text(headerLabel)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.indigo)
+                .foregroundStyle(.motiAccent)
             Spacer()
             DismissButton(onDismiss: onDismiss)
         }
@@ -597,10 +597,10 @@ private struct WorkspacePreviewCard: View {
         if let scope = workspace.estimatedScope, !scope.isEmpty {
             Label(scope, systemImage: "calendar")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.indigo)
+                .foregroundStyle(.motiAccent)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(Color.indigo.opacity(0.10))
+                .background(Color.motiAccent.opacity(0.10))
                 .clipShape(Capsule())
         }
     }
@@ -610,7 +610,7 @@ private struct WorkspacePreviewCard: View {
         if let change = workspace.planChangeSummary, !change.isEmpty {
             Label("Updated: \(change)", systemImage: "sparkles")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.indigo)
+                .foregroundStyle(.motiAccent)
         }
     }
 
@@ -623,10 +623,10 @@ private struct WorkspacePreviewCard: View {
                 Text("\(workspace.targets.count) planning targets detected")
             }
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.indigo)
+            .foregroundStyle(.motiAccent)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color.indigo.opacity(0.10))
+            .background(Color.motiAccent.opacity(0.10))
             .clipShape(Capsule())
         }
     }
@@ -706,7 +706,7 @@ private struct WorkspacePreviewCard: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
-                        .background(Color.indigo)
+                        .background(Color.motiAccent)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -726,7 +726,7 @@ private struct WorkspacePreviewCard: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.indigo)
+                    .background(Color.motiAccent)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -739,10 +739,10 @@ private struct WorkspacePreviewCard: View {
             } label: {
                 Label("Refine", systemImage: "wand.and.stars")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    .background(Color.indigo.opacity(0.10))
+                    .background(Color.motiAccent.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -802,7 +802,7 @@ private struct TargetSectionView: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text("\(index + 1).")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Text(target.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -820,15 +820,15 @@ private struct TargetSectionView: View {
                 if let due = target.dueTimeExpression, !due.isEmpty {
                     Label("Due: \(due)", systemImage: "flag.fill")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(.motiAccent)
                 }
                 if let project = target.projectName, !project.isEmpty {
                     Text(project)
                         .font(.caption2.weight(.medium))
-                        .foregroundStyle(.indigo)
+                        .foregroundStyle(.motiAccent)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Color.indigo.opacity(0.10))
+                        .background(Color.motiAccent.opacity(0.10))
                         .clipShape(Capsule())
                 }
                 if target.deliverableType != .unknown {
@@ -864,7 +864,7 @@ private struct TargetSectionView: View {
     private func priorityBackground(_ priority: PriorityLevel) -> AnyShapeStyle {
         switch priority {
         case .low:    AnyShapeStyle(Color.secondary.opacity(0.10))
-        case .medium: AnyShapeStyle(Color.indigo.opacity(0.12))
+        case .medium: AnyShapeStyle(Color.motiAccent.opacity(0.12))
         case .high:   AnyShapeStyle(Color.orange.opacity(0.18))
         }
     }
@@ -884,7 +884,7 @@ private struct PhaseSectionView: View {
                     if let timing = phase.phaseTimeExpression, !timing.isEmpty {
                         Label(timing, systemImage: "calendar.badge.clock")
                             .font(.caption.weight(.medium))
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(.motiAccent)
                             .padding(.bottom, 2)
                     }
                     ForEach(phase.tasks) { task in
@@ -903,10 +903,10 @@ private struct PhaseSectionView: View {
                                     if let project = task.projectName, !project.isEmpty {
                                         Text(project)
                                             .font(.caption2.weight(.medium))
-                                            .foregroundStyle(.indigo)
+                                            .foregroundStyle(.motiAccent)
                                             .padding(.horizontal, 6)
                                             .padding(.vertical, 2)
-                                            .background(Color.indigo.opacity(0.10))
+                                            .background(Color.motiAccent.opacity(0.10))
                                             .clipShape(Capsule())
                                     }
                                     if let time = task.timeExpression, !time.isEmpty {
@@ -941,7 +941,7 @@ private struct PhaseSectionView: View {
                 }
             }
         )
-        .accentColor(.indigo)
+        .accentColor(.motiAccent)
     }
 }
 
@@ -966,7 +966,7 @@ private struct FallbackCard: View {
                 onDismiss()
             }
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.indigo)
+            .foregroundStyle(.motiAccent)
         }
         .padding(24)
         .cardStyle()
