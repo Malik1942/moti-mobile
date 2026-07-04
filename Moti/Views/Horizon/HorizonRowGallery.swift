@@ -29,7 +29,7 @@ struct HorizonRowGallery: View {
             achievement("Portfolio rebuild", .dueIn(bucket: .today,
                         countdown: CountdownPayload(daysRemaining: 0, dueDate: now)))
             hairline
-            HorizonFoldRow(summary: FoldSummary(count: 3, strandIDs: [], reason: .onCourse))
+            HorizonFoldRow(count: 3, reason: .onCourse)
 
             header(.restOfThisWeek)
             achievement("Grant application", .dueIn(bucket: .restOfThisWeek,
@@ -44,7 +44,7 @@ struct HorizonRowGallery: View {
             header(.later)
             achievement("Someday novel", .achievementNoDueDate)
             hairline
-            HorizonFoldRow(summary: FoldSummary(count: 5, strandIDs: [], reason: .collapsedBucket))
+            HorizonFoldRow(count: 5, reason: .collapsedBucket)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(HorizonTheme.surface)

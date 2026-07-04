@@ -82,6 +82,13 @@ final class HorizonSnapshotTests: XCTestCase {
         snap.sections.first { $0.bucket == bucket }
     }
 
+    private func assertFold(_ fold: FoldSummary?, _ reason: FoldSummary.Reason, _ ids: [String],
+                            file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(fold?.reason, reason, "fold reason", file: file, line: line)
+        XCTAssertEqual(fold?.strandIDs, ids, "fold strandIDs", file: file, line: line)
+        XCTAssertEqual(fold?.count, ids.count, "fold count", file: file, line: line)
+    }
+
     // MARK: - Golden
 
     func test_golden_fullStructure() {
@@ -96,24 +103,24 @@ final class HorizonSnapshotTests: XCTestCase {
         XCTAssertEqual(today.rows.map(\.strandID), ["feedOverdue", "overdue", "todayApproach"])
         XCTAssertEqual(today.rows.prefix(2).map(\.isPinnedToTodayTop), [true, true])
         XCTAssertFalse(today.rows[2].isPinnedToTodayTop)
-        XCTAssertEqual(today.fold, FoldSummary(count: 1, strandIDs: ["todayOnTrack"], reason: .onCourse))
+        assertFold(today.fold, .onCourse, ["todayOnTrack"])
 
         // Tomorrow: one loud row, two folded on course.
         let tomorrow = section(snap, .tomorrow)!
         XCTAssertEqual(tomorrow.rows.map(\.strandID), ["tmrApproach"])
-        XCTAssertEqual(tomorrow.fold, FoldSummary(count: 2, strandIDs: ["tmrOnTrack1", "tmrOnTrack2"], reason: .onCourse))
+        assertFold(tomorrow.fold, .onCourse, ["tmrOnTrack1", "tmrOnTrack2"])
 
         // Rest of week: nothing loud → just the fold.
         let week = section(snap, .restOfThisWeek)!
         XCTAssertTrue(week.rows.isEmpty)
-        XCTAssertEqual(week.fold, FoldSummary(count: 1, strandIDs: ["weekOnTrack"], reason: .onCourse))
+        assertFold(week.fold, .onCourse, ["weekOnTrack"])
 
-        // Far buckets: collapsed count rows.
-        XCTAssertEqual(section(snap, .restOfThisMonth)!.fold,
-                       FoldSummary(count: 2, strandIDs: ["month1", "month2"], reason: .collapsedBucket))
+        // Far buckets: collapsed count rows carry their rows for expansion.
+        assertFold(section(snap, .restOfThisMonth)!.fold, .collapsedBucket, ["month1", "month2"])
         XCTAssertTrue(section(snap, .restOfThisMonth)!.rows.isEmpty)
-        XCTAssertEqual(section(snap, .later)!.fold,
-                       FoldSummary(count: 3, strandIDs: ["laterFar", "laterNoDue", "laterNoRhythm"], reason: .collapsedBucket))
+        assertFold(section(snap, .later)!.fold, .collapsedBucket, ["laterFar", "laterNoDue", "laterNoRhythm"])
+        // The folded rows are real, renderable rows (not just ids).
+        XCTAssertEqual(section(snap, .later)!.fold?.rows.first?.name, "laterFar")
 
         // Past: reverse-chronological, origins carried.
         XCTAssertEqual(snap.past.entries.map(\.strandID), ["compA", "compB"])

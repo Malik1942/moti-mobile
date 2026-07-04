@@ -139,12 +139,21 @@ struct MaintenanceRow: View {
 /// `FoldSummary.reason` chooses the copy. Quiet by design — tertiary chevron,
 /// secondary text.
 struct HorizonFoldRow: View {
-    let summary: FoldSummary
+    let count: Int
+    let reason: FoldSummary.Reason
+
+    init(count: Int, reason: FoldSummary.Reason) {
+        self.count = count
+        self.reason = reason
+    }
+    init(summary: FoldSummary) {
+        self.init(count: summary.count, reason: summary.reason)
+    }
 
     private var text: String {
-        switch summary.reason {
-        case .onCourse: return HorizonCopy.onCourse(summary.count)
-        case .collapsedBucket: return HorizonCopy.collapsedCount(summary.count)
+        switch reason {
+        case .onCourse: return HorizonCopy.onCourse(count)
+        case .collapsedBucket: return HorizonCopy.collapsedCount(count)
         }
     }
 

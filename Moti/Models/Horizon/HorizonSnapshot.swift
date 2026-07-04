@@ -40,10 +40,13 @@ struct FoldSummary: Equatable {
         /// Far bucket (rest of month / later): the whole bucket collapsed.
         case collapsedBucket
     }
-    let count: Int
-    /// Folded strand identities, in stable render order — for expansion (T9).
-    let strandIDs: [String]
+    /// The folded rows, in stable render order — revealed when the fold is
+    /// expanded (T9). Carrying the rows (not just IDs) lets the screen render
+    /// them on tap without re-deriving.
+    let rows: [HorizonRow]
     let reason: Reason
+    var count: Int { rows.count }
+    var strandIDs: [String] { rows.map(\.strandID) }
 }
 
 /// One rendered bucket. `rows` are the surfaced (loud) strands, pinned overdue
@@ -56,6 +59,8 @@ struct BucketSection: Equatable, Identifiable {
     /// Today rendered with nothing in it → the view shows "Nothing needs you
     /// today." (PRD §7.3). Only Today is ever emitted empty.
     var isEmpty: Bool { rows.isEmpty && fold == nil }
+    /// Total strands in this bucket (surfaced + folded) — shown in the header.
+    var strandCount: Int { rows.count + (fold?.count ?? 0) }
 }
 
 /// The Past region (PRD §6.5): completed futures, reverse-chronological.
@@ -124,14 +129,14 @@ enum HorizonSnapshotBuilder {
             let loud = items.filter { !$0.quiet }.sorted(by: Self.rowOrder)
             let quiet = items.filter { $0.quiet }.sorted(by: Self.rowOrder)
             let fold = quiet.isEmpty ? nil
-                : FoldSummary(count: quiet.count, strandIDs: quiet.map(\.strand.id), reason: .onCourse)
+                : FoldSummary(rows: quiet.map(Self.row), reason: .onCourse)
             sections.append(BucketSection(bucket: bucket, rows: loud.map(Self.row), fold: fold))
         }
 
         for bucket in farBuckets {
             let items = (byBucket[bucket] ?? []).sorted(by: Self.rowOrder)
             guard !items.isEmpty else { continue }
-            let fold = FoldSummary(count: items.count, strandIDs: items.map(\.strand.id), reason: .collapsedBucket)
+            let fold = FoldSummary(rows: items.map(Self.row), reason: .collapsedBucket)
             sections.append(BucketSection(bucket: bucket, rows: [], fold: fold))
         }
 
