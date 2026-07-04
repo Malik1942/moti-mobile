@@ -20,6 +20,7 @@ struct SettingsView: View {
     @AppStorage(WorkItemNotificationScheduler.dueRemindersKey)   private var dueRemindersEnabled = true
     @AppStorage(WorkItemNotificationScheduler.progressChecksKey) private var progressChecksEnabled = true
     @AppStorage("useTrajectoryTimeline") private var useTrajectoryTimeline = false
+    @AppStorage(FeatureFlag.horizonTimeline.rawValue) private var horizonTimeline = false
     @AppStorage("timelineTaskSort") private var timelineTaskSortRawValue = TimelineTaskSort.projectPriority.rawValue
 
     @State private var calendarStatus = AppleCalendarSyncStatus.off
@@ -154,6 +155,11 @@ struct SettingsView: View {
 
                     Toggle("Use Trajectory Timeline", isOn: $useTrajectoryTimeline)
                     Text("A redesigned Timeline as a trajectory engine: time runs downward from Now, and each future is projected from your actual pace — on-time, slipping, fading, or sustained.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    Toggle(FeatureFlag.horizonTimeline.label, isOn: $horizonTimeline)
+                    Text("Horizon (v2): a vertically scrolling queue bucketed by time — Today, this week, later. Problems surface; on-track futures fold away. The axis view becomes a Map reachable from the toolbar.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

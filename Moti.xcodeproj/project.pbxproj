@@ -26,6 +26,7 @@
 		1B3BF384EA3A876E563D0ED6 /* WorkItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */; };
 		1C576D64716B87B4110D8CC6 /* CaptureModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 383EA9D03ACDB97879F001F8 /* CaptureModels.swift */; };
 		1DEC78B04951F74177886419 /* StrandTimelineBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C6A3FDECF3509C2D40B9FD /* StrandTimelineBuilder.swift */; };
+		1EF8E6474CA766909179C3D0 /* HorizonStrandAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC9494A06C37C229FF14C35 /* HorizonStrandAdapterTests.swift */; };
 		1F5AAA357B7EC34B20B3DFB8 /* ProjectInferrer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */; };
 		20B1A574C0AD5EE0BC63195D /* UserDefaultsKeyMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD9A2EA3BA8D00B6063D9A7C /* UserDefaultsKeyMigrator.swift */; };
 		285A968B52BB019CEA004E86 /* StrandTimelineBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DCFF5E6B664378EF5AC80FF /* StrandTimelineBuilderTests.swift */; };
@@ -41,6 +42,7 @@
 		3180B9E68AEBF656429EE685 /* HorizonTypicalGapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86DFCE9FAFF34AF332B42470 /* HorizonTypicalGapTests.swift */; };
 		323A9F35903F83C94D43BB2D /* ProjectMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D464C36EA07A200DFFF065 /* ProjectMatcher.swift */; };
 		336E34E87C3C99DAB42B7688 /* GeminiSchemaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */; };
+		3374926A36D23272152DA172 /* FeatureFlag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E5039832594EE1EEE68074 /* FeatureFlag.swift */; };
 		3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4CB83BECF9B15618F7FA70 /* TemporalInterpretation.swift */; };
 		421C2DB443570D777B8A7936 /* TemporalAnchors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D05119B2C63105641FCDC79 /* TemporalAnchors.swift */; };
 		430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */; };
@@ -131,6 +133,7 @@
 		D70CA5CDB0F57F11B6C38A79 /* HorizonTimeBucketTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */; };
 		D798E9C040D7B54F1C764C91 /* EditProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */; };
 		D83320F360B31A2662C137CF /* HorizonSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D8214101CC5118B537984C6 /* HorizonSnapshot.swift */; };
+		D863CC7641C1C0A73727ED20 /* HorizonStrandAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00E705486A8EEDDD5E964A7 /* HorizonStrandAdapter.swift */; };
 		D8E24D814D5F2FD45D444D96 /* MotiWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BBCECF2669A889C4D6145209 /* MotiWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D8F405CDC5C128215599ABAC /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50801E7E5A2BFDC868528F38 /* PlanView.swift */; };
 		D9FF2A47343D6EA532CD6B4B /* SemanticBias.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC4C9E0E625EAD5E505D2EC /* SemanticBias.swift */; };
@@ -154,6 +157,7 @@
 		F4564D7B26F5BB56721EEE31 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = EA71EBBF736BD816610EE36A /* README.md */; };
 		F844DAF23A6518729DE79D47 /* TimeBucket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */; };
 		FA77399088A3C3EF42BFD518 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0209A5FAA692F0C783A106C /* SoundManager.swift */; };
+		FAB26B37CFC9B5734D7D54E6 /* HorizonContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D2C67C1A4F4B58B5638B109 /* HorizonContainerView.swift */; };
 		FBC035FA675D5D8580BC9984 /* HorizonBucketPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */; };
 		FC4204C6A69F8533AA31857A /* HorizonQuietnessProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4543873291E036C875A123 /* HorizonQuietnessProviderTests.swift */; };
 		FC9D2CAC27309184B1A166ED /* HorizonRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EAA92D04974799124EBD87 /* HorizonRows.swift */; };
@@ -239,8 +243,10 @@
 		47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FallbackHonestyTests.swift; sourceTree = "<group>"; };
 		48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceRule.swift; sourceTree = "<group>"; };
 		494DCB3733C6805B72A4654B /* TaskUnderstandingServiceFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskUnderstandingServiceFactory.swift; sourceTree = "<group>"; };
+		4D2C67C1A4F4B58B5638B109 /* HorizonContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonContainerView.swift; sourceTree = "<group>"; };
 		4EF157DBAE933EECAA3A5046 /* FoundationModelsTaskUnderstandingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsTaskUnderstandingService.swift; sourceTree = "<group>"; };
 		50801E7E5A2BFDC868528F38 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		50E5039832594EE1EEE68074 /* FeatureFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlag.swift; sourceTree = "<group>"; };
 		50F4E8BC65CE551E817F3140 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		51F52EABD1066C781D39D217 /* StrandGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandGeometry.swift; sourceTree = "<group>"; };
 		53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsView.swift; sourceTree = "<group>"; };
@@ -302,6 +308,7 @@
 		AD9A2EA3BA8D00B6063D9A7C /* UserDefaultsKeyMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeyMigrator.swift; sourceTree = "<group>"; };
 		AFD02B661C4C23E73161D015 /* TrajectoryInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryInstrumentation.swift; sourceTree = "<group>"; };
 		B009F21F8CD89778BD8B4346 /* WorkItemCompletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemCompletion.swift; sourceTree = "<group>"; };
+		B00E705486A8EEDDD5E964A7 /* HorizonStrandAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonStrandAdapter.swift; sourceTree = "<group>"; };
 		B2ECCB44A3F1A4600E84B001 /* error.caf */ = {isa = PBXFileReference; path = error.caf; sourceTree = "<group>"; };
 		B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineCheckpointScheduler.swift; sourceTree = "<group>"; };
 		B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningIntentTests.swift; sourceTree = "<group>"; };
@@ -341,6 +348,7 @@
 		F71B2181A41236F91C6D7F52 /* RecurrenceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParserTests.swift; sourceTree = "<group>"; };
 		F88C1D0E755889C162161D3C /* TrajectoryAxis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryAxis.swift; sourceTree = "<group>"; };
 		F9E4761CC4E0F309936BF958 /* HorizonRowGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonRowGallery.swift; sourceTree = "<group>"; };
+		FAC9494A06C37C229FF14C35 /* HorizonStrandAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonStrandAdapterTests.swift; sourceTree = "<group>"; };
 		FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicy.swift; sourceTree = "<group>"; };
 		FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionLog.swift; sourceTree = "<group>"; };
 		FFCBF922DCE46509449BDBBC /* MotiDebugDataLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiDebugDataLogger.swift; sourceTree = "<group>"; };
@@ -404,12 +412,14 @@
 		264A863458AD763DE0A7B96F /* Horizon */ = {
 			isa = PBXGroup;
 			children = (
+				4D2C67C1A4F4B58B5638B109 /* HorizonContainerView.swift */,
 				63A4DB24F091B5252DE92DEF /* HorizonCopy.swift */,
 				463C8BCC8D85C35341760824 /* HorizonFoldStore.swift */,
 				6F53488AF435FE3C40B5CCD7 /* HorizonGlyph.swift */,
 				F9E4761CC4E0F309936BF958 /* HorizonRowGallery.swift */,
 				F0EAA92D04974799124EBD87 /* HorizonRows.swift */,
 				2D2C2A35B038FE3062825DD5 /* HorizonSnapshotPreviewData.swift */,
+				B00E705486A8EEDDD5E964A7 /* HorizonStrandAdapter.swift */,
 				0489F2C3DF2A8F4A30C8660C /* HorizonTheme.swift */,
 				14F4FDFF704F1C0775266EEA /* HorizonView.swift */,
 			);
@@ -491,6 +501,7 @@
 				CE4543873291E036C875A123 /* HorizonQuietnessProviderTests.swift */,
 				9BA36CC65FED0E5972ECBA45 /* HorizonScreenSnapshotTests.swift */,
 				42BB0F85714907ACE89820D9 /* HorizonSnapshotTests.swift */,
+				FAC9494A06C37C229FF14C35 /* HorizonStrandAdapterTests.swift */,
 				8CC7CA3BA91D3A219EF637FB /* HorizonThemeTests.swift */,
 				3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */,
 				86DFCE9FAFF34AF332B42470 /* HorizonTypicalGapTests.swift */,
@@ -602,6 +613,7 @@
 		A9A83BF4BADB3D63126E6ABC /* App */ = {
 			isa = PBXGroup;
 			children = (
+				50E5039832594EE1EEE68074 /* FeatureFlag.swift */,
 				847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */,
 			);
 			path = App;
@@ -853,6 +865,7 @@
 				FC4204C6A69F8533AA31857A /* HorizonQuietnessProviderTests.swift in Sources */,
 				A78E5E10ECA397EA4BE47607 /* HorizonScreenSnapshotTests.swift in Sources */,
 				4D563F297549B59993B4DEFE /* HorizonSnapshotTests.swift in Sources */,
+				1EF8E6474CA766909179C3D0 /* HorizonStrandAdapterTests.swift in Sources */,
 				AF484BF3461BABCC1B627137 /* HorizonThemeTests.swift in Sources */,
 				D70CA5CDB0F57F11B6C38A79 /* HorizonTimeBucketTests.swift in Sources */,
 				3180B9E68AEBF656429EE685 /* HorizonTypicalGapTests.swift in Sources */,
@@ -895,9 +908,11 @@
 				605C6E620F133E9F8C6A1B79 /* DeterministicPreClassifier.swift in Sources */,
 				D798E9C040D7B54F1C764C91 /* EditProjectSheet.swift in Sources */,
 				51C2438A2CEDF87F0CF01199 /* Enums.swift in Sources */,
+				3374926A36D23272152DA172 /* FeatureFlag.swift in Sources */,
 				C276154A921126DB993D149C /* FoundationModelsTaskUnderstandingService.swift in Sources */,
 				835414BE2D2BE8C8BE95002B /* GeminiAPIClient.swift in Sources */,
 				2D6E81A232B8329420F89BA2 /* GeminiContextualCaptureService.swift in Sources */,
+				FAB26B37CFC9B5734D7D54E6 /* HorizonContainerView.swift in Sources */,
 				0A99F67CD4428B5EB56F490A /* HorizonCopy.swift in Sources */,
 				4CB96481BC456A1B47B197A5 /* HorizonFoldStore.swift in Sources */,
 				6A23A83402092AA3D8D4B646 /* HorizonGlyph.swift in Sources */,
@@ -906,6 +921,7 @@
 				D83320F360B31A2662C137CF /* HorizonSnapshot.swift in Sources */,
 				00A09275F1D59C861BE11146 /* HorizonSnapshotPreviewData.swift in Sources */,
 				EE383D7BA5053FC791C255E6 /* HorizonStrand.swift in Sources */,
+				D863CC7641C1C0A73727ED20 /* HorizonStrandAdapter.swift in Sources */,
 				006CA97831182C064B421CB0 /* HorizonTheme.swift in Sources */,
 				E1C6F2F3D81E146D5503A2F7 /* HorizonView.swift in Sources */,
 				2DEE146A39BFB8A572F35CEA /* LLMTiebreaker.swift in Sources */,
