@@ -76,6 +76,9 @@ struct RootTabView: View {
     /// Feature flag for the v2.0 Trajectory Timeline redesign. Off by default so
     /// the existing Timeline ships unchanged until the redesign is proven.
     @AppStorage("useTrajectoryTimeline") private var useTrajectoryTimeline = false
+    /// Horizon Timeline v2 flag. When on, Horizon is the Timeline tab root and
+    /// the axis view is demoted to a reachable Map. Off by default.
+    @AppStorage(FeatureFlag.horizonTimeline.rawValue) private var horizonTimeline = false
     @State private var selectedTab: MotiTab = .timeline
     @State private var showingCapture = false
     @State private var captureStartMode: CaptureStartMode = .text
@@ -306,7 +309,14 @@ struct RootTabView: View {
     private var selectedContent: some View {
         switch selectedTab {
         case .timeline:
-            if useTrajectoryTimeline {
+            if horizonTimeline {
+                // Horizon (v2): bucket-based temporal queue; axis view demoted to
+                // a Map reachable from Horizon's toolbar.
+                HorizonContainerView(
+                    onAddToTimeline: { presentCapture(.text) },
+                    onOpenInProjects: { _ in selectedTab = .projects }
+                )
+            } else if useTrajectoryTimeline {
                 // v2.0 trajectory engine (revised PRD). Supersedes the earlier
                 // presence-first timeline, removed in the cleanup pass.
                 TrajectoryTimelineView(

@@ -28,6 +28,7 @@ enum WorkItemCompletion {
             item.status = .done
             item.needsReview = false
             item.updatedAt = now
+            if item.completedAt == nil { item.completedAt = now } // set once (audit P6)
             try? modelContext.save()
             return false
         }
