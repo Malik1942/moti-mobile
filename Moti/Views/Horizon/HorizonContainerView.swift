@@ -81,7 +81,9 @@ struct HorizonContainerView: View {
             guard !items.isEmpty else { return nil }
             let allTerminal = items.allSatisfy { [.done, .skipped, .archived].contains($0.status) }
             let done = items.filter { $0.status == .done }
-            guard allTerminal, let completedAt = done.map(\.updatedAt).max() else { return nil }
+            // Prefer the immutable completion stamp (P6); fall back to updatedAt
+            // for items completed before the field existed.
+            guard allTerminal, let completedAt = done.map({ $0.completedAt ?? $0.updatedAt }).max() else { return nil }
             return HorizonCompletion(id: project.id.uuidString, name: project.name,
                                      colorToken: project.colorToken,
                                      completedAt: completedAt, origin: project.createdAt)

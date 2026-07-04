@@ -218,6 +218,7 @@ struct WorkItemDetailView: View {
                 }
                 item.status = newStatus
                 item.needsReview = newStatus == .needsReview
+                if newStatus == .done, item.completedAt == nil { item.completedAt = .now } // audit P6
             }
         )
     }

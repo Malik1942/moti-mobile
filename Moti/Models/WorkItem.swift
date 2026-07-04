@@ -18,6 +18,12 @@ final class WorkItem {
     var project: Project?
     var createdAt: Date
     var updatedAt: Date
+    /// When this item first completed. Set once on the first `.done` transition
+    /// and never re-stamped, so the Horizon Past region's arrival date doesn't
+    /// drift when a completed item is later edited (audit P6). Optional →
+    /// lightweight SwiftData migration; nil for pre-existing completed items,
+    /// which fall back to `updatedAt`.
+    var completedAt: Date?
     var dueDate: Date?
     var workingStartDate: Date?
     var workingEndDate: Date?
