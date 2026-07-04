@@ -33,6 +33,7 @@
 		2FB5F8FA3E344597D5870D58 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F8750733AF4FC3145AA7E /* SettingsView.swift */; };
 		310337503301B43C024E4DEC /* FoundationModelDedupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6C352C479B03C118265AD /* FoundationModelDedupTests.swift */; };
 		3108399742D43D3BC4246250 /* WorkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76D29D54DF4775B05381C4E /* WorkSession.swift */; };
+		3180B9E68AEBF656429EE685 /* HorizonTypicalGapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86DFCE9FAFF34AF332B42470 /* HorizonTypicalGapTests.swift */; };
 		323A9F35903F83C94D43BB2D /* ProjectMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2D464C36EA07A200DFFF065 /* ProjectMatcher.swift */; };
 		336E34E87C3C99DAB42B7688 /* GeminiSchemaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */; };
 		3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC4CB83BECF9B15618F7FA70 /* TemporalInterpretation.swift */; };
@@ -96,6 +97,7 @@
 		AA5A8956C53E4DE978879608 /* ambiguous.caf in Resources */ = {isa = PBXBuildFile; fileRef = E210F0D95C629CC6FB8F1BF7 /* ambiguous.caf */; };
 		ACCA94165CDDEFDD94530283 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */; };
 		AD6210438742AAC67EEEF5C3 /* MotiWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC40B70C5C2554C3CB451E89 /* MotiWidgetViews.swift */; };
+		ADB3684CCF4EE2B6FC3359B6 /* TypicalGap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756DBC9F95FC5A00B78DA23A /* TypicalGap.swift */; };
 		AFA15869AE41E5331338B141 /* TimelineCheckpointScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67AF8AC34A02DD9445B3B9E /* TimelineCheckpointScheduler.swift */; };
 		B849D3137358A34B6EB7BED6 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */; };
 		BA3AC6649C8702969AB85897 /* ProjectPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2A9C322628F35353C0B5D /* ProjectPill.swift */; };
@@ -230,6 +232,7 @@
 		6B74EF4219717B138C1A0737 /* DateResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateResolver.swift; sourceTree = "<group>"; };
 		7316661A4F25EDDD36C8068D /* ProjectInferrer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectInferrer.swift; sourceTree = "<group>"; };
 		74F1D358E9001940945FF637 /* PlanningClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningClassifier.swift; sourceTree = "<group>"; };
+		756DBC9F95FC5A00B78DA23A /* TypicalGap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypicalGap.swift; sourceTree = "<group>"; };
 		757E196764677A82655E3F6B /* TimelineNarratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineNarratorTests.swift; sourceTree = "<group>"; };
 		75AE02F70F6655486F7ED88B /* CheckpointPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicyTests.swift; sourceTree = "<group>"; };
 		75D559A3C6875E85A44BBF6B /* WorkItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemDetailView.swift; sourceTree = "<group>"; };
@@ -244,6 +247,7 @@
 		842BE0DC4CA87DB834F1E46A /* StrandPreferenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPreferenceStore.swift; sourceTree = "<group>"; };
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		86DFCE9FAFF34AF332B42470 /* HorizonTypicalGapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonTypicalGapTests.swift; sourceTree = "<group>"; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
 		8FBE412CD8CA2B6FA5C3C175 /* StrandPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPresence.swift; sourceTree = "<group>"; };
 		91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiSchemaTests.swift; sourceTree = "<group>"; };
@@ -432,6 +436,7 @@
 				91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */,
 				EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */,
 				3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */,
+				86DFCE9FAFF34AF332B42470 /* HorizonTypicalGapTests.swift */,
 				5C7CA6D8734B95C03C699409 /* IntelligenceAuditTests.swift */,
 				164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */,
 				B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */,
@@ -573,6 +578,7 @@
 			children = (
 				9D3A600D1D430BFE6A4F6EFE /* BucketPlacement.swift */,
 				5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */,
+				756DBC9F95FC5A00B78DA23A /* TypicalGap.swift */,
 			);
 			path = Horizon;
 			sourceTree = "<group>";
@@ -781,6 +787,7 @@
 				336E34E87C3C99DAB42B7688 /* GeminiSchemaTests.swift in Sources */,
 				FBC035FA675D5D8580BC9984 /* HorizonBucketPlacementTests.swift in Sources */,
 				D70CA5CDB0F57F11B6C38A79 /* HorizonTimeBucketTests.swift in Sources */,
+				3180B9E68AEBF656429EE685 /* HorizonTypicalGapTests.swift in Sources */,
 				E232DCB6CE22F4DAE38E8469 /* IntelligenceAuditTests.swift in Sources */,
 				2F80ECD2372641349AAF64EF /* PlanningClassifierTests.swift in Sources */,
 				87157B0DF211467C57084F15 /* PlanningIntentTests.swift in Sources */,
@@ -884,6 +891,7 @@
 				7920F9B0901BB4B8B332935F /* TrajectoryInstrumentation.swift in Sources */,
 				4C47F63E73C563809DA01097 /* TrajectoryProjector.swift in Sources */,
 				48822C2563300A2ED3707162 /* TrajectoryTimelineView.swift in Sources */,
+				ADB3684CCF4EE2B6FC3359B6 /* TypicalGap.swift in Sources */,
 				20B1A574C0AD5EE0BC63195D /* UserDefaultsKeyMigrator.swift in Sources */,
 				C109B0E9870DF6AF8B982C92 /* WidgetSnapshot.swift in Sources */,
 				430ED72527A3656870B0494A /* WidgetSnapshotWriter.swift in Sources */,
