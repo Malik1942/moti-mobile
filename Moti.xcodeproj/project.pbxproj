@@ -50,6 +50,7 @@
 		44ABB8741AECBF0F5B51076A /* StrandPreferenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842BE0DC4CA87DB834F1E46A /* StrandPreferenceStore.swift */; };
 		48822C2563300A2ED3707162 /* TrajectoryTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9654B2FA1CD11DEA50DD87 /* TrajectoryTimelineView.swift */; };
 		489F843800D616F3F0DD3EBE /* RecurrenceRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48AEC5003AEA4D4C2F932092 /* RecurrenceRule.swift */; };
+		48E230925989F722EB461C72 /* HorizonBucketMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C5E44790A20C55D324F9C3 /* HorizonBucketMemory.swift */; };
 		4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */; };
 		4B57021A911E77583E5FECE3 /* reorganized.caf in Resources */ = {isa = PBXBuildFile; fileRef = 77BBE151CF9E4115BC8306B6 /* reorganized.caf */; };
 		4C47F63E73C563809DA01097 /* TrajectoryProjector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F82DAC8D1EF88C3EDC7E024 /* TrajectoryProjector.swift */; };
@@ -94,6 +95,7 @@
 		8A63DD6CDDA74788AB200C7A /* ParsedWorkItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */; };
 		8A72977F2DD020B21F2471D2 /* capture.caf in Resources */ = {isa = PBXBuildFile; fileRef = 18CB7EDFC2A8B4ECFD55505A /* capture.caf */; };
 		8BE2E2CB8F0D243AB5BD4428 /* ProjectContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 258DC761CEA7F2DD39A97D29 /* ProjectContext.swift */; };
+		8C53A35DC4E1B1D108C6B6F0 /* HorizonBucketMemoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99728EEE0211DC7AF61285F /* HorizonBucketMemoryTests.swift */; };
 		8F340BE901DCC2CC8B2DEDB4 /* WorkItemScopeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AED7C517C32264EF77676D /* WorkItemScopeTests.swift */; };
 		91459803F70310540B70259E /* StrandPresence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FBE412CD8CA2B6FA5C3C175 /* StrandPresence.swift */; };
 		91B250EF94F1178429D5B32A /* TaskUnderstandingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407BDF1BE02B12A7FE24FA81 /* TaskUnderstandingService.swift */; };
@@ -280,6 +282,7 @@
 		7DC4C9E0E625EAD5E505D2EC /* SemanticBias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticBias.swift; sourceTree = "<group>"; };
 		7E4EE8BDC454C02D8C378127 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		8117BB4A837027777533E234 /* SemanticContextResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemanticContextResolver.swift; sourceTree = "<group>"; };
+		83C5E44790A20C55D324F9C3 /* HorizonBucketMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonBucketMemory.swift; sourceTree = "<group>"; };
 		842BE0DC4CA87DB834F1E46A /* StrandPreferenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPreferenceStore.swift; sourceTree = "<group>"; };
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -351,6 +354,7 @@
 		F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockTimeInferenceTests.swift; sourceTree = "<group>"; };
 		F71B2181A41236F91C6D7F52 /* RecurrenceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParserTests.swift; sourceTree = "<group>"; };
 		F88C1D0E755889C162161D3C /* TrajectoryAxis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrajectoryAxis.swift; sourceTree = "<group>"; };
+		F99728EEE0211DC7AF61285F /* HorizonBucketMemoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonBucketMemoryTests.swift; sourceTree = "<group>"; };
 		F9E4761CC4E0F309936BF958 /* HorizonRowGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonRowGallery.swift; sourceTree = "<group>"; };
 		FAC9494A06C37C229FF14C35 /* HorizonStrandAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonStrandAdapterTests.swift; sourceTree = "<group>"; };
 		FB41675B2D90667D7B154610 /* CheckpointPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointPolicy.swift; sourceTree = "<group>"; };
@@ -416,6 +420,7 @@
 		264A863458AD763DE0A7B96F /* Horizon */ = {
 			isa = PBXGroup;
 			children = (
+				83C5E44790A20C55D324F9C3 /* HorizonBucketMemory.swift */,
 				4D2C67C1A4F4B58B5638B109 /* HorizonContainerView.swift */,
 				63A4DB24F091B5252DE92DEF /* HorizonCopy.swift */,
 				463C8BCC8D85C35341760824 /* HorizonFoldStore.swift */,
@@ -500,6 +505,7 @@
 				47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */,
 				93A6C352C479B03C118265AD /* FoundationModelDedupTests.swift */,
 				91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */,
+				F99728EEE0211DC7AF61285F /* HorizonBucketMemoryTests.swift */,
 				EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */,
 				9D2F80F8B6094D67993109D3 /* HorizonCopyTests.swift */,
 				19E706C75B048676AFB4E645 /* HorizonFoldStoreTests.swift */,
@@ -865,6 +871,7 @@
 				50DF898232A9AE03E38E3D68 /* FallbackHonestyTests.swift in Sources */,
 				310337503301B43C024E4DEC /* FoundationModelDedupTests.swift in Sources */,
 				336E34E87C3C99DAB42B7688 /* GeminiSchemaTests.swift in Sources */,
+				8C53A35DC4E1B1D108C6B6F0 /* HorizonBucketMemoryTests.swift in Sources */,
 				FBC035FA675D5D8580BC9984 /* HorizonBucketPlacementTests.swift in Sources */,
 				791837004246DE77591EB561 /* HorizonCopyTests.swift in Sources */,
 				50681127ECA0EE075109F504 /* HorizonFoldStoreTests.swift in Sources */,
@@ -919,6 +926,7 @@
 				C276154A921126DB993D149C /* FoundationModelsTaskUnderstandingService.swift in Sources */,
 				835414BE2D2BE8C8BE95002B /* GeminiAPIClient.swift in Sources */,
 				2D6E81A232B8329420F89BA2 /* GeminiContextualCaptureService.swift in Sources */,
+				48E230925989F722EB461C72 /* HorizonBucketMemory.swift in Sources */,
 				FAB26B37CFC9B5734D7D54E6 /* HorizonContainerView.swift in Sources */,
 				0A99F67CD4428B5EB56F490A /* HorizonCopy.swift in Sources */,
 				4CB96481BC456A1B47B197A5 /* HorizonFoldStore.swift in Sources */,

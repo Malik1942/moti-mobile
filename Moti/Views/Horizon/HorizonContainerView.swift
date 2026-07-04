@@ -29,6 +29,7 @@ struct HorizonContainerView: View {
     @State private var showingMap = false
     @State private var openedAt: Date?
     @StateObject private var folds = HorizonFoldStore()
+    @StateObject private var bucketMemory = HorizonBucketMemory()
 
     private var calendar: Calendar { .current }
 
@@ -89,7 +90,8 @@ struct HorizonContainerView: View {
 
     var body: some View {
         NavigationStack {
-            HorizonView(snapshot: snapshot, now: now, calendar: calendar, folds: folds)
+            HorizonView(snapshot: snapshot, now: now, calendar: calendar, folds: folds,
+                        bucketMemory: bucketMemory)
                 .navigationTitle("Timeline")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -129,14 +131,41 @@ struct HorizonContainerView: View {
         .sheet(isPresented: $showingMap) {
             // T11: the demoted axis view, reachable via the visible toolbar
             // button (never gesture-only). Presented so its own NavigationStack
-            // is unchanged.
-            TrajectoryTimelineView(
+            // is unchanged; a close affordance + drag indicator make dismissal
+            // explicit (not gesture-only).
+            HorizonMapSheet(
                 onAddToTimeline: onAddToTimeline,
                 onOpenInProjects: { id in
                     showingMap = false
                     onOpenInProjects(id)
-                }
+                },
+                onClose: { showingMap = false }
             )
         }
+    }
+}
+
+/// Wraps the demoted axis Map with an explicit close affordance (PRD §6.6).
+private struct HorizonMapSheet: View {
+    let onAddToTimeline: () -> Void
+    let onOpenInProjects: (String) -> Void
+    let onClose: () -> Void
+
+    var body: some View {
+        TrajectoryTimelineView(onAddToTimeline: onAddToTimeline, onOpenInProjects: onOpenInProjects)
+            .overlay(alignment: .topTrailing) {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 30, height: 30)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .overlay(Circle().strokeBorder(HorizonTheme.hairline, lineWidth: HorizonTheme.hairlineWidth))
+                }
+                .padding(.trailing, HorizonTheme.leadingInset)
+                .padding(.top, 6)
+                .accessibilityLabel("Close Map")
+            }
+            .presentationDragIndicator(.visible)
     }
 }

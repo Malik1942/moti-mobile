@@ -61,6 +61,8 @@ struct BucketSection: Equatable, Identifiable {
     var isEmpty: Bool { rows.isEmpty && fold == nil }
     /// Total strands in this bucket (surfaced + folded) — shown in the header.
     var strandCount: Int { rows.count + (fold?.count ?? 0) }
+    /// Every strand id in this bucket, surfaced or folded (for migration diffing).
+    var allStrandIDs: [String] { rows.map(\.strandID) + (fold?.strandIDs ?? []) }
 }
 
 /// The Past region (PRD §6.5): completed futures, reverse-chronological.

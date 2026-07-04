@@ -52,18 +52,24 @@ struct HorizonView: View {
     @StateObject private var folds: HorizonFoldStore
     @State private var armedForPastReveal = false
     @State private var didRevealPast = false
+    /// Strand ids that migrated toward Now since the last snapshot — animated in
+    /// (T15). Empty unless a `bucketMemory` is injected (live app only).
+    @State private var migratedIDs: Set<String> = []
 
     /// `false` renders a non-lazy static list (used by ImageRenderer snapshots,
     /// which don't lay out ScrollView/LazyVStack content). The running app uses
     /// the default scrolling list with sticky headers.
     private let scrolls: Bool
+    private let bucketMemory: HorizonBucketMemory?
 
     init(snapshot: HorizonSnapshot, now: Date = Date(), calendar: Calendar = .current,
-         folds: HorizonFoldStore = HorizonFoldStore(), scrolls: Bool = true) {
+         folds: HorizonFoldStore = HorizonFoldStore(), scrolls: Bool = true,
+         bucketMemory: HorizonBucketMemory? = nil) {
         self.snapshot = snapshot
         self.now = now
         self.calendar = calendar
         self.scrolls = scrolls
+        self.bucketMemory = bucketMemory
         _folds = StateObject(wrappedValue: folds)
     }
 
@@ -88,6 +94,7 @@ struct HorizonView: View {
                     // Past sits above, revealed by scrolling up.
                     proxy.scrollTo(TimeBucket.today, anchor: .top)
                     DispatchQueue.main.async { armedForPastReveal = true }
+                    computeMigration()
                 }
             }
         } else {
@@ -133,6 +140,14 @@ struct HorizonView: View {
         HorizonInstrumentation.shared.record(.pastOpen)
     }
 
+    /// Diff this snapshot against the remembered buckets to find strands that
+    /// moved toward Now, then record the new state (T15).
+    private func computeMigration() {
+        guard let memory = bucketMemory else { return }
+        migratedIDs = memory.migratedIDs(in: snapshot)
+        memory.record(snapshot)
+    }
+
     private func header(_ section: BucketSection) -> some View {
         HorizonSectionHeader(title: HorizonCopy.bucketTitle(section.bucket),
                              count: section.strandCount) {
@@ -157,6 +172,7 @@ struct HorizonView: View {
         } else {
             ForEach(Array(section.rows.enumerated()), id: \.element.id) { index, row in
                 HorizonStrandRow(row: row, now: now, calendar: calendar)
+                    .modifier(HorizonEntrance(active: migratedIDs.contains(row.strandID), index: index))
                 if index < section.rows.count - 1 || section.fold != nil { hairline }
             }
 
@@ -164,6 +180,7 @@ struct HorizonView: View {
                 if folds.isExpanded(section.bucket.rawValue) {
                     ForEach(Array(fold.rows.enumerated()), id: \.element.id) { index, row in
                         HorizonStrandRow(row: row, now: now, calendar: calendar)
+                            .modifier(HorizonEntrance(active: migratedIDs.contains(row.strandID), index: index))
                         if index < fold.rows.count - 1 { hairline }
                     }
                     .transition(.opacity)
@@ -193,6 +210,30 @@ struct HorizonView: View {
         if willExpand {
             HorizonInstrumentation.shared.record(.bucketExpand, detail: bucket.rawValue)
         }
+    }
+}
+
+// MARK: - Bucket-migration entrance (T15, PRD §7.2)
+
+/// Rows that just moved to a nearer bucket fade in with a slight downward settle,
+/// staggered so time visibly pushes them toward you. Reduce Motion → no animation.
+private struct HorizonEntrance: ViewModifier {
+    let active: Bool
+    let index: Int
+    @State private var settled = false
+
+    private var animating: Bool { active && !settled }
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(animating ? 0 : 1)
+            .offset(y: animating ? -6 : 0)
+            .onAppear {
+                guard active, HorizonTheme.motionEnabled else { settled = true; return }
+                withAnimation(HorizonTheme.settleSpring.delay(Double(index) * HorizonTheme.staggerDelay)) {
+                    settled = true
+                }
+            }
     }
 }
 

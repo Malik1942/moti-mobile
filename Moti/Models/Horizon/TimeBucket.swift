@@ -24,6 +24,11 @@ enum TimeBucket: String, CaseIterable, Equatable {
     case restOfThisMonth
     /// Everything beyond the current month.
     case later
+
+    /// Distance from Now: `today` = 0 (nearest) … `later` = 5 (farthest). A
+    /// smaller ordinal is nearer — used to detect strands that migrated toward
+    /// Now between snapshots (T15).
+    var ordinal: Int { TimeBucket.allCases.firstIndex(of: self) ?? 0 }
 }
 
 /// A half-open date window `[start, end)` owned by exactly one bucket.
