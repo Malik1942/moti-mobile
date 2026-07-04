@@ -75,6 +75,7 @@
 		835414BE2D2BE8C8BE95002B /* GeminiAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */; };
 		85BBE8D2FD0CDF0149CEA7B2 /* error.caf in Resources */ = {isa = PBXBuildFile; fileRef = B2ECCB44A3F1A4600E84B001 /* error.caf */; };
 		861737AB3B2C4D3641443884 /* understood.caf in Resources */ = {isa = PBXBuildFile; fileRef = AC1520A86C04E2BEA6525BF5 /* understood.caf */; };
+		862867874E06392A9EEB8868 /* BucketPlacement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3A600D1D430BFE6A4F6EFE /* BucketPlacement.swift */; };
 		87157B0DF211467C57084F15 /* PlanningIntentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */; };
 		8A63DD6CDDA74788AB200C7A /* ParsedWorkItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE8A7B36020918F79ADFE6E3 /* ParsedWorkItem.swift */; };
 		8A72977F2DD020B21F2471D2 /* capture.caf in Resources */ = {isa = PBXBuildFile; fileRef = 18CB7EDFC2A8B4ECFD55505A /* capture.caf */; };
@@ -135,6 +136,7 @@
 		F4564D7B26F5BB56721EEE31 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = EA71EBBF736BD816610EE36A /* README.md */; };
 		F844DAF23A6518729DE79D47 /* TimeBucket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */; };
 		FA77399088A3C3EF42BFD518 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0209A5FAA692F0C783A106C /* SoundManager.swift */; };
+		FBC035FA675D5D8580BC9984 /* HorizonBucketPlacementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -250,6 +252,7 @@
 		9C62D47C1EBC1DD104B84FF2 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		9C70CC477CF94EA2B60FF7A6 /* AppleCalendarSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleCalendarSyncService.swift; sourceTree = "<group>"; };
 		9D045B4E2C34C171B64EE0BF /* WidgetSnapshotWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotWriter.swift; sourceTree = "<group>"; };
+		9D3A600D1D430BFE6A4F6EFE /* BucketPlacement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BucketPlacement.swift; sourceTree = "<group>"; };
 		9DCFF5E6B664378EF5AC80FF /* StrandTimelineBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandTimelineBuilderTests.swift; sourceTree = "<group>"; };
 		9E0A6640AA4DB3B6C0DED3CE /* CheckpointFloatingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckpointFloatingCard.swift; sourceTree = "<group>"; };
 		A28F8750733AF4FC3145AA7E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -293,6 +296,7 @@
 		EA71EBBF736BD816610EE36A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		ED0E4696D3E1DCD746527272 /* AddProjectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProjectSheet.swift; sourceTree = "<group>"; };
 		EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolverPath.swift; sourceTree = "<group>"; };
+		EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonBucketPlacementTests.swift; sourceTree = "<group>"; };
 		F24D6E42786E619B03F35A81 /* ProjectRelationshipMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRelationshipMigrator.swift; sourceTree = "<group>"; };
 		F3F6CD665BEBBB20BD9BCB82 /* ClockTimeInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockTimeInferenceTests.swift; sourceTree = "<group>"; };
 		F71B2181A41236F91C6D7F52 /* RecurrenceParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParserTests.swift; sourceTree = "<group>"; };
@@ -426,6 +430,7 @@
 				47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */,
 				93A6C352C479B03C118265AD /* FoundationModelDedupTests.swift */,
 				91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */,
+				EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */,
 				3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */,
 				5C7CA6D8734B95C03C699409 /* IntelligenceAuditTests.swift */,
 				164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */,
@@ -566,6 +571,7 @@
 		B550A2545754BF79D075C6FD /* Horizon */ = {
 			isa = PBXGroup;
 			children = (
+				9D3A600D1D430BFE6A4F6EFE /* BucketPlacement.swift */,
 				5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */,
 			);
 			path = Horizon;
@@ -773,6 +779,7 @@
 				50DF898232A9AE03E38E3D68 /* FallbackHonestyTests.swift in Sources */,
 				310337503301B43C024E4DEC /* FoundationModelDedupTests.swift in Sources */,
 				336E34E87C3C99DAB42B7688 /* GeminiSchemaTests.swift in Sources */,
+				FBC035FA675D5D8580BC9984 /* HorizonBucketPlacementTests.swift in Sources */,
 				D70CA5CDB0F57F11B6C38A79 /* HorizonTimeBucketTests.swift in Sources */,
 				E232DCB6CE22F4DAE38E8469 /* IntelligenceAuditTests.swift in Sources */,
 				2F80ECD2372641349AAF64EF /* PlanningClassifierTests.swift in Sources */,
@@ -798,6 +805,7 @@
 			files = (
 				056DD7C1EB2BF180DF9EE5F9 /* AddProjectSheet.swift in Sources */,
 				719310272976C2CFD5F97492 /* AppleCalendarSyncService.swift in Sources */,
+				862867874E06392A9EEB8868 /* BucketPlacement.swift in Sources */,
 				1C576D64716B87B4110D8CC6 /* CaptureModels.swift in Sources */,
 				4911F1D8524E2D084BAF8DE8 /* CapturedClassifier.swift in Sources */,
 				0F0CE33821D7F437ADBDC42A /* CheckInSheet.swift in Sources */,
