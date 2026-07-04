@@ -21,15 +21,17 @@ final class HorizonStrandAdapterTests: XCTestCase {
     }
 
     private func strand(type: StrandType, deadline: Date? = nil, recurrenceCadenceDays: Double? = nil,
-                        lastActivity: Date? = nil, baselineCadenceDays: Double? = nil) -> Strand {
+                        lastActivity: Date? = nil, baselineCadenceDays: Double? = nil,
+                        traceDates: [Date] = []) -> Strand {
         let p = presence(lastActivity: lastActivity, baselineCadenceDays: baselineCadenceDays)
         let trajectory = TrajectoryProjector.project(events: [], type: type, presence: p, deadline: deadline,
                                                      completedCount: 0, totalCount: 0, now: now)
+        let traces = traceDates.map { StrandTrace(id: UUID(), label: "e", date: $0, kind: .completed) }
         return Strand(id: "s", name: "S", colorToken: "blue", computedType: type, userOverrideType: nil,
                       eventCount: 0, presence: p, trajectory: trajectory, isPaused: false,
                       recurrenceCadenceDays: recurrenceCadenceDays, openCount: 0, deferredCount: 0,
                       completedActionCount: 0, totalActionCount: 0, deadline: deadline,
-                      forwardNodes: [], lastTraces: [], coOccurringStrandNames: [])
+                      forwardNodes: [], lastTraces: traces, coOccurringStrandNames: [])
     }
 
     func test_achievement_mapsDeadline() {
@@ -52,13 +54,26 @@ final class HorizonStrandAdapterTests: XCTestCase {
                        "declared cadence wins over derived baseline")
     }
 
-    func test_maintenance_fallsBackToDerivedBaseline() {
+    func test_maintenance_derivesSpecExactGapFromTraces_whenNoDeclaredCadence() {
+        // 4 traces spaced 7 days → §11-exact median 7d, preferred over baseline.
+        let dates = [now.addingTimeInterval(-21 * day), now.addingTimeInterval(-14 * day),
+                     now.addingTimeInterval(-7 * day), now]
+        let h = HorizonStrand(from: strand(type: .maintenance, lastActivity: now,
+                                           baselineCadenceDays: 30, traceDates: dates))
+        XCTAssertEqual(h.kind, .maintenance(lastFed: now, typicalGap: 7 * day),
+                       "§11-exact derivation from recent traces beats the app baseline")
+    }
+
+    func test_maintenance_fallsBackToBaseline_whenTooFewTraces() {
+        // Only 2 traces → below the §11 >=3-event bar → app baseline is used.
         let last = now.addingTimeInterval(-2 * day)
-        let h = HorizonStrand(from: strand(type: .maintenance, lastActivity: last, baselineCadenceDays: 5))
+        let h = HorizonStrand(from: strand(type: .maintenance, lastActivity: last,
+                                           baselineCadenceDays: 5,
+                                           traceDates: [now.addingTimeInterval(-5 * day), last]))
         XCTAssertEqual(h.kind, .maintenance(lastFed: last, typicalGap: 5 * day))
     }
 
-    func test_maintenance_noCadence_hasNoRhythm() {
+    func test_maintenance_noCadence_noTraces_noBaseline_hasNoRhythm() {
         let h = HorizonStrand(from: strand(type: .maintenance))
         XCTAssertEqual(h.kind, .maintenance(lastFed: nil, typicalGap: nil))
     }
