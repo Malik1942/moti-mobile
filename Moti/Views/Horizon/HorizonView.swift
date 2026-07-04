@@ -50,6 +50,8 @@ struct HorizonView: View {
     var calendar: Calendar = .current
 
     @StateObject private var folds: HorizonFoldStore
+    @State private var armedForPastReveal = false
+    @State private var didRevealPast = false
 
     /// `false` renders a non-lazy static list (used by ImageRenderer snapshots,
     /// which don't lay out ScrollView/LazyVStack content). The running app uses
@@ -70,6 +72,7 @@ struct HorizonView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                        pastSection // above Today — up is past (PRD §2, §6.5)
                         ForEach(snapshot.sections) { section in
                             Section {
                                 sectionContent(section)
@@ -81,12 +84,15 @@ struct HorizonView: View {
                 }
                 .background(HorizonTheme.background)
                 .onAppear {
-                    // Open at Today, no animation on first paint (PRD §6, P0.2).
+                    // Open at Today, no animation on first paint (PRD §6, P0.2);
+                    // Past sits above, revealed by scrolling up.
                     proxy.scrollTo(TimeBucket.today, anchor: .top)
+                    DispatchQueue.main.async { armedForPastReveal = true }
                 }
             }
         } else {
             VStack(alignment: .leading, spacing: 0) {
+                pastSection
                 ForEach(snapshot.sections) { section in
                     header(section)
                     sectionContent(section)
@@ -95,6 +101,36 @@ struct HorizonView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(HorizonTheme.background)
         }
+    }
+
+    // MARK: Past (PRD §6.5)
+
+    @ViewBuilder
+    private var pastSection: some View {
+        if !snapshot.past.isEmpty {
+            let year = calendar.component(.year, from: snapshot.past.entries.first?.completedAt ?? now)
+            Section {
+                ForEach(Array(snapshot.past.entries.enumerated()), id: \.element.id) { index, entry in
+                    HorizonPastRow(entry: entry, calendar: calendar)
+                    if index < snapshot.past.entries.count - 1 { hairline }
+                }
+            } header: {
+                HorizonSectionHeader(title: HorizonCopy.pastHeader(year: year, count: snapshot.past.entries.count),
+                                     count: 0)
+                    .onAppear(perform: revealPast)
+            }
+        }
+    }
+
+    private func revealPast() {
+        // Suppress the launch-layout pass; only fire once the user actually
+        // scrolls up into Past.
+        guard armedForPastReveal, !didRevealPast else { return }
+        didRevealPast = true
+        #if canImport(UIKit)
+        if HorizonTheme.motionEnabled { UIImpactFeedbackGenerator(style: .soft).impactOccurred() }
+        #endif
+        HorizonInstrumentation.shared.record(.pastOpen)
     }
 
     private func header(_ section: BucketSection) -> some View {
@@ -147,12 +183,16 @@ struct HorizonView: View {
     }
 
     private func toggleFold(_ bucket: TimeBucket) {
+        let willExpand = !folds.isExpanded(bucket.rawValue)
         withAnimation(HorizonTheme.motionEnabled ? HorizonTheme.settleSpring : nil) {
             folds.toggle(bucket.rawValue)
         }
         #if canImport(UIKit)
         UISelectionFeedbackGenerator().selectionChanged() // PRD §7.2: .selection on fold toggle
         #endif
+        if willExpand {
+            HorizonInstrumentation.shared.record(.bucketExpand, detail: bucket.rawValue)
+        }
     }
 }
 

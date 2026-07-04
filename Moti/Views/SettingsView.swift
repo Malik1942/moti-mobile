@@ -22,6 +22,9 @@ struct SettingsView: View {
     @AppStorage("useTrajectoryTimeline") private var useTrajectoryTimeline = false
     @AppStorage(FeatureFlag.horizonTimeline.rawValue) private var horizonTimeline = false
     @AppStorage("timelineTaskSort") private var timelineTaskSortRawValue = TimelineTaskSort.projectPriority.rawValue
+    #if DEBUG
+    @ObservedObject private var horizonEvents = HorizonInstrumentation.shared
+    #endif
 
     @State private var calendarStatus = AppleCalendarSyncStatus.off
     @State private var showingGoogleComingSoon = false
@@ -164,6 +167,12 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                #if DEBUG
+                if horizonTimeline {
+                    horizonEventsSection
+                }
+                #endif
+
                 Section("About") {
                     Text("Moti keeps your work data on this device and uses on-device intelligence to turn natural language captures into project timelines.")
                         .foregroundStyle(.secondary)
@@ -249,6 +258,33 @@ struct SettingsView: View {
     }
 
     // MARK: - Notifications section
+
+    #if DEBUG
+    private var horizonEventsSection: some View {
+        Section("Horizon Events (debug)") {
+            let kinds: [(String, HorizonEvent.Kind)] = [
+                ("Opens", .horizonOpen),
+                ("Scan sessions", .scanSessionLength),
+                ("Bucket expands", .bucketExpand),
+                ("Map opens", .mapOpen),
+                ("Past opens", .pastOpen),
+            ]
+            ForEach(kinds, id: \.0) { pair in
+                HStack {
+                    Text(pair.0)
+                    Spacer()
+                    Text("\(horizonEvents.count(pair.1))")
+                        .font(.body.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            #if canImport(UIKit)
+            Button("Copy log") { UIPasteboard.general.string = horizonEvents.exportText() }
+            #endif
+            Button("Clear events", role: .destructive) { horizonEvents.reset() }
+        }
+    }
+    #endif
 
     @ViewBuilder
     private var notificationsSection: some View {

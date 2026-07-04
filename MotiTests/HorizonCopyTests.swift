@@ -71,6 +71,15 @@ final class HorizonCopyTests: XCTestCase {
         XCTAssertEqual(HorizonCopy.bucketTitle(.later), "Later")
     }
 
+    // MARK: - Past region
+
+    func test_pastOrigin_andHeader() {
+        XCTAssertEqual(HorizonCopy.origin(began: date(2026, 3, 2), until: date(2026, 6, 28), calendar: cal),
+                       "began Mar 2 · 118 days")
+        XCTAssertEqual(HorizonCopy.pastHeader(year: 2026, count: 3), "Arrived in 2026 · 3 futures")
+        XCTAssertEqual(HorizonCopy.pastHeader(year: 2026, count: 1), "Arrived in 2026 · 1 future")
+    }
+
     // MARK: - Voice compliance (PRD §7.3)
 
     func test_noBannedWordsAnywhere() {

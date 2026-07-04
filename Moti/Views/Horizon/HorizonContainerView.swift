@@ -27,6 +27,7 @@ struct HorizonContainerView: View {
 
     @State private var now = Date()
     @State private var showingMap = false
+    @State private var openedAt: Date?
     @StateObject private var folds = HorizonFoldStore()
 
     private var calendar: Calendar { .current }
@@ -56,8 +57,34 @@ struct HorizonContainerView: View {
 
     private var snapshot: HorizonSnapshot {
         let active = strands.map(HorizonStrand.init(from:))
-        // Past region (T10) is not wired yet — completions come in a later pass.
-        return HorizonSnapshotBuilder.makeSnapshot(active: active, completed: [], now: now, calendar: calendar)
+        return HorizonSnapshotBuilder.makeSnapshot(active: active, completed: completions(),
+                                                   now: now, calendar: calendar)
+    }
+
+    /// Completed futures for the Past region (PRD §6.5). A project has "arrived"
+    /// when every one of its work items is in a terminal state and at least one
+    /// is done — completion is a state, never a deletion, so these survive.
+    /// Origin is the project's creation; completion is the latest done timestamp.
+    /// Record how long Horizon was visible this foreground stretch (PRD §10).
+    private func recordScanSession() {
+        guard let start = openedAt else { return }
+        let seconds = Int(Date().timeIntervalSince(start))
+        openedAt = nil
+        guard seconds >= 0 else { return }
+        HorizonInstrumentation.shared.record(.scanSessionLength, detail: "\(seconds)")
+    }
+
+    private func completions() -> [HorizonCompletion] {
+        projects.compactMap { project in
+            let items = project.workItems
+            guard !items.isEmpty else { return nil }
+            let allTerminal = items.allSatisfy { [.done, .skipped, .archived].contains($0.status) }
+            let done = items.filter { $0.status == .done }
+            guard allTerminal, let completedAt = done.map(\.updatedAt).max() else { return nil }
+            return HorizonCompletion(id: project.id.uuidString, name: project.name,
+                                     colorToken: project.colorToken,
+                                     completedAt: completedAt, origin: project.createdAt)
+        }
     }
 
     var body: some View {
@@ -68,6 +95,7 @@ struct HorizonContainerView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
+                            HorizonInstrumentation.shared.record(.mapOpen)
                             showingMap = true
                         } label: {
                             Image(systemName: "chart.xyaxis.line")
@@ -76,9 +104,22 @@ struct HorizonContainerView: View {
                     }
                 }
         }
-        .onAppear { now = Date() }
+        .onAppear {
+            now = Date()
+            openedAt = Date()
+            HorizonInstrumentation.shared.record(.horizonOpen)
+        }
+        .onDisappear(perform: recordScanSession)
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { now = Date() } // foreground recompute
+            switch phase {
+            case .active:
+                now = Date()          // foreground recompute
+                openedAt = Date()
+            case .background, .inactive:
+                recordScanSession()   // foreground→background delta while visible
+            @unknown default:
+                break
+            }
         }
         #if canImport(UIKit)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in

@@ -90,6 +90,25 @@ enum HorizonCopy {
     /// Empty-Today voice moment (PRD §7.3).
     static let nothingToday = "Nothing needs you today."
 
+    // MARK: - Past region (PRD §6.5)
+
+    /// Per-strand origin line: "began Mar 2 · 118 days".
+    static func origin(began: Date, until: Date, calendar: Calendar = .current) -> String {
+        let f = DateFormatter()
+        f.calendar = calendar
+        f.locale = calendar.locale ?? .current
+        f.setLocalizedDateFormatFromTemplate("MMMd")
+        let days = max(0, calendar.dateComponents([.day],
+                                                  from: calendar.startOfDay(for: began),
+                                                  to: calendar.startOfDay(for: until)).day ?? 0)
+        return "began \(f.string(from: began)) · \(days) day\(days == 1 ? "" : "s")"
+    }
+
+    /// Past region header: "Arrived in 2026 · 3 futures" (quiet record, not archive).
+    static func pastHeader(year: Int, count: Int) -> String {
+        "Arrived in \(year) · \(count) future\(count == 1 ? "" : "s")"
+    }
+
     // MARK: - Helpers
 
     /// Whole days for a gap interval, rounded, floored at 1.

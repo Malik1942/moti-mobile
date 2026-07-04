@@ -34,6 +34,7 @@
 		2D6E81A232B8329420F89BA2 /* GeminiContextualCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B759D32BD872B331850A728 /* GeminiContextualCaptureService.swift */; };
 		2DEE146A39BFB8A572F35CEA /* LLMTiebreaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25231274051DE1A0E78ABE26 /* LLMTiebreaker.swift */; };
 		2F56DC48727DDC2392AAD2AC /* HorizonRowGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E4761CC4E0F309936BF958 /* HorizonRowGallery.swift */; };
+		2F699918040AE92AF3BFF68A /* HorizonInstrumentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1408BA7B2D686F6B0DA3B66B /* HorizonInstrumentationTests.swift */; };
 		2F80ECD2372641349AAF64EF /* PlanningClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */; };
 		2FB5F8FA3E344597D5870D58 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28F8750733AF4FC3145AA7E /* SettingsView.swift */; };
 		3065B6A47339A8275F1FD076 /* QuietnessProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD420E2511DCA4D65F8F9EA7 /* QuietnessProvider.swift */; };
@@ -141,6 +142,7 @@
 		DD22ADD7466AC06310A32A7D /* SemanticContextResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8117BB4A837027777533E234 /* SemanticContextResolver.swift */; };
 		DF28B0490CD65D0320B0C983 /* ContextualCaptureAgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207B2D0308B1B8D5F3B9E268 /* ContextualCaptureAgentService.swift */; };
 		DF29E5581FF6865B920719CB /* PlanningIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A561B65CF2E9DC58DE33CE1 /* PlanningIntent.swift */; };
+		E03B6C201F0595B14AF21507 /* HorizonInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A2BD946A973F445749B2A79 /* HorizonInstrumentation.swift */; };
 		E1C6F2F3D81E146D5503A2F7 /* HorizonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14F4FDFF704F1C0775266EEA /* HorizonView.swift */; };
 		E232DCB6CE22F4DAE38E8469 /* IntelligenceAuditTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7CA6D8734B95C03C699409 /* IntelligenceAuditTests.swift */; };
 		E315659A3ABF0ED2B972C438 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EAF03D03D924D5CF81FD4D /* ProjectsView.swift */; };
@@ -203,6 +205,7 @@
 		0715C5BF941B119FB3E01DAA /* WorkItemTimeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkItemTimeState.swift; sourceTree = "<group>"; };
 		0F4FC74F477677311A025A0F /* Moti.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Moti.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1255853C224FE82B08E575F5 /* DateResolverTemporalParse+TemporalResolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DateResolverTemporalParse+TemporalResolution.swift"; sourceTree = "<group>"; };
+		1408BA7B2D686F6B0DA3B66B /* HorizonInstrumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonInstrumentationTests.swift; sourceTree = "<group>"; };
 		14F4FDFF704F1C0775266EEA /* HorizonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonView.swift; sourceTree = "<group>"; };
 		15E434F7CF2A99DBEEA437F2 /* GeminiAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiAPIClient.swift; sourceTree = "<group>"; };
 		164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanningClassifierTests.swift; sourceTree = "<group>"; };
@@ -281,6 +284,7 @@
 		847AD39AB89CC0D7F7AA5A70 /* MotiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotiApp.swift; sourceTree = "<group>"; };
 		8536C7AEA7E724FB43EF3C09 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		86DFCE9FAFF34AF332B42470 /* HorizonTypicalGapTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonTypicalGapTests.swift; sourceTree = "<group>"; };
+		8A2BD946A973F445749B2A79 /* HorizonInstrumentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonInstrumentation.swift; sourceTree = "<group>"; };
 		8A5E938C86FC9E7F2FCBEA24 /* CapturedClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturedClassifier.swift; sourceTree = "<group>"; };
 		8CC7CA3BA91D3A219EF637FB /* HorizonThemeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonThemeTests.swift; sourceTree = "<group>"; };
 		8FBE412CD8CA2B6FA5C3C175 /* StrandPresence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandPresence.swift; sourceTree = "<group>"; };
@@ -416,6 +420,7 @@
 				63A4DB24F091B5252DE92DEF /* HorizonCopy.swift */,
 				463C8BCC8D85C35341760824 /* HorizonFoldStore.swift */,
 				6F53488AF435FE3C40B5CCD7 /* HorizonGlyph.swift */,
+				8A2BD946A973F445749B2A79 /* HorizonInstrumentation.swift */,
 				F9E4761CC4E0F309936BF958 /* HorizonRowGallery.swift */,
 				F0EAA92D04974799124EBD87 /* HorizonRows.swift */,
 				2D2C2A35B038FE3062825DD5 /* HorizonSnapshotPreviewData.swift */,
@@ -498,6 +503,7 @@
 				EF819DFC020D1ECE08CE0E23 /* HorizonBucketPlacementTests.swift */,
 				9D2F80F8B6094D67993109D3 /* HorizonCopyTests.swift */,
 				19E706C75B048676AFB4E645 /* HorizonFoldStoreTests.swift */,
+				1408BA7B2D686F6B0DA3B66B /* HorizonInstrumentationTests.swift */,
 				CE4543873291E036C875A123 /* HorizonQuietnessProviderTests.swift */,
 				9BA36CC65FED0E5972ECBA45 /* HorizonScreenSnapshotTests.swift */,
 				42BB0F85714907ACE89820D9 /* HorizonSnapshotTests.swift */,
@@ -862,6 +868,7 @@
 				FBC035FA675D5D8580BC9984 /* HorizonBucketPlacementTests.swift in Sources */,
 				791837004246DE77591EB561 /* HorizonCopyTests.swift in Sources */,
 				50681127ECA0EE075109F504 /* HorizonFoldStoreTests.swift in Sources */,
+				2F699918040AE92AF3BFF68A /* HorizonInstrumentationTests.swift in Sources */,
 				FC4204C6A69F8533AA31857A /* HorizonQuietnessProviderTests.swift in Sources */,
 				A78E5E10ECA397EA4BE47607 /* HorizonScreenSnapshotTests.swift in Sources */,
 				4D563F297549B59993B4DEFE /* HorizonSnapshotTests.swift in Sources */,
@@ -916,6 +923,7 @@
 				0A99F67CD4428B5EB56F490A /* HorizonCopy.swift in Sources */,
 				4CB96481BC456A1B47B197A5 /* HorizonFoldStore.swift in Sources */,
 				6A23A83402092AA3D8D4B646 /* HorizonGlyph.swift in Sources */,
+				E03B6C201F0595B14AF21507 /* HorizonInstrumentation.swift in Sources */,
 				2F56DC48727DDC2392AAD2AC /* HorizonRowGallery.swift in Sources */,
 				FC9D2CAC27309184B1A166ED /* HorizonRows.swift in Sources */,
 				D83320F360B31A2662C137CF /* HorizonSnapshot.swift in Sources */,

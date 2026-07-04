@@ -208,3 +208,42 @@ private func countdownText(_ text: String, accent: Bool) -> some View {
         .lineLimit(1)
         .fixedSize(horizontal: true, vertical: false)
 }
+
+// MARK: - Past entry (PRD §6.5)
+
+/// A completed future in the Past region: a quiet achievement record, not a gray
+/// archive. Name in secondary, origin line in tertiary — deliberately calm.
+struct HorizonPastRow: View {
+    let entry: PastEntry
+    var calendar: Calendar = .current
+
+    private var glyphColumn: CGFloat { HorizonTheme.glyphSize + 2 }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: HorizonTheme.secondLineGap) {
+            HStack(alignment: .firstTextBaseline, spacing: HorizonTheme.glyphToNameGap) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: HorizonTheme.glyphSize + 1, weight: .semibold))
+                    .foregroundStyle(HorizonTheme.tertiaryLabel)
+                    .frame(width: glyphColumn)
+                    .accessibilityHidden(true)
+                Text(entry.name)
+                    .font(HorizonTheme.nameStyle)
+                    .foregroundStyle(HorizonTheme.secondaryLabel)
+                    .lineLimit(1)
+                Spacer(minLength: 12)
+            }
+            Text(HorizonCopy.origin(began: entry.origin, until: entry.completedAt, calendar: calendar))
+                .font(HorizonTheme.secondaryStyle)
+                .foregroundStyle(HorizonTheme.tertiaryLabel)
+                .lineLimit(1)
+                .padding(.leading, glyphColumn + HorizonTheme.glyphToNameGap)
+        }
+        .padding(.vertical, HorizonTheme.rowVerticalPadding)
+        .padding(.horizontal, HorizonTheme.leadingInset)
+        .frame(maxWidth: .infinity, minHeight: HorizonTheme.rowMinHeight, alignment: .leading)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(entry.name), \(HorizonCopy.origin(began: entry.origin, until: entry.completedAt, calendar: calendar))")
+    }
+}
