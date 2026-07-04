@@ -19,10 +19,10 @@ enum HorizonTheme {
     // MARK: - Colour (semantic only)
 
     /// The one accent on this surface, in both appearances: a desaturated amber
-    /// for divergence / overdue. Statement, not blame — never red. Tuned from the
-    /// app's existing muted "amber-stone" so it sits in the same family as the
-    /// adjacent trajectory surface.
-    static let divergenceAccent = dynamic(light: (0.62, 0.46, 0.16), dark: (0.80, 0.64, 0.32))
+    /// for divergence / overdue. Statement, not blame — never red. A clear
+    /// goldenrod amber, legible on the light grouped background and lifted for
+    /// dark, chosen in-context against real overdue rows.
+    static let divergenceAccent = dynamic(light: (0.82, 0.57, 0.12), dark: (0.98, 0.76, 0.30))
 
     static let primaryLabel = Color.primary
     static let secondaryLabel = Color.secondary
