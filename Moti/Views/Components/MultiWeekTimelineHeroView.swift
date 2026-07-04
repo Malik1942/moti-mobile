@@ -5,18 +5,20 @@ struct MultiWeekTimelineHeroView: View {
     let projects: [Project]
     let selectedProject: String
     var horizonDays = 30
+    var horizonLabel: String?
 
+    @AppStorage("timelineTaskSort") private var timelineTaskSortRawValue = TimelineTaskSort.projectPriority.rawValue
     @State private var selectedItem: WorkItem?
 
-    private let labelWidth: CGFloat = 104
+    private let labelWidth: CGFloat = 90
     private let plotDividerWidth: CGFloat = 1
     private let plotLeadingGap: CGFloat = 8
-    private let axisHeight: CGFloat = 46
-    private let projectHeaderHeight: CGFloat = 26
-    private let rowHeight: CGFloat = 54
-    private let selectedRowHeight: CGFloat = 58
+    private let axisHeight: CGFloat = 42
+    private let projectHeaderHeight: CGFloat = 20
+    private let rowHeight: CGFloat = 62
+    private let selectedRowHeight: CGFloat = 62
     private let laneGap: CGFloat = 8
-    private let minimumPlotHeight: CGFloat = 470
+    private let minimumPlotHeight: CGFloat = 278
     private let calendar = Calendar.current
 
     private var startDate: Date {
@@ -54,11 +56,55 @@ struct MultiWeekTimelineHeroView: View {
                 guard let range = displayRange(for: item) else { return false }
                 return range.end >= startDate && range.start <= endDate
             }
-            .sorted { lhs, rhs in
-                let lhsDate = lhs.dueDate ?? lhs.workingEndDate ?? .distantFuture
-                let rhsDate = rhs.dueDate ?? rhs.workingEndDate ?? .distantFuture
-                return lhsDate < rhsDate
+            .sorted(by: areItemsInDisplayOrder)
+    }
+
+    private var taskSort: TimelineTaskSort {
+        TimelineTaskSort(rawValue: timelineTaskSortRawValue) ?? .projectPriority
+    }
+
+    private func areItemsInDisplayOrder(_ lhs: WorkItem, _ rhs: WorkItem) -> Bool {
+        switch taskSort {
+        case .projectPriority:
+            let lhsProject = projectPriorityKey(for: lhs)
+            let rhsProject = projectPriorityKey(for: rhs)
+            if lhsProject.rank != rhsProject.rank {
+                return lhsProject.rank < rhsProject.rank
             }
+            if lhsProject.name != rhsProject.name {
+                return lhsProject.name.localizedCaseInsensitiveCompare(rhsProject.name) == .orderedAscending
+            }
+            return isEarlierByTime(lhs, than: rhs)
+        case .time:
+            return isEarlierByTime(lhs, than: rhs)
+        }
+    }
+
+    private func projectPriorityKey(for item: WorkItem) -> (rank: Int, name: String) {
+        let name = item.displayProject
+        if let index = projects.firstIndex(where: { $0.name == name }) {
+            return (index, name)
+        }
+        if name == ProjectCatalog.unassignedLabel {
+            return (projects.count + 1, name)
+        }
+        return (projects.count, name)
+    }
+
+    private func isEarlierByTime(_ lhs: WorkItem, than rhs: WorkItem) -> Bool {
+        let lhsDate = timelineDateKey(for: lhs)
+        let rhsDate = timelineDateKey(for: rhs)
+        if lhsDate != rhsDate {
+            return lhsDate < rhsDate
+        }
+        if lhs.title != rhs.title {
+            return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+        return lhs.createdAt < rhs.createdAt
+    }
+
+    private func timelineDateKey(for item: WorkItem) -> Date {
+        item.dueDate ?? item.workingEndDate ?? item.workingStartDate ?? .distantFuture
     }
 
     private var lanes: [TimelineLane] {
@@ -68,41 +114,31 @@ struct MultiWeekTimelineHeroView: View {
             for name in grouped.keys.sorted() where !orderedLaneNames.contains(name) {
                 orderedLaneNames.append(name)
             }
-            return orderedLaneNames.map { project in
+            return orderedLaneNames.compactMap { project in
+                guard let items = grouped[project], !items.isEmpty else { return nil }
                 let runtimeProject = projects.first { $0.name == project }
                 return TimelineLane(
                     id: project,
                     title: project,
                     projectName: project == ProjectCatalog.unassignedLabel ? nil : project,
                     colorToken: runtimeProject?.colorToken,
-                    items: grouped[project] ?? [],
+                    items: items,
                     mode: .project
                 )
             }
         }
 
         let items = visibleItems.filter { $0.projectName == selectedProject }
-        if items.isEmpty {
-            let runtimeProject = projects.first { $0.name == selectedProject }
-            return [TimelineLane(
-                id: selectedProject,
-                title: selectedProject,
-                projectName: selectedProject,
-                colorToken: runtimeProject?.colorToken,
-                items: [],
-                mode: .project
-            )]
-        }
-        return items.map { item in
-            TimelineLane(
-                id: item.id.uuidString,
-                title: item.title,
-                projectName: item.projectName,
-                colorToken: colorToken(for: item.projectName),
-                items: [item],
-                mode: .workItem
-            )
-        }
+        guard !items.isEmpty else { return [] }
+        let runtimeProject = projects.first { $0.name == selectedProject }
+        return [TimelineLane(
+            id: selectedProject,
+            title: selectedProject,
+            projectName: selectedProject,
+            colorToken: runtimeProject?.colorToken,
+            items: items,
+            mode: .project
+        )]
     }
 
     private var contentHeight: CGFloat {
@@ -148,63 +184,25 @@ struct MultiWeekTimelineHeroView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             header
 
-            GeometryReader { proxy in
-                let availableForPlot = max(1, proxy.size.width - labelWidth - plotDividerWidth - plotLeadingGap)
-                let plotWidth = plotContentWidth(availableWidth: availableForPlot)
-                let plotHeight = max(minimumPlotHeight, contentHeight)
-
-                HStack(spacing: 0) {
-                    // Fixed left column — project names always visible.
-                    fixedLabelColumn
-                        .frame(width: labelWidth, height: plotHeight, alignment: .topLeading)
-                        .clipped()
-
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.12))
-                        .frame(width: plotDividerWidth, height: plotHeight)
-
-                    Color.clear
-                        .frame(width: plotLeadingGap, height: plotHeight)
-
-                    // 2W: fixed, no scroll — full 14-day overview fits on screen.
-                    // Month/Quarter: controlled horizontal scroll with an explicit leading anchor.
-                    if horizonDays <= 14 {
-                        plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth, plotHeight: plotHeight)
-                    } else {
-                        ScrollViewReader { scrollProxy in
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth, plotHeight: plotHeight)
-                                    .id("timeline-start")
-                            }
-                            .onAppear {
-                                scrollProxy.scrollTo("timeline-start", anchor: .leading)
-                            }
-                            .onChange(of: horizonDays) {
-                                scrollProxy.scrollTo("timeline-start", anchor: .leading)
-                            }
-                        }
-                    }
-                }
-                .frame(height: plotHeight)
+            if visibleItems.isEmpty {
+                emptyTimelineWindow
+            } else {
+                timelineMetricGrid
+                timelineDigestList
             }
-            .frame(height: max(minimumPlotHeight, contentHeight))
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 540, alignment: .topLeading)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .background(
-            LinearGradient(
-                colors: [.indigo.opacity(0.13), .cyan.opacity(0.08), Color(.systemBackground)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ),
-            in: RoundedRectangle(cornerRadius: 8)
+            Color.motiSurface,
+            in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.indigo.opacity(0.18))
+            RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
         }
         .sheet(item: $selectedItem) { item in
             TimelineItemSheet(item: item)
@@ -224,18 +222,252 @@ struct MultiWeekTimelineHeroView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            Text("\(startDate.formatted(.dateTime.month(.abbreviated).day())) – \(endDate.formatted(.dateTime.month(.abbreviated).day()))")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(horizonTitle)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text(headerDetail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Spacer()
-            Label("\(horizonDays)d", systemImage: "arrow.left.and.right")
+            Label(horizonLabel ?? "\(horizonDays)d", systemImage: "calendar")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .labelStyle(.titleAndIcon)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.motiQuietFill, in: Capsule())
+        }
+    }
+
+    private var horizonTitle: String {
+        if horizonDays <= 7 { return "Next Week" }
+        if horizonDays <= 31 { return "Next Month" }
+        if horizonDays <= 92 { return "Next 3 Months" }
+        if horizonDays <= 183 { return "Next 6 Months" }
+        return "Next Year"
+    }
+
+    private var dateRangeText: String {
+        "\(startDate.formatted(.dateTime.month(.abbreviated).day())) to \(endDate.formatted(.dateTime.month(.abbreviated).day()))"
+    }
+
+    private var headerDetail: String {
+        guard !visibleItems.isEmpty else { return dateRangeText }
+        return "\(dateRangeText) · \(visibleItems.count) \(visibleItems.count == 1 ? "item" : "items")"
+    }
+
+    private var dueInWindowCount: Int {
+        visibleItems.filter { item in
+            guard let dueDate = item.dueDate else { return false }
+            return dueDate <= endDate
+        }.count
+    }
+
+    private var overdueCount: Int {
+        visibleItems.filter { $0.timeState() == .overdue }.count
+    }
+
+    private var visibleProjectCount: Int {
+        Set(visibleItems.map(\.displayProject)).count
+    }
+
+    private var timelineMetricGrid: some View {
+        HStack(spacing: 10) {
+            timelineMetricCell(value: "\(visibleItems.count)", label: "Scheduled")
+            timelineMetricCell(value: "\(dueInWindowCount)", label: "Due")
+            timelineMetricCell(
+                value: overdueCount > 0 ? "\(overdueCount)" : "\(visibleProjectCount)",
+                label: overdueCount > 0 ? "Late" : "Projects",
+                tint: overdueCount > 0 ? MotiTheme.today : .primary
+            )
+        }
+    }
+
+    private func timelineMetricCell(value: String, label: String, tint: Color = .primary) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(value)
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(tint)
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            Color.motiElevatedSurface,
+            in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
+    }
+
+    private var emptyTimelineWindow: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.system(size: 19, weight: .medium))
+                .foregroundStyle(.motiAccent)
+                .frame(width: 42, height: 42)
+                .background(Color.motiAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("No timed work here.")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text("Add a date or work window to place a task on the timeline.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.motiQuietFill, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
+    }
+
+    private var timelineDigestList: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(visibleItems.enumerated()), id: \.element.id) { index, item in
+                Button {
+                    selectedItem = item
+                } label: {
+                    timelineDigestRow(for: item)
+                }
+                .buttonStyle(.plain)
+
+                if index < visibleItems.count - 1 {
+                    Divider()
+                        .padding(.leading, 58)
+                }
+            }
+        }
+        .background(
+            Color.motiElevatedSurface,
+            in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius - 6, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.cardRadius - 6, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
+    }
+
+    private func timelineDigestRow(for item: WorkItem) -> some View {
+        let color = itemColor(item)
+
+        return HStack(alignment: .top, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.10))
+                Circle()
+                    .fill(color)
+                    .frame(width: 7, height: 7)
+            }
+            .frame(width: 30, height: 30)
+
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(item.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    Spacer(minLength: 8)
+
+                    Text(rowBadgeText(for: item))
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(rowBadgeTint(for: item))
+                        .lineLimit(1)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(rowBadgeTint(for: item).opacity(0.10), in: Capsule())
+                }
+
+                HStack(spacing: 6) {
+                    Text(item.displayProject)
+                        .lineLimit(1)
+                    Text("·")
+                    Text(itemTimelineDetail(for: item))
+                        .lineLimit(1)
+                }
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(.background.opacity(0.7), in: Capsule())
+
+                timelineDigestProgress(for: item, tint: color)
+            }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+
+    private func timelineDigestProgress(for item: WorkItem, tint: Color) -> some View {
+        GeometryReader { proxy in
+            let progress = elapsedProgress(for: item) ?? 0
+            let fillWidth = max(progress > 0 ? 8 : 0, proxy.size.width * progress)
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.12))
+                    .frame(height: 3)
+
+                if fillWidth > 0 {
+                    Capsule()
+                        .fill(tint.opacity(0.56))
+                        .frame(width: fillWidth, height: 3)
+                }
+            }
+        }
+        .frame(height: 3)
+    }
+
+    private var timelineChart: some View {
+        GeometryReader { proxy in
+            let availableForPlot = max(1, proxy.size.width - labelWidth - plotDividerWidth - plotLeadingGap)
+            let plotWidth = plotContentWidth(availableWidth: availableForPlot)
+            let plotHeight = max(minimumPlotHeight, contentHeight)
+
+            HStack(spacing: 0) {
+                // Fixed left column — project names always visible.
+                fixedLabelColumn
+                    .frame(width: labelWidth, height: plotHeight, alignment: .topLeading)
+                    .clipped()
+
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.08))
+                    .frame(width: plotDividerWidth, height: plotHeight)
+
+                Color.clear
+                    .frame(width: plotLeadingGap, height: plotHeight)
+
+                // 2W: fixed, no scroll — full 14-day overview fits on screen.
+                // Month/Quarter: controlled horizontal scroll with an explicit leading anchor.
+                if horizonDays <= 14 {
+                    plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth, plotHeight: plotHeight)
+                } else {
+                    ScrollViewReader { scrollProxy in
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            plotZStack(plotWidth: plotWidth, canvasWidth: plotWidth, plotHeight: plotHeight)
+                                .id("timeline-start")
+                        }
+                        .onAppear {
+                            scrollProxy.scrollTo("timeline-start", anchor: .leading)
+                        }
+                        .onChange(of: horizonDays) {
+                            scrollProxy.scrollTo("timeline-start", anchor: .leading)
+                        }
+                    }
+                }
+            }
+            .frame(height: plotHeight)
+        }
+        .frame(height: max(minimumPlotHeight, contentHeight))
     }
 
     // MARK: - Fixed left column
@@ -249,9 +481,9 @@ struct MultiWeekTimelineHeroView: View {
                         .fill(laneColor(lane))
                         .frame(width: 8, height: 8)
                     Text(lane.title)
-                        .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.medium))
                         .lineLimit(lane.mode == .project ? 1 : 2)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.secondary)
                         .minimumScaleFactor(0.8)
                 }
                 .frame(width: labelWidth - 8, alignment: .leading)
@@ -269,17 +501,9 @@ struct MultiWeekTimelineHeroView: View {
         let horizontalLineCount = max(1, Int(ceil(plotHeight / rowHeight)))
 
         return ZStack(alignment: .topLeading) {
-            // Alternating background bands.
-            ForEach(0..<weekCount, id: \.self) { week in
-                Rectangle()
-                    .fill(Color.secondary.opacity(week.isMultiple(of: 2) ? 0.035 : 0.015))
-                    .frame(width: timelineWidth / CGFloat(weekCount), height: plotHeight)
-                    .offset(x: CGFloat(week) * (timelineWidth / CGFloat(weekCount)), y: plotTop)
-            }
-
             // Top horizontal rule.
             Rectangle()
-                .fill(.secondary.opacity(0.12))
+                .fill(.secondary.opacity(0.08))
                 .frame(width: timelineWidth, height: 1)
                 .offset(y: plotTop)
 
@@ -287,7 +511,7 @@ struct MultiWeekTimelineHeroView: View {
             ForEach(0...horizontalLineCount, id: \.self) { index in
                 let y = plotTop + min(CGFloat(index) * rowHeight, plotHeight)
                 Rectangle()
-                    .fill(Color.secondary.opacity(index == 0 ? 0.16 : 0.08))
+                    .fill(Color.secondary.opacity(index == 0 ? 0.10 : 0.055))
                     .frame(width: timelineWidth, height: 1)
                     .offset(y: y)
             }
@@ -296,7 +520,7 @@ struct MultiWeekTimelineHeroView: View {
             ForEach(axisTicks, id: \.self) { day in
                 let x = xPosition(forDayOffset: day, timelineWidth: timelineWidth)
                 Rectangle()
-                    .fill(Color.secondary.opacity(0.20))
+                    .fill(Color.secondary.opacity(0.12))
                     .frame(width: 1, height: plotHeight)
                     .offset(x: x, y: plotTop)
             }
@@ -306,13 +530,10 @@ struct MultiWeekTimelineHeroView: View {
                 let date = calendar.date(byAdding: .day, value: day, to: startDate) ?? startDate
                 let x = xPosition(forDayOffset: day, timelineWidth: timelineWidth)
                 Text(axisLabel(for: date))
-                    .font(.caption2.weight(.semibold))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 3)
-                    .background(.background.opacity(0.78), in: Capsule())
-                    .foregroundStyle(.secondary)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.tertiary)
                     .fixedSize()
-                    .offset(x: min(max(x - 10, 0), timelineWidth - 52), y: 2)
+                    .offset(x: min(max(x - 10, 0), timelineWidth - 52), y: 4)
             }
         }
     }
@@ -331,7 +552,7 @@ struct MultiWeekTimelineHeroView: View {
         ZStack(alignment: .topLeading) {
             // Lane separator line.
             Rectangle()
-                .fill(.secondary.opacity(0.10))
+                .fill(.secondary.opacity(0.065))
                 .frame(width: timelineWidth, height: 1)
 
             if lane.items.isEmpty {
@@ -359,60 +580,64 @@ struct MultiWeekTimelineHeroView: View {
         let isEvent = isEventItem(item)
         let titleWidth = titleWidth(for: frame, timelineWidth: timelineWidth)
         let titleX = readableTextX(for: frame.x, width: titleWidth, timelineWidth: timelineWidth)
-        let progressWidth: CGFloat = 38
-        let progressX = readableTextX(for: frame.x, width: progressWidth, timelineWidth: timelineWidth)
+        let progress = elapsedProgress(for: item)
 
         return Button {
             selectedItem = item
         } label: {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .lineLimit(1)
                     .foregroundStyle(.primary)
                     .truncationMode(.tail)
                     .frame(width: titleWidth, alignment: .leading)
                     .offset(x: titleX)
 
+                Text(itemTimelineDetail(for: item))
+                    .font(.caption2.weight(.medium))
+                    .lineLimit(1)
+                    .foregroundStyle(.secondary)
+                    .frame(width: titleWidth, alignment: .leading)
+                    .offset(x: titleX)
+
                 ZStack(alignment: .topLeading) {
                     if isEvent {
                         Circle()
-                            .fill(color.opacity(0.30))
+                            .fill(color.opacity(0.22))
                             .overlay {
                                 Circle()
-                                    .stroke(color.opacity(0.70), lineWidth: 1.2)
+                                    .stroke(color.opacity(0.52), lineWidth: 1)
                             }
                             .frame(width: frame.width, height: frame.width)
                             .offset(x: frame.x, y: 3)
                     } else {
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(color.opacity(0.28))
+                            .fill(color.opacity(0.12))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 6)
-                                    .stroke(color.opacity(0.65), lineWidth: 1)
+                                    .stroke(color.opacity(0.30), lineWidth: 1)
                             }
                             .frame(width: frame.width, height: 20)
                             .offset(x: frame.x)
 
+                        if let progress, progress > 0 {
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(color.opacity(0.38))
+                                .frame(width: max(7, frame.width * progress), height: 20)
+                                .offset(x: frame.x)
+                                .clipped()
+                        }
+
                         if let dueX = dueX(for: item, timelineWidth: timelineWidth),
                            timelineWidth >= 18 {
                             deadlineMarker(for: item)
-                                .offset(x: min(max(dueX - 9, 0), timelineWidth - 18))
+                                .offset(x: min(max(dueX - 8, 0), timelineWidth - 16), y: 1)
                         }
                     }
                 }
                 .frame(width: timelineWidth, height: 20, alignment: .topLeading)
                 .clipped()
-
-                if !isEvent, let progress = elapsedPercentLabel(for: item) {
-                    Text(progress)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(color)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .frame(width: progressWidth, alignment: .leading)
-                        .offset(x: progressX)
-                }
             }
             .frame(width: timelineWidth, alignment: .leading)
         }
@@ -421,13 +646,11 @@ struct MultiWeekTimelineHeroView: View {
     }
 
     private func deadlineMarker(for item: WorkItem) -> some View {
-        Image(systemName: "flag.fill")
-            .font(.caption2)
-            .foregroundStyle(itemColor(item))
-            .padding(4)
-            .background(.background, in: Circle())
+        Circle()
+            .fill(Color.motiSurface)
+            .frame(width: 16, height: 16)
             .overlay {
-                Circle().stroke(itemColor(item).opacity(0.35), lineWidth: 1)
+                Circle().stroke(itemColor(item).opacity(0.58), lineWidth: 2)
             }
             .accessibilityLabel("Due date")
     }
@@ -437,12 +660,12 @@ struct MultiWeekTimelineHeroView: View {
         let plotHeight = max(0, height - axisHeight)
         return ZStack(alignment: .topLeading) {
             Rectangle()
-                .fill(.red.opacity(0.38))
-                .frame(width: 1, height: plotHeight)
+                .fill(MotiTheme.today.opacity(0.36))
+                .frame(width: 1.5, height: plotHeight)
                 .offset(x: x, y: axisHeight)
             Text("Today")
                 .font(.caption2.weight(.semibold))
-                .foregroundStyle(.red.opacity(0.72))
+                .foregroundStyle(MotiTheme.today.opacity(0.72))
                 .fixedSize()
                 .offset(x: min(max(x - 15, 0), timelineWidth - 34), y: axisHeight - 16)
         }
@@ -482,7 +705,7 @@ struct MultiWeekTimelineHeroView: View {
         return false
     }
 
-    private func elapsedPercentLabel(for item: WorkItem) -> String? {
+    private func elapsedProgress(for item: WorkItem) -> CGFloat? {
         guard case let .period(start, end)? = renderKind(for: item) else { return nil }
         let lowerBound = min(start, end)
         let upperBound = max(start, end)
@@ -491,12 +714,12 @@ struct MultiWeekTimelineHeroView: View {
 
         let elapsedMinutes = Date.now.timeIntervalSince(lowerBound) / 60
         let progress = min(max(elapsedMinutes / totalMinutes, 0), 1)
-        return "\(Int((progress * 100).rounded()))%"
+        return CGFloat(progress)
     }
 
     private func accessibilityLabel(for item: WorkItem) -> String {
-        if let progress = elapsedPercentLabel(for: item) {
-            return "\(item.title), \(progress) time elapsed"
+        if let progress = elapsedProgress(for: item) {
+            return "\(item.title), \(Int((progress * 100).rounded())) percent time elapsed"
         }
         return "\(item.title), event"
     }
@@ -505,7 +728,7 @@ struct MultiWeekTimelineHeroView: View {
         switch renderKind(for: item) {
         case .event(let at):
             let x = dateX(at, timelineWidth: timelineWidth)
-            let eventWidth: CGFloat = 14
+            let eventWidth: CGFloat = 16
             return (min(max(0, x - (eventWidth / 2)), max(0, timelineWidth - eventWidth)), eventWidth)
         case .period(let start, let end):
             let lowerBound = min(start, end)
@@ -591,6 +814,71 @@ struct MultiWeekTimelineHeroView: View {
 
     private func itemColor(_ item: WorkItem) -> Color {
         Color.projectToken(colorToken(for: item.projectName) ?? ProjectCatalog.color(for: item.projectName))
+    }
+
+    private func itemTimelineDetail(for item: WorkItem) -> String {
+        if item.timeState() == .overdue {
+            return "Overdue"
+        }
+
+        if isEventItem(item) {
+            if let dueDate = item.dueDate {
+                return pointDateLabel(dueDate)
+            }
+            if let start = item.workingStartDate {
+                return pointDateLabel(start)
+            }
+        }
+
+        if let dueDate = item.dueDate {
+            return "Due \(relativeDateLabel(dueDate))"
+        }
+
+        if let endDate = item.workingEndDate {
+            return "Ends \(relativeDateLabel(endDate))"
+        }
+
+        return item.status.label
+    }
+
+    private func rowBadgeText(for item: WorkItem) -> String {
+        if item.timeState() == .overdue {
+            return "Late"
+        }
+
+        let date = item.dueDate ?? item.workingEndDate ?? item.workingStartDate
+        guard let date else { return item.status.label }
+
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInTomorrow(date) { return "Tomorrow" }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private func rowBadgeTint(for item: WorkItem) -> Color {
+        if item.timeState() == .overdue {
+            return MotiTheme.today
+        }
+
+        let date = item.dueDate ?? item.workingEndDate ?? item.workingStartDate
+        guard let date else { return .secondary }
+
+        if calendar.isDateInToday(date) {
+            return .primary
+        }
+        return .secondary
+    }
+
+    private func relativeDateLabel(_ date: Date) -> String {
+        if calendar.isDateInToday(date) { return "today" }
+        if calendar.isDateInTomorrow(date) { return "tomorrow" }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private func pointDateLabel(_ date: Date) -> String {
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if calendar.isDateInToday(date) { return "Today at \(time)" }
+        if calendar.isDateInTomorrow(date) { return "Tomorrow at \(time)" }
+        return date.formatted(.dateTime.month(.abbreviated).day().hour().minute())
     }
 }
 

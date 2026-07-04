@@ -34,10 +34,10 @@ struct WorkItemCard: View {
             }
         }
         .padding(12)
-        .background(.background, in: RoundedRectangle(cornerRadius: 8))
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(.quaternary)
+            RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
         }
     }
 }

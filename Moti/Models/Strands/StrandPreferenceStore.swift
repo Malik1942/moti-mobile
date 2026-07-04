@@ -15,12 +15,12 @@ final class StrandPreferenceStore: ObservableObject {
     static let shared = StrandPreferenceStore()
 
     private let defaults: UserDefaults
-    private let pausedKey = "lifelines.pausedStrandIDs"
-    private let loweredKey = "lifelines.loweredStrandIDs"
+    private let pausedKey = "strand.pausedIDs"
+    private let loweredKey = "strand.loweredIDs"
     /// Maps strand id → ISO week string it was parked in ("Not this week").
-    private let parkedKey = "lifelines.parkedStrandWeek"
+    private let parkedKey = "strand.parkedWeek"
     /// Maps strand id → ISO week string the user chose to "Make space" in.
-    private let spacedKey = "lifelines.spacedStrandWeek"
+    private let spacedKey = "strand.spacedWeek"
 
     /// Bumped on every mutation so SwiftUI views observing the store refresh.
     @Published private(set) var revision = 0

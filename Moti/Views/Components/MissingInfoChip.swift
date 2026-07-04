@@ -8,7 +8,7 @@ struct MissingInfoChip: View {
             .font(.caption)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(.indigo.opacity(0.10), in: Capsule())
-            .foregroundStyle(.indigo)
+            .background(.motiAccent.opacity(0.10), in: Capsule())
+            .foregroundStyle(.motiAccent)
     }
 }

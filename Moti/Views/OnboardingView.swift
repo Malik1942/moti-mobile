@@ -41,7 +41,7 @@ struct OnboardingView: View {
 
                 footer
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Welcome to Moti")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -51,7 +51,7 @@ struct OnboardingView: View {
         OnboardingPageContainer(systemImage: "waveform") {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Capture naturally.")
-                    .font(.largeTitle.weight(.bold))
+                    .font(.title.weight(.semibold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
 
@@ -74,7 +74,11 @@ struct OnboardingView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(16)
-                .background(.background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
+                        .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+                }
             }
         }
     }
@@ -83,7 +87,7 @@ struct OnboardingView: View {
         OnboardingPageContainer(systemImage: "square.grid.2x2") {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Set up your projects.")
-                    .font(.largeTitle.weight(.bold))
+                    .font(.title.weight(.semibold))
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
 
@@ -133,7 +137,7 @@ struct OnboardingView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Button {
                 if page < 3 {
                     withAnimation(.snappy) { page += 1 }
@@ -142,23 +146,23 @@ struct OnboardingView: View {
                 }
             } label: {
                 Text(page == 3 ? "Start Planning" : "Continue")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
+            .buttonStyle(MotiPrimaryButtonStyle(isFullWidth: true, height: 48))
+            .frame(maxWidth: MotiLayout.prominentControlMaxWidth)
 
             Button(isReplay ? "Done" : "Skip") {
                 completeOnboarding(createProjects: false)
             }
-            .font(.subheadline.weight(.medium))
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(.secondary)
+            .frame(height: 34)
+            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 24)
-        .background(.regularMaterial)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 28)
+        .padding(.top, 12)
+        .padding(.bottom, 20)
+        .background(.bar)
     }
 
     private func toggleProject(_ project: String) {
@@ -228,10 +232,14 @@ private struct ProjectTemplateChip: View {
                         .font(.caption.weight(.bold))
                 }
             }
-            .foregroundStyle(isSelected ? .white : Color.project(project))
+            .foregroundStyle(isSelected ? .white : .primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
-            .background(isSelected ? Color.project(project) : Color.project(project).opacity(0.12), in: Capsule())
+            .background(isSelected ? Color.project(project) : Color.motiQuietFill, in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(isSelected ? .clear : Color.project(project).opacity(0.18), lineWidth: 0.5)
+            }
         }
         .buttonStyle(.plain)
     }
@@ -259,7 +267,7 @@ private struct OnboardingPageView: View {
         OnboardingPageContainer(systemImage: systemImage) {
             VStack(alignment: .leading, spacing: 18) {
                 Text(title)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.title.weight(.semibold))
                     .lineLimit(3)
                     .minimumScaleFactor(0.78)
 
@@ -279,10 +287,10 @@ private struct OnboardingPageContainer<Content: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 42, weight: .semibold))
-                    .foregroundStyle(.indigo)
-                    .frame(width: 78, height: 78)
-                    .background(.indigo.opacity(0.12), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .font(.system(size: 40, weight: .medium))
+                    .foregroundStyle(.motiAccent)
+                    .frame(width: 72, height: 72)
+                    .background(Color.motiAccent.opacity(0.10), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
                 content
 

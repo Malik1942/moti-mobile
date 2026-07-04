@@ -39,7 +39,7 @@ struct WorkItemDetailView: View {
         Form {
             Section("Work Item") {
                 TextField("Title", text: $item.title)
-                Picker("Project", selection: Binding($item.projectName, replacingNilWith: ProjectCatalog.unassignedLabel)) {
+                Picker("Project", selection: projectSelection) {
                     Text(ProjectCatalog.unassignedLabel).tag(ProjectCatalog.unassignedLabel)
                     ForEach(projectOptions, id: \.self) { project in
                         Text(project).tag(project)
@@ -88,7 +88,7 @@ struct WorkItemDetailView: View {
                 if item.isRecurring {
                     HStack {
                         Label("Repeats", systemImage: "repeat")
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(.motiAccent)
                         Spacer()
                         Text(item.recurrence.displayLabel)
                             .foregroundStyle(.secondary)
@@ -228,6 +228,23 @@ struct WorkItemDetailView: View {
             names.append(current)
         }
         return names
+    }
+
+    /// Picker selection bridging the project relationship to name labels.
+    /// Selecting a project links it; selecting Unassigned clears the link.
+    private var projectSelection: Binding<String> {
+        Binding {
+            item.projectName ?? ProjectCatalog.unassignedLabel
+        } set: { newValue in
+            if newValue == ProjectCatalog.unassignedLabel {
+                item.assignProject(nil)
+            } else if let match = projects.first(where: { $0.name == newValue }) {
+                item.assignProject(match)
+            }
+            // A legacy name with no matching project (the appended `current`
+            // option) is a no-op re-selection; keep the item unchanged.
+            item.updatedAt = .now
+        }
     }
 
     private var shouldShowSuggestedProject: Bool {
@@ -379,13 +396,14 @@ struct WorkItemDetailView: View {
     private func createSuggestedProject() {
         guard let suggested = item.suggestedProjectName?.trimmingCharacters(in: .whitespacesAndNewlines), !suggested.isEmpty else { return }
         if let existingProject = projects.first(where: { $0.name.localizedCaseInsensitiveCompare(suggested) == .orderedSame }) {
-            item.projectName = existingProject.name
+            item.assignProject(existingProject)
             item.suggestedProjectName = nil
             return
         }
 
-        modelContext.insert(Project(name: suggested, colorToken: ProjectCatalog.colorToken(forProjectNamed: suggested), sortIndex: projects.nextSortIndex))
-        item.projectName = suggested
+        let newProject = Project(name: suggested, colorToken: ProjectCatalog.colorToken(forProjectNamed: suggested), sortIndex: projects.nextSortIndex)
+        modelContext.insert(newProject)
+        item.assignProject(newProject)
         item.suggestedProjectName = nil
         item.updatedAt = .now
         try? modelContext.save()
@@ -408,7 +426,7 @@ struct WorkItemDetailView: View {
         return max(0, min(1, elapsed / total))
     }
 
-    private func persistManualCheckIn(state: SessionState, note: String) {
+    private func persistManualCheckIn(state: ProgressState, note: String) {
         // Manual pulses use a fresh, unique checkpointID so they never collide
         // with the dedup applied to notification-driven check-ins.
         let id = "manual-\(item.id.uuidString)-\(Int(Date.now.timeIntervalSince1970))"
@@ -466,7 +484,7 @@ private struct ActiveSessionRow: View {
             HStack {
                 Label("Session active", systemImage: "timer")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(.motiAccent)
                 Spacer()
                 Text(session.remainingLabel)
                     .font(.caption)
@@ -474,18 +492,18 @@ private struct ActiveSessionRow: View {
             }
 
             ProgressView(value: session.currentProgress)
-                .tint(.indigo)
+                .tint(.motiAccent)
 
             HStack(spacing: 16) {
                 ForEach(session.checkpointProgress, id: \.self) { cp in
                     let fired = session.firedCheckpoints.contains(cp)
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(fired ? Color.indigo : Color.secondary.opacity(0.25))
+                            .fill(fired ? Color.motiAccent : Color.secondary.opacity(0.25))
                             .frame(width: 6, height: 6)
                         Text("\(Int(cp * 100))%")
                             .font(.caption2)
-                            .foregroundStyle(fired ? .indigo : .secondary)
+                            .foregroundStyle(fired ? .motiAccent : .secondary)
                     }
                 }
             }

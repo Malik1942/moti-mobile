@@ -1,9 +1,9 @@
 import Foundation
 import SwiftData
 
-// MARK: - Session State
+// MARK: - Progress State
 
-enum SessionState: String, Codable, CaseIterable {
+enum ProgressState: String, Codable, CaseIterable {
     case good
     case normal
     case bad
@@ -70,14 +70,14 @@ enum SessionState: String, Codable, CaseIterable {
     /// repeated taps of the same notification. `nil` for manual pulses.
     var checkpointID: String?
 
-    var state: SessionState {
-        get { SessionState(rawValue: stateRawValue) ?? .normal }
+    var state: ProgressState {
+        get { ProgressState(rawValue: stateRawValue) ?? .normal }
         set { stateRawValue = newValue.rawValue }
     }
 
     /// Focus-block init kept for backward compatibility with existing call
     /// sites (`SessionCheckIn(progress:state:)`).
-    init(progress: Double, state: SessionState) {
+    init(progress: Double, state: ProgressState) {
         self.id            = UUID()
         self.timestamp     = .now
         self.progress      = progress
@@ -88,7 +88,7 @@ enum SessionState: String, Codable, CaseIterable {
     init(
         workItemID: UUID,
         progress: Double,
-        state: SessionState,
+        state: ProgressState,
         note: String? = nil,
         checkpointID: String? = nil
     ) {

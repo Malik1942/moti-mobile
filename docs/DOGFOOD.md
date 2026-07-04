@@ -8,13 +8,12 @@ Use this guide to evaluate the trajectory timeline on real local data before any
 2. Go to Timeline.
 3. Turn on Use Trajectory Timeline.
 
-The flag is off by default. DEBUG sample data is launch-argument only and should not appear unless the app is started with `-MotiSeedLifelines YES`.
+The flag is off by default. DEBUG sample data is launch-argument only and should not appear unless the app is started with `-MotiSeedStrands YES`.
 
 ## What to Watch For
 
 After about two weeks of normal use, review:
 
-- The coverage snapshot in Settings -> Timeline -> Lifelines Metrics (DEBUG).
 - The glance-and-close rate: how often the timeline can be opened, understood, and closed without action.
 - Which trajectory outcomes appear in real use: on-time, behind, sustained, fading.
 

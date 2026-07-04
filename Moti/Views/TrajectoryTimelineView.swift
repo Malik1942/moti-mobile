@@ -18,9 +18,9 @@ struct TrajectoryTimelineView: View {
     @Query(sort: \Project.createdAt) private var projects: [Project]
     @Query private var completionLogs: [CompletionLog]
     @ObservedObject private var prefs = StrandPreferenceStore.shared
-    @ObservedObject private var metrics = LifelineInstrumentation.shared
+    @ObservedObject private var metrics = TrajectoryInstrumentation.shared
     #if DEBUG
-    @ObservedObject private var typeOverrideStore = LifelineTypeOverrideStore.shared
+    @ObservedObject private var typeOverrideStore = StrandTypeOverrideStore.shared
     #endif
 
     @State private var peekStrand: Strand?
@@ -69,7 +69,7 @@ struct TrajectoryTimelineView: View {
 
     private var hasContent: Bool { !projects.isEmpty || !workItems.isEmpty }
 
-    private var visibleStrands: [Strand] { Array(strands.prefix(6)) }
+    private var visibleStrands: [Strand] { strands }
 
     private var timelineFieldHeight: CGFloat {
         fieldHeaderHeight + CGFloat(max(visibleStrands.count, 1)) * laneHeight + fieldBottomPadding
@@ -80,13 +80,12 @@ struct TrajectoryTimelineView: View {
             Group {
                 if hasContent {
                     ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 16) {
+                        VStack(spacing: MotiLayout.sectionSpacing) {
                             scaleSelector
-                            headline
                             timelineSurface
                         }
                         .padding(.horizontal, MotiLayout.pagePadding)
-                        .padding(.top, 8)
+                        .padding(.top, MotiLayout.titleToContentSpacing)
                         .padding(.bottom, MotiLayout.pageBottomPadding)
                         .frame(maxWidth: .infinity, alignment: .top)
                     }
@@ -96,9 +95,8 @@ struct TrajectoryTimelineView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Timeline")
-            .navigationBarTitleDisplayMode(.inline)
             .onAppear { recordOpen() }
             .onDisappear { recordClose() }
             .sheet(item: $peekStrand) { strand in
@@ -119,10 +117,9 @@ struct TrajectoryTimelineView: View {
 
     private var headline: some View {
         Text(TimelineNarrator.trajectoryHeadline(for: strands))
-            .font(.system(size: 18, weight: .semibold))
+            .font(.headline)
             .foregroundStyle(.primary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 2)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
     }
@@ -134,7 +131,7 @@ struct TrajectoryTimelineView: View {
             }
         }
         .padding(4)
-        .background(.secondary.opacity(0.055), in: Capsule())
+        .background(Color.motiQuietFill, in: Capsule())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Timeline scale, \(selectedScale.label) selected")
     }
@@ -149,12 +146,15 @@ struct TrajectoryTimelineView: View {
                 .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
                 .foregroundStyle(isSelected ? Color.primary.opacity(0.82) : Color.secondary.opacity(0.72))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
+                .padding(.vertical, 10)
                 .background {
                     if isSelected {
                         Capsule()
-                            .fill(.background)
-                            .shadow(color: .black.opacity(0.035), radius: 4, x: 0, y: 1)
+                            .fill(Color.motiSurface)
+                            .overlay {
+                                Capsule()
+                                    .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+                            }
                     }
                 }
         }
@@ -184,26 +184,52 @@ struct TrajectoryTimelineView: View {
             .padding(.trailing, 10)
             .background(
                 TrajectoryColorPalette.fieldGradient,
-                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
+                in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius - 6, style: .continuous)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.08), lineWidth: 0.7)
+                RoundedRectangle(cornerRadius: MotiLayout.cardRadius - 6, style: .continuous)
+                    .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: MotiLayout.cardRadius - 6, style: .continuous))
         }
         .accessibilityLabel("Timeline trajectory field")
     }
 
     private var timelineSurface: some View {
-        VStack(spacing: 18) {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Trajectory")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text("\(visibleStrands.count) \(visibleStrands.count == 1 ? "project" : "projects") · \(selectedScale.longLabel)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Label("Now", systemImage: "circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .labelStyle(.titleAndIcon)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.motiQuietFill, in: Capsule())
+            }
+
+            headline
+
             timelineField
                 .frame(height: timelineFieldHeight)
 
             focusCard
-                .padding(.horizontal, 2)
         }
-        .padding(.bottom, 8)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
     }
 
     private func fixedIdentityColumn(_ geometry: TimelineFieldGeometry) -> some View {
@@ -239,7 +265,11 @@ struct TrajectoryTimelineView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .background(Color.motiElevatedSurface, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("What matters now: \(message)")
     }
@@ -247,9 +277,15 @@ struct TrajectoryTimelineView: View {
     private func attentionCard(strandID: String, title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("WHAT MATTERS NOW").font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-                Text(title).font(.system(size: 16, weight: .semibold))
-                Text(detail).font(.system(size: 13)).foregroundStyle(.secondary)
+                Text("What Matters Now")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             HStack(spacing: 10) {
                 gentleButton("Make space", filled: true) {
@@ -262,34 +298,55 @@ struct TrajectoryTimelineView: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous).stroke(.indigo.opacity(0.16), lineWidth: 1))
+        .background(Color.motiElevatedSurface, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
     }
 
-    /// App-control styling — the original app purple, never the chart palette.
+    /// App-control styling — shared with the rest of the refreshed Moti UI.
+    @ViewBuilder
     private func gentleButton(_ label: String, filled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(.system(size: 14, weight: .semibold))
-                .padding(.horizontal, 14).padding(.vertical, 9)
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(filled ? Color.white : .indigo)
-                .background(filled ? Color.indigo : Color.indigo.opacity(0.12), in: Capsule())
+        if filled {
+            Button(action: action) {
+                Text(label)
+            }
+            .buttonStyle(MotiPrimaryButtonStyle(isFullWidth: true, height: 44))
+        } else {
+            Button(action: action) {
+                Text(label)
+            }
+            .buttonStyle(MotiSecondaryButtonStyle(isFullWidth: true, height: 44))
         }
-        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
-        VStack(alignment: .leading, spacing: MotiLayout.emptyStateSpacing) {
-            Text("Your futures will appear here.").font(.headline)
-            Text("As you capture and tend work, each future becomes a trajectory — and Moti projects, from your actual pace, where each one is heading.")
-                .font(.motiEmptySubtitle).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                MotiEmptyStateIcon(systemName: "chart.xyaxis.line")
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Your futures will appear here.")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Text("Capture work over time and Moti will show where each project is heading.")
+                        .font(.motiEmptySubtitle)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
             Button { onAddToTimeline() } label: { Label("Add to Timeline", systemImage: "plus") }
-                .font(.motiButtonLabel).buttonStyle(.borderedProminent).tint(.indigo).padding(.top, 4)
+                .buttonStyle(MotiPrimaryButtonStyle(isFullWidth: true))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(MotiLayout.cardPadding)
-        .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .padding(18)
+        .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
+                .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
     }
 
     // MARK: - Instrumentation (local-only; PRD §9.4)
@@ -348,24 +405,22 @@ private enum TrajectoryColorPalette {
     }
 
     /// System-native card surface (Apple Health / Stocks chart-card feel).
-    static var surface: Color { Color(.secondarySystemGroupedBackground) }
+    static var surface: Color { Color.motiSurface }
 
-    /// Instrument-panel field the trajectory curves are plotted on — a vertical
-    /// wash (lifted at the top, settling at the floor) so luminous strokes and
-    /// the Now handles read against it. Adapts to appearance: a soft light wash
-    /// in light mode, a near-black panel in dark.
-    static var fieldTop: Color { color(light: (0.975, 0.978, 0.986), dark: (0.157, 0.166, 0.196)) }
-    static var fieldBottom: Color { color(light: (0.928, 0.936, 0.952), dark: (0.055, 0.058, 0.070)) }
+    /// Neutral elevated field so the trajectory chart sits inside the same
+    /// surface system as the refreshed Timeline digest card.
+    static var fieldTop: Color { Color.motiElevatedSurface }
+    static var fieldBottom: Color { Color.motiQuietFill.opacity(0.55) }
     /// Solid wash matching the field, used to knock marker cores/rings out.
-    static var fieldKnockout: Color { color(light: (0.955, 0.962, 0.975), dark: (0.075, 0.078, 0.092)) }
+    static var fieldKnockout: Color { Color.motiElevatedSurface }
     static var fieldGradient: LinearGradient {
         LinearGradient(colors: [fieldTop, fieldBottom], startPoint: .top, endPoint: .bottom)
     }
-    /// Lavender horizon each curve breathes around — the reference's threshold.
-    static var horizonTint: Color { color(light: (0.46, 0.44, 0.70), dark: (0.64, 0.62, 0.84)) }
+    /// Quiet neutral horizon each curve breathes around.
+    static var horizonTint: Color { Color.secondary }
     /// Now-handle outline — graphite in light so it reads as a soft target ring
     /// (never a harsh black dot), bright in dark so it reads on the panel.
-    static var handleRing: Color { color(light: (0.46, 0.48, 0.52), dark: (0.92, 0.93, 0.96)) }
+    static var handleRing: Color { Color.secondary }
 
     static var plotWash: Color {
         #if canImport(UIKit)
@@ -382,12 +437,12 @@ private enum TrajectoryColorPalette {
     // Apple-system color energy: richer and clearly readable on the light card,
     // but a touch deeper than pure neon system colors (not candy). Chart-only.
     private static let tokenColors: [String: Color] = [
-        "blue": color(light: (0.04, 0.42, 0.88), dark: (0.32, 0.62, 1.00)),     // refined iOS blue
-        "green": color(light: (0.16, 0.62, 0.33), dark: (0.30, 0.80, 0.46)),    // calm but visible green
-        "purple": color(light: (0.52, 0.24, 0.80), dark: (0.69, 0.46, 0.95)),   // rich, not neon
-        "indigo": color(light: (0.29, 0.30, 0.76), dark: (0.52, 0.52, 0.94)),   // deep indigo
-        "orange": color(light: (0.92, 0.50, 0.08), dark: (1.00, 0.62, 0.24)),   // warm, clear amber
-        "gray": color(light: (0.42, 0.44, 0.47), dark: (0.62, 0.64, 0.67))      // neutral, readable
+        "blue": Color.projectToken("blue"),
+        "green": Color.projectToken("green"),
+        "purple": Color.projectToken("purple"),
+        "indigo": Color.projectToken("indigo"),
+        "orange": Color.projectToken("orange"),
+        "gray": Color.projectToken("gray")
     ]
 
     private static let fallbackColors: [Color] = [
@@ -426,6 +481,16 @@ private enum TimelineScale: String, CaseIterable, Identifiable {
         case .threeMonths: return "3M"
         case .sixMonths: return "6M"
         case .year: return "Y"
+        }
+    }
+
+    var longLabel: String {
+        switch self {
+        case .week: return "1 week"
+        case .month: return "1 month"
+        case .threeMonths: return "3 months"
+        case .sixMonths: return "6 months"
+        case .year: return "1 year"
         }
     }
 

@@ -22,7 +22,7 @@ struct StartSessionSheet: View {
                 .padding(24)
                 .padding(.bottom, 8)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.motiGroupedBackground)
             .navigationTitle("Timeline Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -66,9 +66,9 @@ struct StartSessionSheet: View {
                             .font(.callout.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .foregroundStyle(selectedDuration == duration ? .white : .indigo)
+                            .foregroundStyle(selectedDuration == duration ? .white : .motiAccent)
                             .background(
-                                selectedDuration == duration ? Color.indigo : Color.indigo.opacity(0.10),
+                                selectedDuration == duration ? Color.motiAccent : Color.motiAccent.opacity(0.10),
                                 in: Capsule()
                             )
                     }
@@ -88,11 +88,11 @@ struct StartSessionSheet: View {
                     let triggerDate = Date.now.addingTimeInterval(selectedDuration.seconds * progress)
                     HStack(spacing: 10) {
                         Circle()
-                            .fill(.indigo.opacity(0.30))
+                            .fill(.motiAccent.opacity(0.30))
                             .frame(width: 7, height: 7)
                         Text("\(Int(progress * 100))%")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(.motiAccent)
                             .frame(width: 30, alignment: .leading)
                         Text(triggerDate.formatted(date: .omitted, time: .shortened))
                             .font(.caption)
@@ -118,19 +118,17 @@ struct StartSessionSheet: View {
                     ProgressView().tint(.white)
                 } else {
                     Text("Start Session")
-                        .font(.headline)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(.indigo)
+        .buttonStyle(MotiPrimaryButtonStyle(isFullWidth: true, height: 48))
+        .frame(maxWidth: MotiLayout.prominentControlMaxWidth)
+        .frame(maxWidth: .infinity)
         .disabled(isStarting)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 28)
         .padding(.top, 12)
-        .padding(.bottom, 24)
-        .background(.regularMaterial)
+        .padding(.bottom, 20)
+        .background(.bar)
     }
 
     // MARK: - Helpers

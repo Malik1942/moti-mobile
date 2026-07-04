@@ -53,20 +53,20 @@ It works best when the input is simple, such as:
 
 This mode is reliable, local-friendly, and easy to debug.
 
-### SLM Mode
+### Foundation Model Mode
 
-The Small Language Model mode is designed for more flexible task understanding while staying lightweight.
+The Foundation Model mode runs Apple's on-device model (via the FoundationModels framework) for flexible task understanding without leaving the device. It is the default when the device supports it, and falls back to Rule-Based mode when it does not.
 
-It is useful when the user input is slightly messy but does not require deep project reasoning.
+It is useful when the user input is slightly messy but does not require cloud-scale reasoning.
 
-SLM mode can help with:
+Foundation Model mode can help with:
 
 - Interpreting natural language task captures
 - Extracting intent
 - Identifying rough time information
 - Structuring simple task details
 
-This mode balances flexibility, speed, and efficiency.
+This mode balances flexibility and privacy — everything stays on-device.
 
 ### LLM Mode
 
@@ -89,7 +89,7 @@ Smart Capture is only activated in LLM mode, so advanced AI behavior is used int
 
 Moti is currently in active development.
 
-The current version explores how rule-based systems, SLMs, and LLMs can work together inside a personal planning app, each used where it fits best.
+The current version explores how rule-based logic, on-device foundation models, and cloud LLMs can work together inside a personal planning app, each used where it fits best.
 
 ## Tech Stack
 
@@ -100,6 +100,11 @@ The current version explores how rule-based systems, SLMs, and LLMs can work tog
 - App Groups
 - Gemini API
 - Xcode
+- XcodeGen
+
+## Project Generation
+
+`project.yml` (XcodeGen) is the **single source of truth** for the Xcode project. `Moti.xcodeproj` is generated output — run `xcodegen generate` after adding, removing, or moving source files. Any hand-edit to `Moti.xcodeproj/project.pbxproj` is disposable and will be overwritten on the next generation; make project-structure changes in `project.yml` instead.
 
 ## Author
 

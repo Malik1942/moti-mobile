@@ -35,7 +35,7 @@ struct StrandCoverageSnapshot: Equatable {
 
 /// One timestamped local signal. Holds only ids / types / states — never titles
 /// or any other PII, and never leaves the device.
-struct LifelineMetricRecord: Codable, Identifiable, Equatable {
+struct TrajectoryMetricRecord: Codable, Identifiable, Equatable {
     enum Kind: String, Codable {
         case open       // timeline appeared
         case close      // timeline disappeared
@@ -57,20 +57,20 @@ struct LifelineMetricRecord: Codable, Identifiable, Equatable {
 
 // MARK: - Instrumentation store
 
-/// Local-only, on-device instrumentation for the Lifelines Timeline. No backend,
+/// Local-only, on-device instrumentation for the Trajectory Timeline. No backend,
 /// no PII off-device. It is a measurement tool (read in the DEBUG Settings panel
 /// or via os_log), not a product feature — and it only ever runs while the
 /// flagged timeline is on screen, so it costs nothing for normal users.
 @MainActor
-final class LifelineInstrumentation: ObservableObject {
-    static let shared = LifelineInstrumentation()
+final class TrajectoryInstrumentation: ObservableObject {
+    static let shared = TrajectoryInstrumentation()
 
     private let defaults: UserDefaults
-    private let storageKey = "lifelines.metrics.records.v1"
+    private let storageKey = "trajectory.metrics.records.v1"
     private let cap = 200
-    private let logger = Logger(subsystem: "com.malik.Moti", category: "LifelineMetrics")
+    private let logger = Logger(subsystem: "com.malik.Moti", category: "TrajectoryMetrics")
 
-    @Published private(set) var records: [LifelineMetricRecord] = []
+    @Published private(set) var records: [TrajectoryMetricRecord] = []
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -80,13 +80,13 @@ final class LifelineInstrumentation: ObservableObject {
     // MARK: Recording
 
     func record(
-        _ kind: LifelineMetricRecord.Kind,
+        _ kind: TrajectoryMetricRecord.Kind,
         strandID: String? = nil,
         effectiveType: String? = nil,
         presenceState: String? = nil,
         detail: String? = nil
     ) {
-        let entry = LifelineMetricRecord(
+        let entry = TrajectoryMetricRecord(
             kind: kind, timestamp: .now, strandID: strandID,
             effectiveType: effectiveType, presenceState: presenceState, detail: detail
         )
@@ -154,7 +154,7 @@ final class LifelineInstrumentation: ObservableObject {
 
     private func load() {
         guard let data = defaults.data(forKey: storageKey),
-              let decoded = try? JSONDecoder().decode([LifelineMetricRecord].self, from: data)
+              let decoded = try? JSONDecoder().decode([TrajectoryMetricRecord].self, from: data)
         else { return }
         records = decoded
     }

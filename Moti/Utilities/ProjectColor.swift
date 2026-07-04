@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension Color {
     static func project(_ name: String?) -> Color {
@@ -7,12 +8,12 @@ extension Color {
 
     static func projectToken(_ token: String?) -> Color {
         switch token {
-        case "blue": .blue
-        case "green": .green
-        case "purple": .purple
-        case "indigo": .indigo
-        case "orange": .orange
-        default: .gray
+        case "blue": Color(uiColor: .systemBlue)
+        case "green": Color(uiColor: .systemGreen)
+        case "purple": Color(uiColor: .systemPurple)
+        case "indigo": Color(uiColor: .systemIndigo)
+        case "orange": Color(uiColor: .systemBrown)
+        default: Color(uiColor: .systemGray)
         }
     }
 }

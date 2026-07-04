@@ -6,7 +6,16 @@ final class WorkItem {
     @Attribute(.unique) var id: UUID
     var rawInput: String
     var title: String
-    var projectName: String?
+    /// Legacy string-based project link, superseded by the `project`
+    /// relationship. Kept (under the original column name) so existing stores
+    /// migrate lightweightly and `ProjectRelationshipMigrator` can backfill.
+    /// Holds a value only while unlinked: capture-time guesses for projects
+    /// that don't exist yet, and pre-migration data. Read `projectName`,
+    /// write via `assignProject(_:)`.
+    @Attribute(originalName: "projectName") var legacyProjectName: String?
+    /// The item's project. Source of truth for assignment; `.nullify` on
+    /// project deletion (see `Project.workItems`).
+    var project: Project?
     var createdAt: Date
     var updatedAt: Date
     var dueDate: Date?
@@ -56,7 +65,7 @@ final class WorkItem {
         self.id = id
         self.rawInput = rawInput
         self.title = title
-        self.projectName = projectName
+        self.legacyProjectName = projectName
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.dueDate = dueDate
@@ -145,6 +154,27 @@ final class WorkItem {
         set {
             suggestedSessionsData = try? JSONEncoder().encode(newValue)
         }
+    }
+
+    /// The item's project name: the linked project's live name, falling back
+    /// to the legacy string for unlinked items. Read-only — assignment goes
+    /// through `assignProject(_:)` so the relationship stays source of truth.
+    var projectName: String? {
+        project?.name ?? legacyProjectName
+    }
+
+    /// Links (or unlinks, with `nil`) the item to a project. Clears the legacy
+    /// string so a stale name can never resurface after unlink or rename.
+    func assignProject(_ newProject: Project?) {
+        project = newProject
+        legacyProjectName = nil
+    }
+
+    /// True when the item belongs to `candidate` — by relationship identity
+    /// for linked items, by name for legacy/unlinked ones.
+    func belongsTo(_ candidate: Project) -> Bool {
+        if let project { return project.id == candidate.id }
+        return legacyProjectName == candidate.name
     }
 
     var displayProject: String {

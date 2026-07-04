@@ -19,7 +19,8 @@ struct SettingsView: View {
     @AppStorage("calendarSyncMode") private var calendarSyncModeRawValue = CalendarSyncMode.event.rawValue
     @AppStorage(WorkItemNotificationScheduler.dueRemindersKey)   private var dueRemindersEnabled = true
     @AppStorage(WorkItemNotificationScheduler.progressChecksKey) private var progressChecksEnabled = true
-    @AppStorage("useLifelineTimeline") private var useLifelineTimeline = false
+    @AppStorage("useTrajectoryTimeline") private var useTrajectoryTimeline = false
+    @AppStorage("timelineTaskSort") private var timelineTaskSortRawValue = TimelineTaskSort.projectPriority.rawValue
 
     @State private var calendarStatus = AppleCalendarSyncStatus.off
     @State private var showingGoogleComingSoon = false
@@ -64,6 +65,14 @@ struct SettingsView: View {
 
     private var calendarSyncProvider: CalendarSyncProvider {
         CalendarSyncProvider(rawValue: calendarSyncProviderRawValue) ?? .appleCalendar
+    }
+
+    private var timelineTaskSort: Binding<TimelineTaskSort> {
+        Binding {
+            TimelineTaskSort(rawValue: timelineTaskSortRawValue) ?? .projectPriority
+        } set: {
+            timelineTaskSortRawValue = $0.rawValue
+        }
     }
 
     var body: some View {
@@ -134,15 +143,19 @@ struct SettingsView: View {
                 notificationsSection
 
                 Section("Timeline") {
-                    Toggle("Use Trajectory Timeline", isOn: $useLifelineTimeline)
+                    Picker("Task Order", selection: timelineTaskSort) {
+                        ForEach(TimelineTaskSort.allCases) { sort in
+                            Text(sort.label).tag(sort)
+                        }
+                    }
+                    Text((TimelineTaskSort(rawValue: timelineTaskSortRawValue) ?? .projectPriority).description)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    Toggle("Use Trajectory Timeline", isOn: $useTrajectoryTimeline)
                     Text("A redesigned Timeline as a trajectory engine: time runs downward from Now, and each future is projected from your actual pace — on-time, slipping, fading, or sustained.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    #if DEBUG
-                    NavigationLink("Lifelines Metrics (DEBUG)") {
-                        LifelineMetricsDebugView()
-                    }
-                    #endif
                 }
 
                 Section("About") {
@@ -166,7 +179,7 @@ struct SettingsView: View {
             .contentMargins(.bottom, 72, for: .scrollContent)
             .navigationTitle("Settings")
             .onAppear {
-                if modeRawValue == TaskUnderstandingMode.mockSLM.rawValue {
+                if modeRawValue == TaskUnderstandingMode.legacyMockSLMRawValue {
                     modeRawValue = FoundationModelRuntime.status.isAvailable
                         ? TaskUnderstandingMode.foundationModel.rawValue
                         : TaskUnderstandingMode.ruleBased.rawValue

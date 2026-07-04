@@ -134,7 +134,6 @@ final class SmartCaptureTests: XCTestCase {
 
         XCTAssertFalse(shouldRouteToAgent(for: .foundationModel))
         XCTAssertFalse(shouldRouteToAgent(for: .ruleBased))
-        XCTAssertFalse(shouldRouteToAgent(for: .mockSLM))
         XCTAssertTrue(shouldRouteToAgent(for: .llm))
 
         // The agent itself is mode-agnostic — when invoked it records the call.
@@ -155,7 +154,7 @@ final class SmartCaptureTests: XCTestCase {
         // smartDecision is only ever set inside `runSmartCapture`, which is only
         // called inside the `isLLMMode` branch of `submit()`. In any non-LLM mode
         // the predicate is always false regardless of intermediate state.
-        for mode in [TaskUnderstandingMode.foundationModel, .ruleBased, .mockSLM] {
+        for mode in [TaskUnderstandingMode.foundationModel, .ruleBased] {
             let isLLM = (mode == .llm)
             XCTAssertFalse(isLLM, "\(mode.rawValue) must not be treated as LLM mode")
         }

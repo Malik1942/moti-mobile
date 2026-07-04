@@ -1,7 +1,7 @@
 //
 // StrandPresenceTests.swift
 //
-// Covers the pure, deterministic presence computation that powers the Lifelines
+// Covers the pure, deterministic presence computation that powers the Trajectory Timeline
 // Timeline: recency vs. each strand's OWN baseline cadence → {active|quiet|drifted}.
 //
 // The product rules under test (PRD §5.1, §8, §10):

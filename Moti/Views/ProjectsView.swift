@@ -86,7 +86,7 @@ struct ProjectsView: View {
         ScrollView {
             LazyVStack(spacing: MotiLayout.cardSpacing) {
                 ForEach(orderedProjects) { project in
-                    let items = workItems.filter { $0.projectName == project.name && !$0.needsReview }
+                    let items = workItems.filter { $0.belongsTo(project) && !$0.needsReview }
                     ProjectCardRow(
                         project: project,
                         items: items,
@@ -115,7 +115,7 @@ struct ProjectsView: View {
             .padding(.top, MotiLayout.pageTopPadding)
             .padding(.bottom, MotiLayout.pageBottomPadding)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color.motiGroupedBackground)
         .onPreferenceChange(CardHeightPreferenceKey.self) { cardHeights = $0 }
     }
 
@@ -241,13 +241,11 @@ struct ProjectsView: View {
             } label: {
                 Label("Add Project", systemImage: "square.grid.2x2")
             }
-            .font(.motiButtonLabel)
-            .buttonStyle(.borderedProminent)
-            .tint(.indigo)
+            .buttonStyle(MotiPrimaryButtonStyle())
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(.systemGroupedBackground))
+        .background(Color.motiGroupedBackground)
     }
 
     private func normalizeProjectOrderIfNeeded() {
@@ -266,8 +264,8 @@ struct ProjectsView: View {
 
     private func deleteProject(_ project: Project) {
         let remainingProjects = projects.filter { $0.id != project.id }.motiOrdered
-        for item in workItems where item.projectName == project.name {
-            item.projectName = nil
+        for item in workItems where item.belongsTo(project) {
+            item.assignProject(nil)
             item.updatedAt = .now
             try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: remainingProjects)
         }
@@ -567,7 +565,7 @@ private struct ProjectDetailView: View {
     /// archived. Nothing is filtered out by date; grouping happens via buckets
     /// so a passed deadline can never hide a task.
     private var allProjectItems: [WorkItem] {
-        workItems.filter { $0.projectName == project.name }
+        workItems.filter { $0.belongsTo(project) }
     }
 
     var body: some View {
@@ -765,7 +763,7 @@ private struct ProjectPulseView: View {
             }
 
             HStack(spacing: 8) {
-                pulseChip(value: pulse.active, label: "Active", tint: .indigo)
+                pulseChip(value: pulse.active, label: "Active", tint: .motiAccent)
                 pulseChip(value: pulse.overdue, label: "Overdue", tint: pulse.overdue > 0 ? .orange : .secondary)
                 pulseChip(value: pulse.upcoming, label: "Upcoming", tint: .secondary)
             }
@@ -788,7 +786,7 @@ private struct ProjectPulseView: View {
         switch pulse.statusLabel {
         case "Needs attention": .orange
         case "Complete":        .green
-        case "In progress":     .indigo
+        case "In progress":     .motiAccent
         default:                .secondary
         }
     }
@@ -804,7 +802,7 @@ private struct ProjectPulseView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
     }
 }
 
@@ -858,7 +856,7 @@ private struct ProjectWorkItemRow: View {
         switch state {
         case .overdue:     .orange
         case .completed:   .green
-        case .active:      .indigo
+        case .active:      .motiAccent
         case .needsReview: .orange
         case .upcoming, .skipped, .archived: .secondary
         }

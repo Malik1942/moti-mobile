@@ -98,10 +98,11 @@ struct EditProjectSheet: View {
                 return
             }
 
-            // Cascade name change to all assigned work items
-            let oldName = project.name
-            for item in workItems where item.projectName == oldName {
-                item.projectName = trimmedName
+            // Linked items follow the rename automatically via the `project`
+            // relationship. Adopt any legacy string-linked stragglers first so
+            // the rename can't orphan them.
+            for item in workItems where item.project == nil && item.projectName == project.name {
+                item.assignProject(project)
                 item.updatedAt = .now
             }
             // TODO: update Apple Calendar name when sync is active (non-blocking)

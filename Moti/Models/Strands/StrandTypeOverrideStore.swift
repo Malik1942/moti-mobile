@@ -12,11 +12,11 @@ import Foundation
 /// the user overrode), it can store a richer value type under this same key with
 /// **no data migration**. Do not add that field now.
 @MainActor
-final class LifelineTypeOverrideStore: ObservableObject {
-    static let shared = LifelineTypeOverrideStore()
+final class StrandTypeOverrideStore: ObservableObject {
+    static let shared = StrandTypeOverrideStore()
 
     private let defaults: UserDefaults
-    private let key = "lifelines.debug.typeOverrides.v1"
+    private let key = "trajectory.debug.typeOverrides.v1"
 
     @Published private(set) var revision = 0
 

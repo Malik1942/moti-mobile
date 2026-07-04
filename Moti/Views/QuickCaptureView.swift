@@ -159,7 +159,7 @@ struct QuickCaptureView: View {
                     .lineLimit(5)
                     .padding(16)
                     .frame(maxWidth: .infinity)
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
             }
 
             // Centered — voice mode is the primary interaction here, so the
@@ -167,11 +167,11 @@ struct QuickCaptureView: View {
             Button { toggleVoiceCapture() } label: {
                 ZStack {
                     Circle()
-                        .fill(speechService.isRecording ? .red.opacity(0.10) : .indigo.opacity(0.10))
+                        .fill(speechService.isRecording ? .red.opacity(0.10) : .motiAccent.opacity(0.10))
                         .frame(width: 96, height: 96)
                     Image(systemName: speechService.isRecording ? "stop.fill" : "mic")
                         .font(.system(size: 34, weight: .medium))
-                        .foregroundStyle(speechService.isRecording ? .red : .indigo)
+                        .foregroundStyle(speechService.isRecording ? .red : .motiAccent)
                 }
             }
             .buttonStyle(.plain)
@@ -237,7 +237,7 @@ struct QuickCaptureView: View {
             }
             Button("Type instead") { switchToTextMode() }
                 .font(.subheadline)
-                .foregroundStyle(.indigo)
+                .foregroundStyle(.motiAccent)
         }
         .frame(maxWidth: .infinity)
     }
@@ -250,7 +250,7 @@ struct QuickCaptureView: View {
                 .font(.body)
                 .lineLimit(4...10)
                 .padding(14)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
                 .focused($isInputFocused)
                 // Return key inserts a newline. Submit is in the nav bar.
 
@@ -311,11 +311,11 @@ struct QuickCaptureView: View {
             } label: {
                 ZStack {
                     Circle()
-                        .fill((speechService.isRecording ? Color.red : Color.indigo).opacity(0.10))
+                        .fill((speechService.isRecording ? Color.red : Color.motiAccent).opacity(0.10))
                         .frame(width: 64, height: 64)
                     Image(systemName: speechService.isRecording ? "stop.fill" : "mic")
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundStyle(speechService.isRecording ? .red : .indigo)
+                        .foregroundStyle(speechService.isRecording ? .red : .motiAccent)
                 }
             }
             .buttonStyle(.plain)
@@ -388,7 +388,7 @@ struct QuickCaptureView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous))
         .padding(.horizontal, 20)
     }
 
@@ -680,7 +680,7 @@ struct QuickCaptureView: View {
             do {
                 try await createWorkItems(
                     from: rawText,
-                    preferredProjectName: decision.inferredProjectName,
+                    preferredProject: existingProject(named: decision.inferredProjectName),
                     recurrence: recurrence
                 )
                 SoundManager.shared.play(.capture)   // confirmed task captured
@@ -728,12 +728,12 @@ struct QuickCaptureView: View {
             // persisted project list and either (a) returns the existing project's
             // name, or (b) inserts exactly one new Project and caches its name.
             // All subsequent calls for that hint hit the cache and skip insertion.
-            var sessionProjectCache: [String: String] = [:]   // normalized hint → canonical name
+            var sessionProjectCache: [String: Project] = [:]   // normalized hint → resolved project
             var nextSortIdx = projects.nextSortIndex
 
-            // Returns the canonical project name for `hint`, creating the Project
+            // Returns the resolved project for `hint`, creating the Project
             // record at most once per unique (case-insensitive) hint per session.
-            let resolveProjectName: (String?) -> String? = { [self] hint in
+            let resolveProject: (String?) -> Project? = { [self] hint in
                 guard let hint = hint?.trimmingCharacters(in: .whitespacesAndNewlines),
                       !hint.isEmpty,
                       hint.localizedCaseInsensitiveCompare("Uncategorized") != .orderedSame
@@ -749,8 +749,8 @@ struct QuickCaptureView: View {
                 if let matched = ProjectMatcher.match(
                     projectHint: hint, taskTitle: "", rawInput: "", existingProjects: projects
                 ) {
-                    sessionProjectCache[key] = matched.name
-                    return matched.name
+                    sessionProjectCache[key] = matched
+                    return matched
                 }
 
                 // No existing project matched — create exactly one new Project for
@@ -763,21 +763,21 @@ struct QuickCaptureView: View {
                 )
                 modelContext.insert(newProject)
                 nextSortIdx += 1
-                sessionProjectCache[key] = newProject.name
+                sessionProjectCache[key] = newProject
                 #if DEBUG
                 print("Smart Capture: created new project '\(hint)' (sortIndex \(newProject.sortIndex ?? -1)).")
                 #endif
-                return newProject.name
+                return newProject
             }
 
             // Workspace-level fallback: matched project ID takes priority over
             // the inferred name so an existing project is never recreated.
-            let workspaceFallback: String? = {
+            let workspaceFallback: Project? = {
                 if let matchedId = decision.matchedProjectId,
                    let matched = projects.first(where: { $0.id == matchedId }) {
-                    return matched.name
+                    return matched
                 }
-                return resolveProjectName(decision.inferredProjectName)
+                return resolveProject(decision.inferredProjectName)
             }()
 
             do {
@@ -785,7 +785,7 @@ struct QuickCaptureView: View {
                     // Per-target project: target's own hint takes priority over the
                     // workspace-level fallback so a workspace spanning two projects
                     // lands each target in the right place.
-                    let targetProject = resolveProjectName(target.projectName) ?? workspaceFallback
+                    let targetProject = resolveProject(target.projectName) ?? workspaceFallback
 
                     for plannedTask in target.phases.flatMap(\.tasks) {
                         // Compose raw text: task title + its own timing hint, or fall
@@ -801,9 +801,9 @@ struct QuickCaptureView: View {
 
                         // Per-task project hint overrides the target's project if the
                         // LLM specifically labeled this task for a different project.
-                        let taskProject = resolveProjectName(plannedTask.projectName) ?? targetProject
+                        let taskProject = resolveProject(plannedTask.projectName) ?? targetProject
 
-                        try await createWorkItems(from: rawText, preferredProjectName: taskProject)
+                        try await createWorkItems(from: rawText, preferredProject: taskProject)
                     }
                 }
                 SoundManager.shared.play(.reorganized)   // plan settled onto the timeline
@@ -893,7 +893,7 @@ struct QuickCaptureView: View {
                 id: project.id,
                 name: project.name,
                 activeItemCount: workItems.filter {
-                    $0.projectName == project.name && $0.status != .archived
+                    $0.belongsTo(project) && $0.status != .archived
                 }.count
             )
         }
@@ -1096,7 +1096,7 @@ struct QuickCaptureView: View {
     @MainActor
     private func createWorkItems(
         from text: String,
-        preferredProjectName: String? = nil,
+        preferredProject: Project? = nil,
         recurrence: RecurrenceRule = .none
     ) async throws {
         let parsedItems = try await parser.parseMany(text)
@@ -1126,13 +1126,13 @@ struct QuickCaptureView: View {
             let item = WorkItem(parsed: parsed)
             applyProjectMapping(from: parsed, to: item)
 
-            // Smart Capture: when the agent matched an existing project, prefer it
-            // over the parser's own keyword inference.
-            if let preferredProjectName,
-               let matched = projects.first(where: {
-                   $0.name.localizedCaseInsensitiveCompare(preferredProjectName) == .orderedSame
-               }) {
-                item.projectName = matched.name
+            // Smart Capture: when the agent resolved a project, prefer it over
+            // the parser's own keyword inference. The object is passed in
+            // directly (no name re-match against the stale `@Query projects`
+            // snapshot), so items also link correctly to projects created
+            // earlier in this same confirm session.
+            if let preferredProject {
+                item.assignProject(preferredProject)
                 item.suggestedProjectName = nil
             }
 
@@ -1182,6 +1182,16 @@ struct QuickCaptureView: View {
 
     // MARK: - Project mapping
 
+    /// Resolves a project name to an existing project object (case-insensitive),
+    /// without creating one. Mirrors the match the single-task Smart Capture
+    /// confirm previously did inside `createWorkItems` — now returning the
+    /// object so no name-based hop survives at the call site.
+    private func existingProject(named name: String?) -> Project? {
+        guard let name = name?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty else { return nil }
+        return projects.first { $0.name.localizedCaseInsensitiveCompare(name) == .orderedSame }
+    }
+
     private func applyProjectMapping(from parsed: ParsedWorkItem, to item: WorkItem) {
         // Smarter matching: fuzzy match the parser's hint plus the task's own
         // title and raw input against existing projects. This catches cases the
@@ -1194,7 +1204,7 @@ struct QuickCaptureView: View {
             rawInput: parsed.rawInput,
             existingProjects: projects
         ) {
-            item.projectName = matched.name
+            item.assignProject(matched)
             item.suggestedProjectName = nil
             return
         }
@@ -1206,11 +1216,11 @@ struct QuickCaptureView: View {
               !inferredProject.isEmpty,
               inferredProject.localizedCaseInsensitiveCompare("Uncategorized") != .orderedSame
         else {
-            item.projectName = nil
+            item.assignProject(nil)
             item.suggestedProjectName = nil
             return
         }
-        item.projectName = nil
+        item.assignProject(nil)
         item.suggestedProjectName = ProjectCatalog.normalizedTemplateName(inferredProject) ?? inferredProject
     }
 }

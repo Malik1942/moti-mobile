@@ -1,20 +1,46 @@
 import SwiftUI
 
+// MARK: - Visual tokens
+
+enum MotiTheme {
+    static let accent = Color(uiColor: .systemBlue)
+    static let groupedBackground = Color(uiColor: .systemGroupedBackground)
+    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
+    static let elevatedSurface = Color(uiColor: .tertiarySystemGroupedBackground)
+    static let stroke = Color(uiColor: .separator).opacity(0.22)
+    static let subtleStroke = Color(uiColor: .separator).opacity(0.14)
+    static let quietFill = Color(uiColor: .secondarySystemFill)
+    static let today = Color(uiColor: .systemRed)
+}
+
+extension Color {
+    static let motiAccent = MotiTheme.accent
+    static let motiGroupedBackground = MotiTheme.groupedBackground
+    static let motiSurface = MotiTheme.surface
+    static let motiElevatedSurface = MotiTheme.elevatedSurface
+    static let motiQuietFill = MotiTheme.quietFill
+}
+
+extension ShapeStyle where Self == Color {
+    static var motiAccent: Color { MotiTheme.accent }
+    static var motiSurface: Color { MotiTheme.surface }
+}
+
 // MARK: - Empty-state icon container
 
 /// Consistent icon container used in empty states across Projects, Review, and any future screens.
-/// 64 pt square, soft indigo background, 18 pt corner radius.
+/// 60 pt square, soft system accent background, 22 pt corner radius.
 struct MotiEmptyStateIcon: View {
     let systemName: String
 
     var body: some View {
         Image(systemName: systemName)
-            .font(.system(size: 28, weight: .semibold))
-            .foregroundStyle(.indigo)
-            .frame(width: 64, height: 64)
+            .font(.system(size: 25, weight: .medium))
+            .foregroundStyle(.motiAccent)
+            .frame(width: 60, height: 60)
             .background(
-                .indigo.opacity(0.10),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                Color.motiAccent.opacity(0.10),
+                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
             )
     }
 }
@@ -34,7 +60,10 @@ extension Font {
 
 enum MotiLayout {
     /// Corner radius for floating content cards (empty-state cards, project cards, review cards).
-    static let cardRadius: CGFloat = 16
+    static let cardRadius: CGFloat = 28
+    /// Corner radius for smaller controls and inset surfaces.
+    static let controlRadius: CGFloat = 23
+    static let compactSurfaceRadius: CGFloat = 20
     /// Standard horizontal padding for page-level content.
     static let pagePadding: CGFloat = 16
     /// Gap between the navigation title and the first content card on every main tab.
@@ -46,6 +75,10 @@ enum MotiLayout {
     static let cardSpacing: CGFloat = 12
     /// Padding inside content cards.
     static let cardPadding: CGFloat = 16
+    /// Standard height for deliberate app actions with a softer, pill-like iOS control feel.
+    static let controlHeight: CGFloat = 46
+    /// Primary onboarding/action width that feels intentional on iPhone instead of edge-to-edge.
+    static let prominentControlMaxWidth: CGFloat = 340
     /// Vertical spacing between empty-state elements.
     static let emptyStateSpacing: CGFloat = 12
     /// Extra bottom scroll clearance so content isn't hidden behind the custom tab bar.
@@ -55,18 +88,81 @@ enum MotiLayout {
 // MARK: - Card container style
 
 /// Shared card surface used by Project cards, Review cards, and Timeline content cards.
-/// Applies a white background, system corner radius, and a soft drop shadow.
+/// Uses grouped iOS surfaces with a quiet separator instead of decorative shadows.
 struct MotiCardModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .background(.background, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .background(Color.motiSurface, in: RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: MotiLayout.cardRadius, style: .continuous)
+                    .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+            }
     }
 }
 
 extension View {
     func motiCard() -> some View {
         modifier(MotiCardModifier())
+    }
+}
+
+// MARK: - Button styles
+
+struct MotiPrimaryButtonStyle: ButtonStyle {
+    var isFullWidth = false
+    var height: CGFloat = MotiLayout.controlHeight
+
+    private var radius: CGFloat {
+        min(MotiLayout.controlRadius, height / 2)
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.motiButtonLabel)
+            .frame(maxWidth: isFullWidth ? .infinity : nil)
+            .frame(height: height)
+            .padding(.horizontal, isFullWidth ? 0 : 16)
+            .foregroundStyle(.white)
+            .background {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(Color.motiAccent)
+                    .overlay(alignment: .top) {
+                        RoundedRectangle(cornerRadius: radius, style: .continuous)
+                            .stroke(.white.opacity(0.22), lineWidth: 0.5)
+                    }
+            }
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(.snappy(duration: 0.16), value: configuration.isPressed)
+    }
+}
+
+struct MotiSecondaryButtonStyle: ButtonStyle {
+    var isFullWidth = false
+    var height: CGFloat = MotiLayout.controlHeight
+
+    private var radius: CGFloat {
+        min(MotiLayout.controlRadius, height / 2)
+    }
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.motiButtonLabel)
+            .frame(maxWidth: isFullWidth ? .infinity : nil)
+            .frame(height: height)
+            .padding(.horizontal, isFullWidth ? 0 : 16)
+            .foregroundStyle(.motiAccent)
+            .background {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .fill(Color.motiAccent.opacity(0.11))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: radius, style: .continuous)
+                            .strokeBorder(Color.motiAccent.opacity(0.16), lineWidth: 0.5)
+                    }
+            }
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .opacity(configuration.isPressed ? 0.82 : 1)
+            .animation(.snappy(duration: 0.16), value: configuration.isPressed)
     }
 }
 

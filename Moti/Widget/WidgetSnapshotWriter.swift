@@ -5,7 +5,7 @@ enum WidgetSnapshotWriter {
     static func write(projects: [Project], workItems: [WorkItem]) {
         let projectData: [ProjectWidgetData] = projects.motiOrdered.map { project in
             let projectItems = workItems.filter {
-                $0.projectName == project.name &&
+                $0.belongsTo(project) &&
                 $0.status != .archived &&
                 !$0.needsReview
             }.map(WidgetWorkItemData.init(workItem:))
