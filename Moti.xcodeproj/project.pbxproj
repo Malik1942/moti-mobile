@@ -112,6 +112,7 @@
 		D31E185392D4B107FE242590 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA976F0F0B6FB7D282A4401 /* OnboardingView.swift */; };
 		D4EE63DD1598DFD1C593B47B /* ResolverPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE1EC87413BC2F5115A0B4CB /* ResolverPath.swift */; };
 		D66604F307E1B11FE52B4F68 /* SmartCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE7FD27B9CB6E62193659197 /* SmartCaptureTests.swift */; };
+		D70CA5CDB0F57F11B6C38A79 /* HorizonTimeBucketTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */; };
 		D798E9C040D7B54F1C764C91 /* EditProjectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6BC900E981CADF7B69AAEF /* EditProjectSheet.swift */; };
 		D8E24D814D5F2FD45D444D96 /* MotiWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BBCECF2669A889C4D6145209 /* MotiWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D8F405CDC5C128215599ABAC /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50801E7E5A2BFDC868528F38 /* PlanView.swift */; };
@@ -132,6 +133,7 @@
 		F24E15F107FEFC1E37099429 /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A3A3F0F686739AFC74C1E2E /* Project.swift */; };
 		F318D271E306F2530F8E9147 /* CompletionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC6B793F8A732EB9832C3A3B /* CompletionLog.swift */; };
 		F4564D7B26F5BB56721EEE31 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = EA71EBBF736BD816610EE36A /* README.md */; };
+		F844DAF23A6518729DE79D47 /* TimeBucket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */; };
 		FA77399088A3C3EF42BFD518 /* SoundManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0209A5FAA692F0C783A106C /* SoundManager.swift */; };
 /* End PBXBuildFile section */
 
@@ -194,6 +196,7 @@
 		30C6A3FDECF3509C2D40B9FD /* StrandTimelineBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandTimelineBuilder.swift; sourceTree = "<group>"; };
 		31AE34A01BD28B70A1750DF8 /* RecurringCompletionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringCompletionTests.swift; sourceTree = "<group>"; };
 		3526038302978193BA832464 /* RecurrenceParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurrenceParser.swift; sourceTree = "<group>"; };
+		3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizonTimeBucketTests.swift; sourceTree = "<group>"; };
 		382ABA033145311D10EF58FD /* Moti.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Moti.entitlements; sourceTree = "<group>"; };
 		383EA9D03ACDB97879F001F8 /* CaptureModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureModels.swift; sourceTree = "<group>"; };
 		3A13942342BA47085410C5EA /* StrandSampleData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandSampleData.swift; sourceTree = "<group>"; };
@@ -216,6 +219,7 @@
 		55E4952BB64D94680893EE33 /* RefinementLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefinementLoopTests.swift; sourceTree = "<group>"; };
 		5831017862C61EA3E73AAB1F /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
 		58F2D03D24B2A09BF30D52DE /* CheckInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckInSheet.swift; sourceTree = "<group>"; };
+		5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeBucket.swift; sourceTree = "<group>"; };
 		5AC6DAFDF478177EE4C9B099 /* StrandTypeOverrideStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrandTypeOverrideStore.swift; sourceTree = "<group>"; };
 		5AE2A9C322628F35353C0B5D /* ProjectPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPill.swift; sourceTree = "<group>"; };
 		5C7CA6D8734B95C03C699409 /* IntelligenceAuditTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntelligenceAuditTests.swift; sourceTree = "<group>"; };
@@ -422,6 +426,7 @@
 				47C6F169560383CEC91BF924 /* FallbackHonestyTests.swift */,
 				93A6C352C479B03C118265AD /* FoundationModelDedupTests.swift */,
 				91FA76C54552F8D8A2B2D6B9 /* GeminiSchemaTests.swift */,
+				3547AEC6131CE26F136F9FC1 /* HorizonTimeBucketTests.swift */,
 				5C7CA6D8734B95C03C699409 /* IntelligenceAuditTests.swift */,
 				164353E84B8A2069DE91EFC2 /* PlanningClassifierTests.swift */,
 				B9EC35295D439C2629D7F67A /* PlanningIntentTests.swift */,
@@ -558,6 +563,14 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		B550A2545754BF79D075C6FD /* Horizon */ = {
+			isa = PBXGroup;
+			children = (
+				5A4B4535E35280D6081B0CB2 /* TimeBucket.swift */,
+			);
+			path = Horizon;
+			sourceTree = "<group>";
+		};
 		CEAFAFDD64985C1F73F27FC2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -571,6 +584,7 @@
 				BB2CD187C2EB8DD312C24215 /* WorkItemScope.swift */,
 				0715C5BF941B119FB3E01DAA /* WorkItemTimeState.swift */,
 				A76D29D54DF4775B05381C4E /* WorkSession.swift */,
+				B550A2545754BF79D075C6FD /* Horizon */,
 				E3920241A8B2C7CC6FCD695C /* SmartCapture */,
 				7F6B857F9DCB4C37774A3053 /* Strands */,
 				31639C3709932C94414070D6 /* Temporal */,
@@ -759,6 +773,7 @@
 				50DF898232A9AE03E38E3D68 /* FallbackHonestyTests.swift in Sources */,
 				310337503301B43C024E4DEC /* FoundationModelDedupTests.swift in Sources */,
 				336E34E87C3C99DAB42B7688 /* GeminiSchemaTests.swift in Sources */,
+				D70CA5CDB0F57F11B6C38A79 /* HorizonTimeBucketTests.swift in Sources */,
 				E232DCB6CE22F4DAE38E8469 /* IntelligenceAuditTests.swift in Sources */,
 				2F80ECD2372641349AAF64EF /* PlanningClassifierTests.swift in Sources */,
 				87157B0DF211467C57084F15 /* PlanningIntentTests.swift in Sources */,
@@ -853,6 +868,7 @@
 				3DD104A3DD5741B801AD5DE7 /* TemporalInterpretation.swift in Sources */,
 				619473673DE127605CD34B4D /* TemporalResolution.swift in Sources */,
 				A9E8586A102D3375618F5F59 /* TemporalResolver.swift in Sources */,
+				F844DAF23A6518729DE79D47 /* TimeBucket.swift in Sources */,
 				AFA15869AE41E5331338B141 /* TimelineCheckpointScheduler.swift in Sources */,
 				0DC2E5380DE6B3645483133E /* TimelineNarrator.swift in Sources */,
 				DB234ABFADEB56397D841C35 /* TimelineView.swift in Sources */,
