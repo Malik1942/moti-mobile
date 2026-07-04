@@ -46,6 +46,17 @@ enum WorkItemScope {
         items.filter { $0.timeState(now: now) == .active }
     }
 
+    /// **Upcoming** — scheduled work that hasn't started yet, soonest first
+    /// (by working-window start, falling back to due date).
+    static func upcoming(_ items: [WorkItem], now: Date = .now) -> [WorkItem] {
+        items
+            .filter { $0.timeState(now: now) == .upcoming }
+            .sorted {
+                ($0.workingStartDate ?? $0.dueDate ?? .distantFuture)
+                    < ($1.workingStartDate ?? $1.dueDate ?? .distantFuture)
+            }
+    }
+
     /// **Recently Completed** — finished work, most recent first. The Timeline's
     /// short-term memory of what just got done.
     static func recentlyCompleted(_ items: [WorkItem], now: Date = .now) -> [WorkItem] {

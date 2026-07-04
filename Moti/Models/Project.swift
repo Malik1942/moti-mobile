@@ -10,6 +10,11 @@ final class Project {
     var calendarIdentifier: String?
     var sortIndex: Int?
 
+    /// Inverse of `WorkItem.project`. Deleting a project nullifies its items'
+    /// link rather than deleting them — work outlives its project.
+    @Relationship(deleteRule: .nullify, inverse: \WorkItem.project)
+    var workItems: [WorkItem] = []
+
     init(
         id: UUID = UUID(),
         name: String,

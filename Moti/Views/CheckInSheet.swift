@@ -19,7 +19,7 @@ struct CheckInSheet: View {
     /// Persist the check-in. Called once when the user taps a state button (or
     /// after a `Bad` selection if they want to attach a note before deciding
     /// what to do next).
-    let onSave: (SessionState, String) -> Void
+    let onSave: (ProgressState, String) -> Void
 
     /// Bad-only follow-up: user wants to revise the plan now.
     let onReplan: () -> Void
@@ -30,7 +30,7 @@ struct CheckInSheet: View {
     /// Top-right × dismiss without recording anything.
     let onCancel: () -> Void
 
-    @State private var selection: SessionState?
+    @State private var selection: ProgressState?
     @State private var note: String = ""
     @FocusState private var noteFieldFocused: Bool
 
@@ -104,13 +104,13 @@ struct CheckInSheet: View {
 
     private var stateButtons: some View {
         HStack(spacing: 10) {
-            ForEach(SessionState.allCases, id: \.self) { state in
+            ForEach(ProgressState.allCases, id: \.self) { state in
                 stateButton(state)
             }
         }
     }
 
-    private func stateButton(_ state: SessionState) -> some View {
+    private func stateButton(_ state: ProgressState) -> some View {
         let isSelected = selection == state
         let tint: Color = {
             switch state {
@@ -245,7 +245,7 @@ struct CheckInSheet: View {
 
     /// Tap a state button. `.good`/`.normal` auto-save and dismiss.
     /// `.bad` holds selection for the follow-up row.
-    private func paceTapped(_ state: SessionState) {
+    private func paceTapped(_ state: ProgressState) {
         if selection == state {
             // Allow de-selection for correction before saving.
             selection = nil
@@ -263,7 +263,7 @@ struct CheckInSheet: View {
     }
 
     /// Used by the Bad follow-up buttons to save exactly once on the way out.
-    private func persistIfNeeded(state: SessionState) {
+    private func persistIfNeeded(state: ProgressState) {
         onSave(state, note)
     }
 }

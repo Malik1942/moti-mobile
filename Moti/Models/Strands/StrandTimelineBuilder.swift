@@ -47,7 +47,7 @@ struct StrandTimelineBuilder {
         var strands: [Strand] = []
 
         for project in projects.motiOrdered {
-            let items = workItems.filter { $0.projectName == project.name }
+            let items = workItems.filter { $0.belongsTo(project) }
             strands.append(makeStrand(
                 id: project.id.uuidString,
                 name: project.name,
@@ -313,6 +313,6 @@ struct StrandTimelineBuilder {
             return workItems.filter { ($0.projectName ?? "").isEmpty }
         }
         guard let project = projects.first(where: { $0.id.uuidString == strand.id }) else { return [] }
-        return workItems.filter { $0.projectName == project.name }
+        return workItems.filter { $0.belongsTo(project) }
     }
 }

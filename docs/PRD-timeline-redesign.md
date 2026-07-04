@@ -745,3 +745,186 @@ The shape should communicate before the text does.
 - Planning belongs to Plan and Projects.
 - Moti predicts from behavior, not intention.
 - The experience should feel like a future field rather than an analytics dashboard.
+
+---
+
+# Canonical Vocabulary
+
+> **Status: ADOPTED — executed in the v2.1 cleanup.** This section is the single source of truth for Moti's naming. It was produced from an exhaustive inventory of the codebase + docs (every symbol, filename, folder, persisted key, PRD line, and user-facing string). All renames in the "Rename Map" below have been applied; "Lifeline" is fully eliminated from the code. The four sign-off decisions were confirmed: (1) the Good/Normal/Bad value is **`ProgressState`**; (2) the 5 persisted keys were renamed **with** a one-time idempotent `UserDefaultsKeyMigrator` (read-old → write-new → clear-old, covered by tests); (3) `StrandTypeOverrideStore`; (4) the view-component folder is **`Views/Components/Strand`**. `SessionCheckIn` (a `@Model`) remains deferred (store-migration-sensitive).
+
+## The concept model
+
+Three timeline concepts, kept strictly distinct:
+
+| Term | Meaning | Role | User-facing? |
+|---|---|---|---|
+| **Strand** | A future the user cares about — one project drawn across time. The **entity**. | The noun everything else attaches to. | Yes — the user-facing noun. |
+| **Trajectory** | The **computed projection** of a strand: where its behavior says it is heading (on-time, slipping, fading, sustained). Output of the trajectory engine. | A *property of* a Strand, never a synonym for it. | Indirectly (via outcome words). |
+| **Trajectory engine** | The pure compute subsystem that turns behavior into a Trajectory (`TrajectoryProjector`, `TrajectoryProjection`, `TrajectoryOutcome`, `TrajectoryPolicy`). | Compute only — no UI, no entity state. | No. |
+| **Timeline** | The **surface** that renders strands and their trajectories (PRD three-surface model: Timeline / Peek / Plan). | Surface name. Stays "Timeline". | Yes. |
+| **Lifeline** | **ELIMINATED.** Dead legacy name for the pre-v2 vertical design. Every occurrence resolves to Strand, Trajectory, or Timeline. | — | Never again. |
+
+Key invariant confirmed by the inventory: **Strand** (entity) and **Trajectory** (projection) are already used cleanly and are never swapped. `StrandPresence` (the entity's present-moment truth) and `TrajectoryProjection` (the forward read) are correctly separated. The only polluted term is **Lifeline**.
+
+## Rename Map — Lifeline elimination
+
+All remaining `Lifeline`-named symbols (verified: 6 types + 1 sample-data enum), with the concept each actually names:
+
+| Current symbol | Names… | → Canonical | File |
+|---|---|---|---|
+| `LifelineView` (View) | renders one **strand** row | `StrandView` | `LifelineView.swift` → `StrandView.swift` |
+| `LifelineGeometry` | render geometry for a **strand** | `StrandGeometry` | `LifelineGeometry.swift` → `StrandGeometry.swift` |
+| `LifelineMetrics` (layout consts) | **strand** row layout constants | `StrandLayout` | (in `StrandView.swift`) |
+| `LifelineSampleData` | seeds sample **strands** | `StrandSampleData` | `LifelineSampleData.swift` → `StrandSampleData.swift` |
+| `LifelineTypeOverrideStore` | overrides `StrandType` (an **entity** attribute) | `StrandTypeOverrideStore` | file renamed to match |
+| `LifelineInstrumentation` | metrics for the **trajectory** timeline feature | `TrajectoryInstrumentation` | file renamed to match |
+| `LifelineMetricRecord` | a **trajectory** metrics record | `TrajectoryMetricRecord` | (in `TrajectoryInstrumentation.swift`) |
+
+`StrandCoverageSnapshot` (already Strand-named, lives in the instrumentation file) **keeps its name** — it measures strand-type coverage.
+
+### Folder renames (in-place; not a taxonomy move)
+
+| Current folder | → Canonical | Note |
+|---|---|---|
+| `Moti/Models/Lifelines/` | `Moti/Models/Strands/` | Holds the Strand entity types **and** the trajectory engine (`TrajectoryProjector`). |
+| `Moti/Views/Components/Lifeline/` | `Moti/Views/Components/Strand/` | Also holds `TrajectoryAxis` + `TimelineNarrator` — acceptable as the strand-timeline component folder. |
+
+Both keep the type-vs-feature taxonomy exactly as-is (Models stays Models, Views stays Views). The feature-first restructure is explicitly a **separate, later pass**.
+
+### Feature flag
+
+| Current | → Canonical |
+|---|---|
+| `@AppStorage("useLifelineTimeline")` (3 sites: `MotiApp`, `SettingsView`, `StrandSampleData`) | `useTrajectoryTimeline` |
+
+The user-facing toggle label is already "Use Trajectory Timeline" — the flag name was the last "Lifeline" leak behind it.
+
+## Persisted keys — the one place migration is required
+
+Renaming a `UserDefaults` **string key** silently orphans stored values. These 8 keys embed the legacy name. Split by risk:
+
+| Current key | → Canonical | Migrate? |
+|---|---|---|
+| `useLifelineTimeline` | `useTrajectoryTimeline` | **Yes** — real user state (a TestFlight user who enabled the v2 timeline would silently revert to off). |
+| `lifelines.pausedStrandIDs` | `strand.pausedIDs` | **Yes** — user's paused strands. |
+| `lifelines.loweredStrandIDs` | `strand.loweredIDs` | **Yes** — user's de-emphasized strands. |
+| `lifelines.parkedStrandWeek` | `strand.parkedWeek` | **Yes** — user preference. |
+| `lifelines.spacedStrandWeek` | `strand.spacedWeek` | **Yes** — user preference. |
+| `lifelines.metrics.records.v1` | `trajectory.metrics.records.v1` | No — DEBUG instrumentation, disposable. |
+| `lifelines.debug.typeOverrides.v1` | `trajectory.debug.typeOverrides.v1` | No — DEBUG only. |
+| `MotiSeedLifelines` (launch arg) | `MotiSeedStrands` | No — DEBUG seed trigger. |
+
+**Decision required:** the 5 "Yes" keys need a one-time idempotent `UserDefaults` migration (read old → write new → remove old), mirroring `ProjectRelationshipMigrator`. This is the only migration code Phase 2 introduces. Alternative (zero-risk, lower-purity): keep the legacy key *strings* and rename only the Swift identifiers — "Lifeline" then survives invisibly in string literals. **Recommended: migrate the 5 keys** so the term is truly gone.
+
+## Check-in family — three distinct meanings
+
+The inventory confirmed three separate concepts hiding under overlapping "check-in" language. Canonical split:
+
+| Concept | Scope | Canonical name | Symbols (KEEP) |
+|---|---|---|---|
+| **Checkpoint** | Session-scoped mid-session progress prompt | "Checkpoint" | `CheckpointCoordinator`, `CheckpointEvent`, `TimelineCheckpointScheduler`, `CheckpointPolicy`, `CheckpointFloatingCard`, `WorkSession.checkpointProgress` / `.firedCheckpoints` |
+| **Check-in** | Task-scoped, notification-driven progress prompt | "Check-in" | `TaskCheckInCoordinator`, `TaskCheckInCoordinator.Request`, `CheckInSheet` |
+| **Progress value** | The shared Good / Normal / Bad response | **`ProgressState`** (see below) | currently `SessionState` |
+
+**Open naming choice (the one genuinely open decision): the Good/Normal/Bad value.** Currently `enum SessionState` — misleading, because it is used equally by session checkpoints *and* task check-ins *and* manual pulses, not sessions only.
+- **Recommended: `ProgressState`.** Verified **migration-free**: it is a plain `enum` (not a `@Model`); it is persisted only as its raw strings (`"good"`/`"normal"`/`"bad"`) in `SessionCheckIn.stateRawValue`, so the type name is never stored. Rename is ~16 in-memory reference substitutions, zero persistence risk.
+- Alternatives if you dislike ProgressState: `PaceState`, `ProgressPulse`.
+
+## Deferred (out of scope for this rename pass)
+
+- **`SessionCheckIn` (`@Model`)** stores *both* checkpoint and check-in responses (disambiguated by whether `session` or `workItemID` is set). Its name leans "check-in" and is arguably a muddle, but it is a **SwiftData `@Model`** — renaming the class changes the persisted entity name and needs a store migration. **Keep `SessionCheckIn` for now**; revisit with the model layer.
+- **Doc bug to fix during the pass (not a rename):** `MotiApp.swift:90` — the comment "Drives the Timeline Check-in sheet for task progress checkpoints" sits above the *session checkpoint* scheduler, not the check-in coordinator. Correct it to describe the checkpoint floating card while touching that file.
+- **`docs/DOGFOOD.md`** references `-MotiSeedLifelines` and "Lifelines Metrics (DEBUG)" — update to the new names when the keys/labels change.
+
+## Conflicts flagged against the originally-proposed mapping
+
+1. `LifelineTypeOverrideStore` → the inventory's first instinct was `Trajectory…`, but it overrides `StrandType` (achievement vs maintenance), an **entity** attribute → mapped to **`StrandTypeOverrideStore`**. (Decision recorded above.)
+2. `LifelineInstrumentation` / `LifelineMetricRecord` are feature-level metrics, not the entity → mapped to **`Trajectory…`** even though the co-located `StrandCoverageSnapshot` stays Strand-named. Slight asymmetry, intentional.
+3. View-component folder (`Views/Components/Lifeline/`) contains non-strand pieces (`TrajectoryAxis`, `TimelineNarrator`). Named **`Strand/`** to pair with `Models/Strands/`; alternative `Views/Components/Timeline/` if you prefer surface-naming. (Decision needed.)
+
+No case was found where **Strand** meant the projection or **Trajectory** meant the entity — the only real cleanup is eliminating **Lifeline** plus renaming the misleading `SessionState` (now `ProgressState`).
+
+---
+
+# Architecture: RootTabView decomposition
+
+> **Status: PLAN ONLY — not executed.** This is the design for a later pass. No code has been changed for this section. It follows the vocabulary cleanup and is sequenced into independently build+test-gated steps.
+
+## Why
+
+`RootTabView` (in `MotiApp.swift`) has grown into a god view: ~340 lines owning tab routing, three sheet presentations, the checkpoint floating card, **persistence** logic (check-in dedup, checkpoint bookkeeping), notification reconciliation, and widget-snapshot triggering. Persistence and dedup do not belong in a view, and the widget trigger is a per-render O(n) allocation. The parser layer already demonstrates the target pattern (protocol + `EnvironmentKey` + `@Environment`); this brings the rest of the app into line.
+
+## Current responsibilities (inventory)
+
+| # | Responsibility | Current location | Keep in view? |
+|---|---|---|---|
+| 1 | Tab routing + tab bar + Plan badge | `selectedTab`, `selectedContent`, `MotiTab`, `MotiTabBar`, `planAttentionCount` | **Yes** — this is the view's job. |
+| 2 | Onboarding gate | `hasCompletedOnboarding` branch | Yes. |
+| 3 | Three sheet presentations | `QuickCaptureView`, `CheckInSheet`, `WorkItemDetailView` (re-plan) | Yes (presentation), but the *save callbacks* move out. |
+| 4 | Checkpoint floating card + handlers | `handleCheckpointResponse`, `handleCheckpointDismiss` | Presentation stays; **persistence moves out**. |
+| 5 | Task check-in persistence + dedup | `saveTaskCheckIn` (dedup by `checkpointID`) | **Move to service.** |
+| 6 | Checkpoint response persistence | `handleCheckpointResponse` body + `markFired` | **Move to service.** |
+| 7 | Notification reconciliation | `.task` / `.onChange` / `.onChange(scenePhase)` → `WorkItemNotificationScheduler.shared.reconcile` | **Move to a lifecycle modifier.** |
+| 8 | Widget snapshot trigger | `widgetChangeToken` + `.onChange` → `writeWidgetSnapshot` | **Replace mechanism.** |
+| 9 | Scene-phase checkpoint resolution | `.onChange(scenePhase)` → `scheduler.resolvePassedCheckpoints` | Move with #7. |
+
+## Extraction 1 — `ProgressPersistence` service (responsibilities #5, #6)
+
+Move all `SessionCheckIn` / `WorkSession` writes out of the view into one `@MainActor` service. Proposed surface:
+
+- `recordTaskCheckIn(_ request: TaskCheckInCoordinator.Request, state: ProgressState, note: String, in: ModelContext)` — the dedup-by-`checkpointID` insert-or-update (currently `saveTaskCheckIn`).
+- `recordCheckpointResponse(_ event: CheckpointCoordinator.CheckpointEvent, state: ProgressState, in: ModelContext)` — creates the `SessionCheckIn` and calls `markCheckpointFired` (currently the body of `handleCheckpointResponse`).
+- `markCheckpointFired(_ event:, in session: WorkSession, context: ModelContext)` — the `firedCheckpoints` bookkeeping + session deactivation (currently `markFired`).
+
+Injected via `EnvironmentKey` (`\.progressPersistence`) exactly like `taskUnderstandingService`; the default value is the live implementation, a fake is injectable in tests. **Payoff:** the check-in dedup rule (repeated notification taps must update-in-place, not duplicate) becomes unit-testable in isolation for the first time — today it can only be exercised through the whole view.
+
+Note on the context: the methods take `ModelContext` as a parameter (the view already has `@Environment(\.modelContext)`), so the service stays a stateless, easily-faked value rather than capturing a context.
+
+## Extraction 2 — replace `widgetChangeToken` (responsibility #8)
+
+**Problem.** `widgetChangeToken` concatenates *every field of every work item and project* into a `String` on **every** `body` evaluation, then `.onChange(of: token)` writes the snapshot when it differs. Cost is O(n · fields) allocation per render and grows with the dataset — paid even when nothing changed.
+
+**Target.** Stop deriving a giant reactive string. Introduce a `WidgetSnapshotCoordinator` (injected service) exposing `scheduleRefresh()` that coalesces bursts (debounce ~0.25s) and calls `WidgetSnapshotWriter.write`. Call `scheduleRefresh()` from the handful of real mutation sites — all of which already call `modelContext.save()`:
+
+- QuickCapture create/save, `WorkItemDetailView` save/delete, `PlanView` delete, `EditProjectSheet` save, `ProjectsView` delete/reorder, and the two `ProgressPersistence` methods above.
+
+This converts "recompute a fingerprint every frame" into "signal on the ~7 writes that actually change data." **Version-stamp variant:** if a reactive trigger is preferred over explicit calls, back the coordinator with a single monotonic counter bumped on each save (the pattern `StrandPreferenceStore.revision` already uses) and `.onChange(of: clock.version)` — O(1) per render. Either way, drop the per-field string. Risk to watch: a new mutation path that forgets to signal → stale widget; mitigate by funneling saves through one helper and asserting in DEBUG.
+
+## Extraction 3 — notification + scene-phase lifecycle (responsibilities #7, #9)
+
+Fold the three reconcile triggers and the scene-phase checkpoint resolution into a private `.reconcilesNotifications(workItems:sessions:)` view modifier (or a small `AppLifecycleCoordinator`). Pure move of existing calls; no behavior change. Low priority, do last.
+
+## Migrating the five `.shared` singletons to environment DI
+
+Match the parser pattern: define an `EnvironmentKey` whose `defaultValue` is the current shared instance (so behavior is identical on day one), add an `EnvironmentValues` accessor, inject once at the app root in `MotiApp` (alongside the existing `.environment(\.taskUnderstandingService, …)`), and replace `X.shared` in views with `@Environment(\.x)`.
+
+| Singleton | Observed by UI? | DI difficulty | Order |
+|---|---|---|---|
+| `SoundManager` | No | Trivial | 1 |
+| `AppleCalendarSyncService` | No | Easy | 2 |
+| `WorkItemNotificationScheduler` | No | Easy | 3 |
+| `TaskCheckInCoordinator` | **Yes** (`pendingRequest` drives a sheet) | Medium | 4 |
+| `TimelineCheckpointScheduler` | **Yes** (`coordinator.pendingCheckpoint` drives the floating card) | Medium | 5 |
+
+**Critical caveat — environment DI only reaches views.** Several of these singletons are also called from *non-view* code: `WorkItemNotificationScheduler.shared` and `AppleCalendarSyncService.shared` are invoked from services and from `QuickCaptureView`'s save path deep in async work; `TimelineCheckpointScheduler` calls into other services. `@Environment` cannot reach those call sites. So this migration has two seams:
+
+1. **View layer →** environment injection (the parser pattern).
+2. **Service-to-service →** constructor/parameter injection from a single composition root (e.g. build the graph in `MotiApp` and pass dependencies in), *not* `@Environment`.
+
+Do not attempt to route service-to-service calls through the environment. The two observed coordinators (#4, #5) are the highest risk: they publish state that drives presentation, so injection must preserve their `@Observable`/`ObservableObject` identity or the checkpoint card / check-in sheet silently stops appearing — verify each with a manual foreground-a-checkpoint pass, not just the unit suite.
+
+## Sequencing (each step independently build+test-gated)
+
+1. **Extract `ProgressPersistence`** + add dedup/bookkeeping tests. Highest value, lowest risk (pure logic move; view shrinks ~80 lines).
+2. **Replace `widgetChangeToken`** with `WidgetSnapshotCoordinator` (or version stamp). Self-contained.
+3. **Extract the lifecycle modifier** (#7, #9). Pure move.
+4. **DI-migrate the 3 non-observed singletons** (SoundManager, AppleCalendarSyncService, WorkItemNotificationScheduler).
+5. **DI-migrate the 2 observed coordinators** last, with manual verification of the checkpoint card and check-in sheet.
+
+## Risks
+
+- **Observation regressions** (highest): injecting `TaskCheckInCoordinator` / `TimelineCheckpointScheduler` wrongly can break the reactive presentation of the check-in sheet and checkpoint card. Manual verification required.
+- **Split DI seams**: environment for views, constructor injection for service-to-service — mixing them (trying to use `@Environment` off the view tree) will not compile / will silently fall back to the singleton.
+- **Widget staleness**: any mutation site not wired to `scheduleRefresh()` leaves the widget stale; centralize saves and add a DEBUG assertion.
+- **`@MainActor` + `ModelContext` threading**: the persistence service must stay `@MainActor`, matching the current call sites, to avoid SwiftData context hopping.
+- **Not in scope**: renaming the `SessionCheckIn` `@Model` (store migration) — tracked separately in the Canonical Vocabulary "Deferred" list.

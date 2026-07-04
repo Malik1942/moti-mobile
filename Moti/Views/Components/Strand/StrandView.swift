@@ -2,13 +2,13 @@ import SwiftUI
 
 /// Shared geometry so every row's Now axis lines up into one column and the
 /// parent can draw a single vertical "Now" rule through the nodes.
-enum LifelineMetrics {
+enum StrandLayout {
     static let nodeRadius: CGFloat = 5
     /// Distance from the track's trailing edge to the node centers.
     static let axisTrailingInset: CGFloat = nodeRadius + 1
 }
 
-/// One strand rendered as a lifeline: a label, a line that flows from the past
+/// One strand rendered as a trajectory line: a label, a line that flows from the past
 /// (left, receding) toward the fixed Now axis (right), a recency fade, and a
 /// node — or, for a drifted strand, an **empty slot** at the axis.
 ///
@@ -16,7 +16,7 @@ enum LifelineMetrics {
 /// decorative animation) so it honors reduced-motion by construction, and its
 /// state is legible in grayscale: the node *shape* (filled / hollow / empty) and
 /// the *gap* before Now do the work; color only says which future this is.
-struct LifelineView: View {
+struct StrandView: View {
     let strand: Strand
     /// Pixel x of the shared Now axis inside the plot (so every row's axis lines
     /// up and the empty slot reads as one column).
@@ -27,7 +27,7 @@ struct LifelineView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var color: Color { .projectToken(strand.colorToken) }
-    private var geo: LifelineGeometry { .make(for: strand) }
+    private var geo: StrandGeometry { .make(for: strand) }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -65,7 +65,7 @@ struct LifelineView: View {
     private var track: some View {
         Canvas { context, size in
             let midY = size.height / 2
-            let nowX = size.width - LifelineMetrics.axisTrailingInset // node column
+            let nowX = size.width - StrandLayout.axisTrailingInset // node column
             let startX: CGFloat = 0
             let endX = startX + (nowX - startX) * geo.endFraction
 
@@ -129,7 +129,7 @@ struct LifelineView: View {
 
     // MARK: - Derived presentation
 
-    private var nodeRadius: CGFloat { LifelineMetrics.nodeRadius }
+    private var nodeRadius: CGFloat { StrandLayout.nodeRadius }
 
     private var lineWidth: CGFloat {
         switch strand.presence.state {
@@ -193,14 +193,14 @@ private func previewStrand(
     )
 }
 
-#Preview("Lifelines") {
+#Preview("Strands") {
     VStack(spacing: 0) {
-        LifelineView(strand: previewStrand("Work", color: "blue", state: .active, days: 1))
-        LifelineView(strand: previewStrand("Move", color: "purple", state: .active, days: 0))
-        LifelineView(strand: previewStrand("Reading", color: "green", state: .quiet, days: 9))
-        LifelineView(strand: previewStrand("Fitness", color: "orange", state: .drifted, days: 22))
-        LifelineView(strand: previewStrand("Parents", color: "indigo", state: .drifted, days: 34, baseline: 7))
-        LifelineView(strand: previewStrand("Spanish", color: "gray", state: .quiet, days: 6, paused: true))
+        StrandView(strand: previewStrand("Work", color: "blue", state: .active, days: 1))
+        StrandView(strand: previewStrand("Move", color: "purple", state: .active, days: 0))
+        StrandView(strand: previewStrand("Reading", color: "green", state: .quiet, days: 9))
+        StrandView(strand: previewStrand("Fitness", color: "orange", state: .drifted, days: 22))
+        StrandView(strand: previewStrand("Parents", color: "indigo", state: .drifted, days: 34, baseline: 7))
+        StrandView(strand: previewStrand("Spanish", color: "gray", state: .quiet, days: 6, paused: true))
     }
     .padding()
     .overlay(alignment: .trailing) {

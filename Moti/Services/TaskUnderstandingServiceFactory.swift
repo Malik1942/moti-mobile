@@ -7,8 +7,6 @@ enum TaskUnderstandingServiceFactory {
             return FoundationModelRuntime.status.isAvailable ? .foundationModel : .ruleBased
         case .ruleBased:
             return requestedMode
-        case .mockSLM:
-            return FoundationModelRuntime.status.isAvailable ? .foundationModel : .ruleBased
         case .llm:
             // LLM mode is always usable: ContextualCaptureAgentService has its own
             // rule-based fallback. The underlying TaskUnderstandingService is still
@@ -26,8 +24,6 @@ enum TaskUnderstandingServiceFactory {
             return FoundationModelsTaskUnderstandingService(fallback: RuleBasedTaskUnderstandingService())
         case .ruleBased:
             return RuleBasedTaskUnderstandingService()
-        case .mockSLM:
-            return MockSLMTaskUnderstandingService()
         }
     }
 }

@@ -2,24 +2,24 @@
 import Foundation
 import SwiftData
 
-/// DEBUG-only sample data for visually verifying the Lifelines Timeline against
+/// DEBUG-only sample data for visually verifying the Trajectory Timeline against
 /// the PRD's visual grammar. Never compiled into release builds, and only runs
-/// when the app is launched with `-MotiSeedLifelines YES`.
+/// when the app is launched with `-MotiSeedStrands YES`.
 ///
 /// It deliberately exercises every state: active (reaching, filled), quiet
 /// (just-reaching, hollow), drifted (empty Now-slot), and paused (dashed) — plus
 /// an achievement strand (deadline + forward nodes), a maintenance strand with a
 /// co-occurring riser, and a calm/active majority so the screen reads serene.
-enum LifelineSampleData {
+enum StrandSampleData {
     @MainActor
     static func seedIfRequested(into context: ModelContext) {
-        guard UserDefaults.standard.bool(forKey: "MotiSeedLifelines") else { return }
+        guard UserDefaults.standard.bool(forKey: "MotiSeedStrands") else { return }
 
         // Keep visual QA deterministic even after interacting with the sample
         // build in prior simulator runs.
-        UserDefaults.standard.removeObject(forKey: "lifelines.parkedStrandWeek")
-        UserDefaults.standard.removeObject(forKey: "lifelines.spacedStrandWeek")
-        UserDefaults.standard.removeObject(forKey: "lifelines.loweredStrandIDs")
+        UserDefaults.standard.removeObject(forKey: "strand.parkedWeek")
+        UserDefaults.standard.removeObject(forKey: "strand.spacedWeek")
+        UserDefaults.standard.removeObject(forKey: "strand.loweredIDs")
 
         // Only seed an empty store, so relaunches stay stable.
         let existing = (try? context.fetch(FetchDescriptor<Project>())) ?? []
@@ -102,7 +102,7 @@ enum LifelineSampleData {
         StrandPreferenceStore.shared.setPaused(true, for: reading.id.uuidString)
 
         // Turn the redesign on and skip onboarding for the verification run.
-        UserDefaults.standard.set(true, forKey: "useLifelineTimeline")
+        UserDefaults.standard.set(true, forKey: "useTrajectoryTimeline")
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
     }
 }

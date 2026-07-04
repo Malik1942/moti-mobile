@@ -5,6 +5,7 @@ struct MultiWeekTimelineHeroView: View {
     let projects: [Project]
     let selectedProject: String
     var horizonDays = 30
+    var horizonLabel: String?
 
     @AppStorage("timelineTaskSort") private var timelineTaskSortRawValue = TimelineTaskSort.projectPriority.rawValue
     @State private var selectedItem: WorkItem?
@@ -231,7 +232,7 @@ struct MultiWeekTimelineHeroView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Label("\(horizonDays)d", systemImage: "calendar")
+            Label(horizonLabel ?? "\(horizonDays)d", systemImage: "calendar")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
@@ -242,9 +243,11 @@ struct MultiWeekTimelineHeroView: View {
     }
 
     private var horizonTitle: String {
-        if horizonDays <= 14 { return "Next 2 Weeks" }
-        if horizonDays <= 60 { return "Next Month" }
-        return "Next Quarter"
+        if horizonDays <= 7 { return "Next Week" }
+        if horizonDays <= 31 { return "Next Month" }
+        if horizonDays <= 92 { return "Next 3 Months" }
+        if horizonDays <= 183 { return "Next 6 Months" }
+        return "Next Year"
     }
 
     private var dateRangeText: String {

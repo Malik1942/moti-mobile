@@ -107,10 +107,13 @@ enum ProjectCatalog {
 enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
     case foundationModel
     case ruleBased
-    case mockSLM
     case llm
 
     var id: String { rawValue }
+
+    /// Raw value of the removed `mockSLM` case. Retained only so persisted
+    /// stores that still hold it can be migrated to a supported mode on launch.
+    static let legacyMockSLMRawValue = "mockSLM"
 
     static var releaseOptions: [TaskUnderstandingMode] {
         [.foundationModel, .ruleBased, .llm]
@@ -120,7 +123,6 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
         switch self {
         case .foundationModel: "Foundational Model"
         case .ruleBased: "Rule-based"
-        case .mockSLM: "Mock SLM"
         case .llm: "LLM"
         }
     }
@@ -129,7 +131,6 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
         switch self {
         case .foundationModel: "On-device"
         case .ruleBased: "Fallback"
-        case .mockSLM: "Debug Only"
         case .llm: "Smart Capture"
         }
     }
@@ -139,7 +140,7 @@ enum TaskUnderstandingMode: String, CaseIterable, Identifiable {
         switch self {
         case .llm:
             return "Uses Smart Capture to clarify vague input, save project context, and generate task plans."
-        case .foundationModel, .ruleBased, .mockSLM:
+        case .foundationModel, .ruleBased:
             return nil
         }
     }

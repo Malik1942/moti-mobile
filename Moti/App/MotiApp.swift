@@ -24,6 +24,12 @@ struct MotiApp: App {
         }
     }()
 
+    init() {
+        // Migrate renamed UserDefaults keys before any view reads them. Runs at
+        // App construction (before `body`); idempotent, safe on every launch.
+        UserDefaultsKeyMigrator.run()
+    }
+
     private var requestedMode: TaskUnderstandingMode {
         TaskUnderstandingMode(rawValue: modeRawValue) ?? .foundationModel
     }
@@ -40,12 +46,15 @@ struct MotiApp: App {
                 .tint(.motiAccent)
                 .onAppear {
                     #if DEBUG
-                    LifelineSampleData.seedIfRequested(into: sharedModelContainer.mainContext)
+                    StrandSampleData.seedIfRequested(into: sharedModelContainer.mainContext)
                     #endif
+                    // Backfill legacy string project links into the `project`
+                    // relationship. Idempotent; also adopts sample-data items.
+                    ProjectRelationshipMigrator.run(in: sharedModelContainer.mainContext)
                     // Preload the (optional) cognitive-feedback sounds so the
                     // first event has no decode hitch. No-op if assets absent.
                     SoundManager.shared.prewarm()
-                    if !didPromoteFoundationModelDefault && modeRawValue == TaskUnderstandingMode.mockSLM.rawValue {
+                    if !didPromoteFoundationModelDefault && modeRawValue == TaskUnderstandingMode.legacyMockSLMRawValue {
                         modeRawValue = FoundationModelRuntime.status.isAvailable
                             ? TaskUnderstandingMode.foundationModel.rawValue
                             : TaskUnderstandingMode.ruleBased.rawValue
@@ -64,9 +73,9 @@ struct MotiApp: App {
 
 struct RootTabView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    /// Feature flag for the v2.0 Lifelines Timeline redesign. Off by default so
+    /// Feature flag for the v2.0 Trajectory Timeline redesign. Off by default so
     /// the existing Timeline ships unchanged until the redesign is proven.
-    @AppStorage("useLifelineTimeline") private var useLifelineTimeline = false
+    @AppStorage("useTrajectoryTimeline") private var useTrajectoryTimeline = false
     @State private var selectedTab: MotiTab = .timeline
     @State private var showingCapture = false
     @State private var captureStartMode: CaptureStartMode = .text
@@ -82,10 +91,12 @@ struct RootTabView: View {
     @Query private var allSessions: [WorkSession]
     @Query private var allCheckIns: [SessionCheckIn]
 
+    /// Drives the checkpoint floating card for **session-scoped** progress
+    /// prompts (fired while a Timeline session is running).
     private var scheduler: TimelineCheckpointScheduler { .shared }
 
-    /// Drives the Timeline Check-in sheet for task progress checkpoints
-    /// (banners scheduled by `WorkItemNotificationScheduler`).
+    /// Drives the Check-in sheet for **task-scoped** progress prompts
+    /// (notifications scheduled by `WorkItemNotificationScheduler`).
     private var checkInCoordinator: TaskCheckInCoordinator { .shared }
 
     /// After a Bad → Re-plan tap we open the work item's detail screen so the
@@ -111,6 +122,7 @@ struct RootTabView: View {
 
                         MotiTabBar(
                             selectedTab: $selectedTab,
+                            planBadgeCount: planAttentionCount,
                             bottomSafeArea: proxy.safeAreaInsets.bottom
                         ) { mode in
                             presentCapture(mode)
@@ -206,7 +218,7 @@ struct RootTabView: View {
 
     private func handleCheckpointResponse(
         event: CheckpointCoordinator.CheckpointEvent,
-        state: SessionState
+        state: ProgressState
     ) {
         if let session = allSessions.first(where: { $0.id == event.sessionID }) {
             let checkIn = SessionCheckIn(progress: event.progress, state: state)
@@ -246,7 +258,7 @@ struct RootTabView: View {
     /// note in place rather than inserting a duplicate.
     private func saveTaskCheckIn(
         for request: TaskCheckInCoordinator.Request,
-        state: SessionState,
+        state: ProgressState,
         note: String
     ) {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -294,9 +306,9 @@ struct RootTabView: View {
     private var selectedContent: some View {
         switch selectedTab {
         case .timeline:
-            if useLifelineTimeline {
-                // v2.0 trajectory engine (revised PRD). Supersedes the
-                // presence-first LifelineTimelineView (kept in git history).
+            if useTrajectoryTimeline {
+                // v2.0 trajectory engine (revised PRD). Supersedes the earlier
+                // presence-first timeline, removed in the cleanup pass.
                 TrajectoryTimelineView(
                     onAddToTimeline: { presentCapture(.text) },
                     onOpenInProjects: { _ in selectedTab = .projects }
@@ -308,11 +320,16 @@ struct RootTabView: View {
             }
         case .projects:
             ProjectsView()
-        case .review:
-            ReviewView()
+        case .plan:
+            PlanView()
         case .settings:
             SettingsView()
         }
+    }
+
+    /// Items waiting on the user (review inbox) — drives the Plan tab badge.
+    private var planAttentionCount: Int {
+        workItems.filter { $0.needsReview || $0.needsProjectAssignment }.count
     }
 
     private func presentCapture(_ mode: CaptureStartMode) {
@@ -344,7 +361,7 @@ enum CaptureStartMode {
 private enum MotiTab: String, CaseIterable, Identifiable {
     case timeline
     case projects
-    case review
+    case plan
     case settings
 
     var id: String { rawValue }
@@ -353,7 +370,7 @@ private enum MotiTab: String, CaseIterable, Identifiable {
         switch self {
         case .timeline: "Timeline"
         case .projects: "Projects"
-        case .review: "Review"
+        case .plan: "Plan"
         case .settings: "Settings"
         }
     }
@@ -362,7 +379,7 @@ private enum MotiTab: String, CaseIterable, Identifiable {
         switch self {
         case .timeline: "calendar"
         case .projects: "square.grid.2x2"
-        case .review: "tray"
+        case .plan: "checklist"
         case .settings: "gearshape"
         }
     }
@@ -370,6 +387,7 @@ private enum MotiTab: String, CaseIterable, Identifiable {
 
 private struct MotiTabBar: View {
     @Binding var selectedTab: MotiTab
+    let planBadgeCount: Int
     let bottomSafeArea: CGFloat
     let onCapture: (CaptureStartMode) -> Void
 
@@ -379,7 +397,7 @@ private struct MotiTabBar: View {
                 tabButton(.timeline)
                 tabButton(.projects)
                 centerAction
-                tabButton(.review)
+                tabButton(.plan)
                 tabButton(.settings)
             }
             .frame(height: MotiTabBarMetrics.rowHeight)
@@ -405,6 +423,17 @@ private struct MotiTabBar: View {
             VStack(spacing: 4) {
                 Image(systemName: tab.iconName)
                     .font(.system(size: 18, weight: selectedTab == tab ? .semibold : .regular))
+                    .overlay(alignment: .topTrailing) {
+                        if tab == .plan, planBadgeCount > 0 {
+                            Text("\(min(planBadgeCount, 99))")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.motiAccent, in: Capsule())
+                                .offset(x: 11, y: -7)
+                        }
+                    }
                 Text(tab.title)
                     .font(.caption2.weight(selectedTab == tab ? .semibold : .regular))
                     .lineLimit(1)
@@ -415,7 +444,9 @@ private struct MotiTabBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tab.title)
+        .accessibilityLabel(tab == .plan && planBadgeCount > 0
+            ? "\(tab.title), \(planBadgeCount) items need attention"
+            : tab.title)
     }
 
     private var centerAction: some View {

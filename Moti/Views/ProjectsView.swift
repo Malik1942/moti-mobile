@@ -86,7 +86,7 @@ struct ProjectsView: View {
         ScrollView {
             LazyVStack(spacing: MotiLayout.cardSpacing) {
                 ForEach(orderedProjects) { project in
-                    let items = workItems.filter { $0.projectName == project.name && !$0.needsReview }
+                    let items = workItems.filter { $0.belongsTo(project) && !$0.needsReview }
                     ProjectCardRow(
                         project: project,
                         items: items,
@@ -264,8 +264,8 @@ struct ProjectsView: View {
 
     private func deleteProject(_ project: Project) {
         let remainingProjects = projects.filter { $0.id != project.id }.motiOrdered
-        for item in workItems where item.projectName == project.name {
-            item.projectName = nil
+        for item in workItems where item.belongsTo(project) {
+            item.assignProject(nil)
             item.updatedAt = .now
             try? AppleCalendarSyncService.shared.syncAfterItemChange(item: item, projects: remainingProjects)
         }
@@ -565,7 +565,7 @@ private struct ProjectDetailView: View {
     /// archived. Nothing is filtered out by date; grouping happens via buckets
     /// so a passed deadline can never hide a task.
     private var allProjectItems: [WorkItem] {
-        workItems.filter { $0.projectName == project.name }
+        workItems.filter { $0.belongsTo(project) }
     }
 
     var body: some View {

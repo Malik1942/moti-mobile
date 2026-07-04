@@ -1,14 +1,14 @@
 import SwiftUI
 
 /// Pure mapping from a strand's *computed* presence to the handful of drawing
-/// quantities the `Lifeline` needs. Keeping this separate (and trivially
+/// quantities the strand rendering needs. Keeping this separate (and trivially
 /// inspectable) honors PRD §14: every visual property maps to a computed
 /// quantity — lines must not become decoration.
 ///
 /// Note the division of labour: position-vs-Now and node shape carry **state**
 /// (legible in grayscale); the identity color is layered on top by the view and
 /// never appears here.
-struct LifelineGeometry: Equatable {
+struct StrandGeometry: Equatable {
 
     /// How the endpoint meets the Now axis.
     enum Node: Equatable {
@@ -40,19 +40,19 @@ struct LifelineGeometry: Equatable {
 
     /// Derive geometry from a strand. Paused is decided here (it is a UI choice
     /// layered on the computed state, not something the event stream infers).
-    static func make(for strand: Strand) -> LifelineGeometry {
+    static func make(for strand: Strand) -> StrandGeometry {
         if strand.isPaused {
             // n/a reach: a dashed line spans the window with a quiet hollow node.
-            return LifelineGeometry(endFraction: 1.0, node: .hollow, isDashed: true, intensity: 0.4)
+            return StrandGeometry(endFraction: 1.0, node: .hollow, isDashed: true, intensity: 0.4)
         }
 
         switch strand.presence.state {
         case .active:
-            return LifelineGeometry(endFraction: 1.0, node: .filled, isDashed: false, intensity: 1.0)
+            return StrandGeometry(endFraction: 1.0, node: .filled, isDashed: false, intensity: 1.0)
 
         case .quiet:
             // Just reaches — a hair short of the axis, faint, hollow node.
-            return LifelineGeometry(endFraction: 0.97, node: .hollow, isDashed: false, intensity: 0.5)
+            return StrandGeometry(endFraction: 0.97, node: .hollow, isDashed: false, intensity: 0.5)
 
         case .drifted:
             // Stops well short of Now. The break position is cadence-relative so a
@@ -60,7 +60,7 @@ struct LifelineGeometry: Equatable {
             // not at a raw calendar distance. Clamped to stay clearly mid-plot so
             // the gap to the empty slot always reads.
             let break_ = driftBreakFraction(for: strand.presence)
-            return LifelineGeometry(endFraction: break_, node: .empty, isDashed: false, intensity: 0.6)
+            return StrandGeometry(endFraction: break_, node: .empty, isDashed: false, intensity: 0.6)
         }
     }
 

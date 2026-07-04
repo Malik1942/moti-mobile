@@ -10,7 +10,7 @@ import SwiftUI
 /// - Animates in/out from below using the parent's transition
 struct CheckpointFloatingCard: View {
     let event:     CheckpointCoordinator.CheckpointEvent
-    let onRespond: (SessionState) -> Void
+    let onRespond: (ProgressState) -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -54,7 +54,7 @@ struct CheckpointFloatingCard: View {
 
     private var moodButtons: some View {
         HStack(spacing: 8) {
-            ForEach(SessionState.allCases, id: \.self) { state in
+            ForEach(ProgressState.allCases, id: \.self) { state in
                 Button {
                     onRespond(state)
                 } label: {

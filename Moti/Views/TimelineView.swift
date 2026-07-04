@@ -1,5 +1,8 @@
 import SwiftData
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct TimelineView: View {
     var onAddToTimeline: () -> Void = {}
@@ -8,7 +11,7 @@ struct TimelineView: View {
     @Query(sort: \WorkItem.createdAt, order: .reverse) private var workItems: [WorkItem]
     @Query(sort: \Project.createdAt) private var projects: [Project]
     @State private var selectedProject = ProjectCatalog.allProjectsLabel
-    @State private var horizonDays = 30
+    @State private var selectedHorizon: TimelineHorizonScale = .month
     @State private var showingAddProject = false
 
     /// Timeline scope: past + present + future, archived hidden. Past work stays
@@ -27,6 +30,10 @@ struct TimelineView: View {
         projects.motiOrdered
     }
 
+    private var horizonDays: Int {
+        selectedHorizon.futureDays
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -38,7 +45,8 @@ struct TimelineView: View {
                             workItems: filteredItems,
                             projects: orderedProjects,
                             selectedProject: selectedProject,
-                            horizonDays: horizonDays
+                            horizonDays: horizonDays,
+                            horizonLabel: selectedHorizon.label
                         )
                         summaryCards
                     } else {
@@ -118,13 +126,40 @@ struct TimelineView: View {
     }
 
     private var horizonSelector: some View {
-        Picker("Horizon", selection: $horizonDays) {
-            Text("2W").tag(14)
-            Text("Month").tag(30)
-            Text("Quarter").tag(90)
+        HStack(spacing: 0) {
+            ForEach(TimelineHorizonScale.allCases) { horizon in
+                horizonButton(horizon)
+            }
         }
-        .pickerStyle(.segmented)
-        .frame(maxWidth: 260)
+        .padding(4)
+        .background(Color.motiQuietFill, in: Capsule())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Timeline period, \(selectedHorizon.longLabel) selected")
+    }
+
+    private func horizonButton(_ horizon: TimelineHorizonScale) -> some View {
+        let isSelected = selectedHorizon == horizon
+        return Button {
+            selectedHorizon = horizon
+            haptic()
+        } label: {
+            Text(horizon.label)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? Color.primary.opacity(0.82) : Color.secondary.opacity(0.72))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background {
+                    if isSelected {
+                        Capsule()
+                            .fill(Color.motiSurface)
+                            .overlay {
+                                Capsule()
+                                    .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+                            }
+                    }
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     // Due Soon = upcoming + overdue (most-urgent first). Overdue is intentionally
@@ -254,6 +289,52 @@ struct TimelineView: View {
         .overlay {
             RoundedRectangle(cornerRadius: MotiLayout.compactSurfaceRadius, style: .continuous)
                 .strokeBorder(MotiTheme.subtleStroke, lineWidth: 0.5)
+        }
+    }
+
+    private func haptic() {
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        #endif
+    }
+}
+
+private enum TimelineHorizonScale: String, CaseIterable, Identifiable {
+    case week
+    case month
+    case threeMonths
+    case sixMonths
+    case year
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .week: return "1W"
+        case .month: return "1M"
+        case .threeMonths: return "3M"
+        case .sixMonths: return "6M"
+        case .year: return "Y"
+        }
+    }
+
+    var longLabel: String {
+        switch self {
+        case .week: return "1 week"
+        case .month: return "1 month"
+        case .threeMonths: return "3 months"
+        case .sixMonths: return "6 months"
+        case .year: return "1 year"
+        }
+    }
+
+    var futureDays: Int {
+        switch self {
+        case .week: return 7
+        case .month: return 28
+        case .threeMonths: return 90
+        case .sixMonths: return 180
+        case .year: return 365
         }
     }
 }
